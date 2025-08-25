@@ -53,7 +53,7 @@ virer
 08:30:37.970 -> ===============================
 08:30:37.970 -> Mise à l'heure
 
-
+envoi en boucle Payload en exploitation
 
 
 

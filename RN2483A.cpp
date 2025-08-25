@@ -92,27 +92,6 @@ String readLoRaResponse(int timeoutMs = 1000)
 }
 
 
-void debugPrintNextAlarm(DateTime nextPayload, int IRQ)  
-{
-  sprintf(serialbuf,"Interruption Alarme %d activée, reprogrammée pour: ",IRQ );
-  debugSerial.print(serialbuf); 
-  sprintf(serialbuf,"%02d:%02d:%02d",nextPayload.hour(),nextPayload.minute(),nextPayload.second());
-  debugSerial.println(serialbuf); 
-}
-
-
-void debugPrintLoRaStatus()  
-{
-  debugSerial.println("\n=== STATUS LoRa ===");
-  sprintf(serialbuf," => RN2483#%02d",Ruche.Num_Carte);        // affiche N° de carte
-  debugSerial.println(serialbuf);
-  debugSerial.print("DevEUI = ");printOndebugSerial((char *)DevEUI,8);
-  debugSerial.print("AppEUI = ");printOndebugSerial((char *)AppEUI,8);
-  debugSerial.print("AppKey = ");printOndebugSerial((char *)AppKey,16); 
-  debugSerial.println("=====================");
-}  
-
-
 // ---------------------------------------------------------------------------*
 //  out : 0 (OK) / 1 (Error)                          
 // ---------------------------------------------------------------------------*
@@ -139,7 +118,7 @@ debugSerial.print(" car. lus: "); debugSerial.println(serialBuf);
 debugSerial.println(serialbuf);
 
 
-//debugDisplayOLED(OLEDbuf);
+//OLEDDebugDisplay(OLEDbuf);
 //debugSerial.println("------------------------------------------------------------------");
  
   for (Ruche.Num_Carte=0;Ruche.Num_Carte<9; Ruche.Num_Carte++)
@@ -196,14 +175,14 @@ bool setupLoRaOTAA()
 // With using the GetHWEUI() function the HWEUI will be used
   if (LoRaBee.initOTA(loraSerial, DevEUI, AppEUI, AppKey, true))
   {
-    debugSerial.println("Network connection successful in setupLoRaOTAA().");
+    debugSerial.println("setupLoRaOTAA(), Network connection successfull");
     LoRaBee.setSpreadingFactor(LoRa_Config.SpreadingFactor); // 7, 9 et 12 echec freudeneck
     return(1);
   }
   else  // ordre des lignes changé le 07/04/25, 
   { 
-    debugPrintLoRaStatus();
-    debugSerial.println("LoRaBee.initOTA: Network connection failed!");
+    debugSerialPrintLoRaStatus();
+    debugSerial.println("setupLoRaOTAA(), Network connection failed!");
     return(0);
   }
 }
@@ -503,7 +482,7 @@ char chardata[256]="";
 // ---------------------------------------------------------------------------*
 void Send_LoRa_Mess(uint8_t *Datas,uint8_t len)
 { 
-printLoraPayloadOndebugSerial(Datas,len);
+debugSerialPrintLoraPayload(Datas,len);
 debugSerial.println("appel LoRaBee.send");
 
     switch (LoRaBee.send(1,Datas,len))

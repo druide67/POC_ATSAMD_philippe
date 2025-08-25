@@ -24,7 +24,7 @@ clavier_context_t clavierContext = {KEY_NONE, KEY_NONE, 0, 0, false};
 
 char OLEDbuf[21] = "12345678901234567890";
 char serialbuf[SERIALBUFLEN];
-bool debugdrawtext = false;
+bool debugOLEDDrawText = false;
 
 // Variables pour gestion des interruptions
 volatile bool wakeupPayload = false;
@@ -199,7 +199,7 @@ extern unsigned long lastBlink;
 extern bool blinkState;
 
 
-extern bool debugdrawtext;
+extern bool debugOLEDDrawText;
 
 extern RTC_DS3231 rtc;
 
@@ -230,6 +230,9 @@ extern uint8_t *AppKey;    // Orange : kit SodaQ RUCHE 0
 
 // Variables config
 extern ConfigGenerale_t config;
+
+// Variables debug
+extern bool COM_DebugSerial;
 
 // Variable définitions RUCHE
 extern HW_equipement Ruche;

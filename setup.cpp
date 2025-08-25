@@ -20,7 +20,7 @@ debugSerial.println("-----------------------------------------------------------
 debugSerial.println("INIT 2483...");
 
 //  LoRaBee.setDiag(debugSerial);  // Debug des commandes
-  debugDisplayOLED("Initializing 2483");
+  OLEDDebugDisplay("Initializing 2483");
   
   loraSerial.begin(LoRaBee.getDefaultBaudRate());
   
@@ -34,21 +34,21 @@ debugSerial.println("INIT 2483...");
       {
         debugSerial.print(" Init 2483 done with card : ");
         debugSerial.println(Ruche.Num_Carte);
-        debugDisplayOLED("2483    Initialized");
+        OLEDDebugDisplay("2483    Initialized");
       }
       else
       {
         debugSerial.println(" NO 2483 present.");
-        debugDisplayOLED("2483    Failed");
+        OLEDDebugDisplay("2483    Failed");
       }
     else 
     {
       debugSerial.println(" Init 2483 failed");    
-      debugDisplayOLED("2483    Failed");
+      OLEDDebugDisplay("2483    Failed");
     }  
 //   blink(LED_BUILTIN,200);
 /* */
-debugPrintLoRaStatus();
+debugSerialPrintLoRaStatus();
 }
 
 
@@ -66,14 +66,14 @@ debugSerial.println("INIT LoRa...");
 debugSerial.println("Init LoRa done.");
 debugSerial.println("------------------------------------------------------------------");
 debugSerial.println("Test sending LoRa testPayload (7) (Restart)..."); 
-  debugDisplayOLED("Sending testPayload");
+  OLEDDebugDisplay("Sending testPayload");
   Send_LoRa_Mess((uint8_t*)testPayload,7);
-  debugDisplayOLED("LoRa    Initialized");
+  OLEDDebugDisplay("LoRa    Initialized");
   }
   else
   {
 //debugSerial.println("Reboot message SENT");
-  debugDisplayOLED("LoRa    Failed");  
+  OLEDDebugDisplay("LoRa    Failed");  
   }
 
 /*
@@ -82,7 +82,7 @@ debugSerial.println("Test sending LoRa testPayload (7) (Restart)...");
 // set FLASH to deep sleep & reset SPI pins for min. energy consumption
   DFlashUltraDeepSleep(); 
 */
-  debugDisplayOLED("---- SETUP DONE ----");
+  OLEDDebugDisplay("---- SETUP DONE ----");
 delay(1000);
   display.clearDisplay();
   display.display();
