@@ -40,13 +40,12 @@ DateTime getSystemTime(void)
 }
 
  /**
- * @brief Configure les alarmes du RTC
+ * @brief Configure alarme du RTC
  * Alarme 1 : Toutes les secondes (mode programmation)
- * Alarme 2 : Payload toutes les X minutes
  * @param Aucun
  * @return void
  */
-void setRTCAlarms(void) 
+void DS3231setRTCAlarm1(void) 
 {
   clearRTCAlarms();
 debugSerial.println("=== CONFIGURATION ALARMES RTC + INTERRUPTIONS ===");
@@ -58,7 +57,23 @@ rtc.setAlarm1(nextSecond, DS3231_A1_PerSecond);
 //    rtc.setAlarm1(nextSecond, DS3231_A1_Second);
 //debugSerialPrintNextAlarm(nextSecond, 1);  
   }
-  
+debugSerial.print("État pin RTC après config alarmes: ");
+debugSerial.println(digitalRead(RTC_INTERRUPT_PIN) ? "HIGH" : "LOW");
+debugSerial.println("=== FIN CONFIGURATION ALARMES + INTERRUPTIONS ===");
+// Activer les interruptions
+  rtc.writeSqwPinMode(DS3231_OFF); 
+}
+
+ /**
+ * @brief Configure alarme du RTC
+ * Alarme 2 : Payload toutes les X minutes
+ * @param Aucun
+ * @return void
+ */
+void DS3231setRTCAlarm2(void) 
+{
+  clearRTCAlarms();
+debugSerial.println("=== CONFIGURATION ALARMES RTC + INTERRUPTIONS ===");
   // ALARME 2 : Payload toutes les X minutes
   if (DEBUG_WAKEUP_PAYLOAD) 
   {

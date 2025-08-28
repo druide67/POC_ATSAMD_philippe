@@ -9,7 +9,8 @@ void DHTInit(void);
 // DS3231, gestion RTC et temps
 void initRTC(void);                       // Initialise le module RTC DS3231
 DateTime getSystemTime(void);             // Retourne l'heure système actuelle
-void setRTCAlarms(void);                  // Configure les alarmes du RTC
+void DS3231setRTCAlarm1(void);                  // Configure alarme 1 du RTC
+void DS3231setRTCAlarm2(void);                  // Configure alarme 2 du RTC
 void clearRTCAlarms(void);                // Efface les alarmes du RTC
 void testConnexionDS3231(void);           // Affiche heure et status Alarmes sur SerialDebug
 void forcerSynchronisationDS3231(void);   //  Forcer une synchronisation immédiate

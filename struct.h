@@ -142,3 +142,19 @@ typedef struct     // regroupe tous les paramètres de EEPROM
   float   VBatScale;
 // DS18B20 ???  
 } ConfigBalance;
+
+
+
+// exemples struct et union
+// dans Mesures.cpp
+
+struct nombre
+{
+  unsigned entier : 1;
+  unsigned flottant : 1;
+  union
+  {
+    int e;
+    double f;
+  } u;
+};

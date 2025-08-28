@@ -18,8 +18,6 @@
 
 // ILS avec anti rebond : 47k en Pull Up et 100nf // ILS
 
-// Copie de l'exemple:  powerDownWakeExternalInterrupt.ino
-
 /*
    typedef struct
   {
@@ -101,11 +99,11 @@ debugSerial.println(serialbuf);
   Poids_Peson(3) = Poids_Peson(1) - (Temp_Peson(1)-TareTemp(1))*CompTemp(1); 
 //#endif // WEIGHT_YES
 */
-debugSerial.println("Take_All_Measure");
-debugSerial.println(" Temp  Hum   Vs   Vb   ds18    P1   P2    P3    P4    tare1 comp1");
-snprintf(serialbuf, BUFF_MAX,"%04.2f %04.2f %04.2f %04.2f %04.2f %04.2f %04.2f %04.2f %04.2f %04.2f %04.2f ",
+//debugSerial.println("Take_All_Measure");
+debugSerial.println(" Temp  Hum   Vs   Vb  ds18   P1     P2     P3     P4   tare1 comp1  lum");
+sprintf(serialbuf, "%04.2f %04.2f %04.2f %04.2f %04.2f %06.2f %06.2f %06.2f %06.2f %04.2f %04.2f   %04.2f",
                  Data_LoRa.DHT_Temp,Data_LoRa.DHT_Hum,Data_LoRa.Solar_Voltage,Data_LoRa.Bat_Voltage,
-                 Temp_Peson(1),Poids_Peson(0),Poids_Peson(1),Poids_Peson(2),Poids_Peson(3),TareTemp(1),CompTemp(1));
+                 Temp_Peson(1),Poids_Peson(0),Poids_Peson(1),Poids_Peson(2),Poids_Peson(3),TareTemp(1),CompTemp(1),Data_LoRa.Brightness);
 debugSerial.println(serialbuf); 
 }
 
@@ -175,10 +173,10 @@ float GetPoids(int num)    // N° de jauges des balances 1 à 4
 
   num--;
 //debugSerial.print(" carte. num : "); debugSerial.print((int)Ruche.Num_Carte);
-//debugSerial.print(" Bal. num (0..3) : "); debugSerial.print((int)num); debugSerial.print(" Peson num : "); debugSerial.print((int)Peson[Ruche.Num_Carte][num]);
+debugSerial.print(" Bal. num (0..3) : "); debugSerial.print((int)num); debugSerial.print(" Peson num : "); debugSerial.print((int)Peson[Ruche.Num_Carte][num]);
   if (!Peson[Ruche.Num_Carte][num])
   {
-//debugSerial.println(" Peson : N/A");
+debugSerial.println(" Peson : N/A");
     return (0); // pas de jauge déclarée
   }
 
@@ -223,7 +221,7 @@ debugSerial.print(" poids : "); debugSerial.println(pesee);
 // String getTemperature(void);
 
 // ---------------------------------------------------------------------------*
-//                               
+//  Lecture temp µC                             
 // ---------------------------------------------------------------------------*
 float getTemperature()
 {
@@ -231,8 +229,8 @@ float getTemperature()
   //10mV per C, 0C is 500mV
   float mVolts = (float)analogRead(TEMP_SENSOR) * 3300.0 / 1023.0;
   float temp = (mVolts - 500.0) / 10.0;
-  sprintf(OLEDbuf, "%4.1f %%", temp);
-  debugSerial.print(" TEMP_SENSOR : "); debugSerial.println(OLEDbuf);
+  sprintf(serialbuf, "%4.1f °C", temp);
+  debugSerial.print(" TEMP_SENSOR : "); debugSerial.println(serialbuf);
   return(temp);
 #endif
   return(TEMP_ERR);
@@ -255,8 +253,8 @@ float getLuminance(void) //
  // CS_File1("LDR.start" , "" , "" , "");
   float mVolts = (float)analogRead(LUM_SENSOR) / 10.23; // echelle 0 à 100
   float lum = (mVolts * VLumScale_List[Ruche.Num_Carte]); // - 500.0) / 10.0;
-  sprintf(OLEDbuf, "%4.1f %%", lum);
-//  debugSerial.print(" LDR : "); debugSerial.println(OLEDbuf);
+  sprintf(serialbuf, "%4.1f %%", lum);
+//  debugSerial.print(" LDR : "); debugSerial.println(serialbuf);
  // CS_File1("LDR.end" , "" , "" , "");
   return (lum);
 }
@@ -265,8 +263,8 @@ float getLuminance(void) //
 // ---------------------------------------------------------------------------*
 //                               
 // ---------------------------------------------------------------------------*
-void toggle(int port)  // ??????????????????????????????????????????????????????????????????????????????????????????????
-{ bool state = 0;
+void fonctiondemerdetoggle(int port)  // ??????????????????????????????????????????????????????????????????????????????????????????????
+{ static bool state = 0;
 
   state = ! state;
   digitalWrite(port, state);
@@ -291,8 +289,6 @@ float getVBatMoy(void)
   // pilote FET@RD_VBAT à 1
   digitalWrite(RD_VBAT, HIGH);       // Blocage FET
 
-
-
   VBat[v] = analogRead(VBAT_MEASURE);   // on fait une mesure
   sprintf(OLEDbuf, "%d ", VBat[v]);
   //  debug
@@ -309,13 +305,13 @@ float getVBatMoy(void)
     VBat[10] += VBat[i];
   }
   VBat[10] /= 11;
-/*          Affichage de controle
-  sprintf(OLEDbuf, " VBat : %4.3f V", VBat[v - 1]);
-  debugSerial.print(OLEDbuf);
-  sprintf(OLEDbuf, " VBatMoy : %4.3f V", VBat[10]);
-  debugSerial.println(OLEDbuf);
+//          Affichage de controle
+/*
+  sprintf(serialbuf, " VBat : %4.3f V", VBat[v - 1]);
+  debugSerial.print(serialbuf);
+  sprintf(serialbuf, " VBatMoy : %4.3f V", VBat[10]);
+  debugSerial.println(serialbuf);
 */
-
   if (v > 9) v = 0;
 //  CS_File1("VBat.end" , "" , "" , "");
   return (VBat[10]);
@@ -335,30 +331,19 @@ float getVSolMoy(void)
     VSol[10] += VSol[i]; 
   VSol[10] /= 10;
 
-/*          Affichage de controle
-  sprintf(OLEDbuf, " VSol : %4.2f V %d", VSol[v], v); // valeur lue
-  debugSerial.print(OLEDbuf);
-  sprintf(OLEDbuf, " VSolMoy : %4.2f V", VSol[10]); // moyenne courante
-  debugSerial.println(OLEDbuf);
+ //          Affichage de controle
+/*  
+  sprintf(serialbuf, " VSol : %4.2f V %d", VSol[v], v); // valeur lue
+  debugSerial.print(serialbuf);
+  sprintf(serialbuf, " VSolMoy : %4.2f V", VSol[10]); // moyenne courante
+  debugSerial.println(serialbuf);
 */
   if (++v > 9) 
     v = 0;
   return (VSol[10]);   // moyenne courante
 }
 
-// exemples struct et union
 
-
-struct nombre
-{
-  unsigned entier : 1;
-  unsigned flottant : 1;
-  union
-  {
-    int e;
-    double f;
-  } u;
-};
 
 
 // ---------------------------------------------------------------------------*

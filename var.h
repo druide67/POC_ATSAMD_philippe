@@ -174,7 +174,7 @@ int Peson [10][4] = {
       {0,0,0,0},    // Module LoRa pas Lu; pas de Peson
       {0,0,0,17},    // 0004A30B0020300A carte 1 HS; sur Carte PROTO2 en service le 05/03/2021
       {13,8,9,0}, //15},    // 0004A30B0024BF45 carte 2; en service le 10/05/2020
-      {19,17,0,0},    // 0004A30B00EEEE01 Carte PROTO1 mis en service Loess le 08/03/2021
+      {16,18,0,0},    // 0004A30B00EEEE01 Carte PROTO1 mis en service Loess le 08/03/2021
       {0,5,0,0},    // complter
       {5,0,0,0},
       {6,0,0,0},

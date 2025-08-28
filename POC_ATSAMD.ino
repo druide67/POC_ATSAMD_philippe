@@ -22,7 +22,7 @@
 // ===== INCLUDES PROJET =====
 #include ".\define.h"
 
-//#define __SendLoRa
+#define __SendLoRa
 
 // =====  PROGRAMME =====
 // ===== SETUP =====
@@ -63,7 +63,8 @@ void setup()
   OLEDDebugDisplay("initConfig OK");
         
   // Configuration des alarmes RTC 1 et 2
-  setRTCAlarms();
+  DS3231setRTCAlarm1();
+  DS3231setRTCAlarm2();
   OLEDDebugDisplay("setRTCAlarms OK");
     
   // Configuration interruption externe
@@ -102,7 +103,21 @@ debugSerial.println("Mise à l'heure");
   debugSerial.println(serialbuf); 
   sprintf(serialbuf,"Temperature : %.2f °C",Data_LoRa.DHT_Temp );
   debugSerial.println(serialbuf); 
-    
+
+getVBatMoy();
+getVBatMoy();
+getVBatMoy();
+getVBatMoy();
+getVBatMoy();
+getVBatMoy();
+getVBatMoy();
+getVBatMoy();
+getVBatMoy();
+getVBatMoy();
+
+getVSolMoy();
+
+/*    
   if (OLED) 
   {
     OLEDDebugDisplay("Init terminee");
@@ -110,6 +125,7 @@ debugSerial.println("Mise à l'heure");
     OLEDClear();
   }
 //  vider cache : OLEDDebugDisplay()  
+*/
  OLEDDebugDisplayReset();
  debugSerial.println("Start loop(); =====================================");
 
@@ -199,13 +215,21 @@ counter15m++;
   
   if (wakeup1Sec) // && !modeExploitation)                  // màj heure, blink LED
   {     
-sprintf(serialbuf, "IRQ1 1s %d =====", counter1s);
-debugSerial.println(serialbuf); 
+//sprintf(serialbuf, "IRQ1 1s %4d =====", counter1s);
+//debugSerial.print(serialbuf); 
 /* 
  sprintf(OLEDbuf,  "IRQ1 1s %d ", counter1);
 OLEDDebugDisplay(OLEDbuf);   
 */       
 counter1s++;
+
+if (!(counter1s %5))
+{ float poidsTest;
+  take_All_Measure();
+//sprintf(serialbuf, ", poids 1 %f =====", poidsTest);
+//debugSerial.println(serialbuf); 
+}
+
 //debugSerial.println("S"); 
     wakeup1Sec = false;
     LEDStartBlue();
@@ -315,7 +339,9 @@ void onRTCAlarm(void)
     {
 //      DateTime nextSecond = rtc.now() + TimeSpan(0, 0, 0, 1);
  //     rtc.setAlarm1(nextSecond, DS3231_A1_Second);
-//     rtc.setAlarm1(nextSecond, DS3231_A1_PerSecond);     
+//     rtc.setAlarm1(nextSecond, DS3231_A1_PerSecond);  
+// DS3231setRTCAlarm1();
+     
 // debugSerialPrintNextAlarm(nextSecond, 1); 
     }
   }
@@ -325,7 +351,7 @@ void onRTCAlarm(void)
   {
     wakeupPayload = true;
     rtc.clearAlarm(2);      
-    setRTCAlarms(); // Reprogrammer prochaine alarme
+    DS3231setRTCAlarm2(); // Reprogrammer prochaine alarme
   }
 }
 
@@ -769,7 +795,7 @@ void handleDebugMenu(void)
                 debugSerial.print("DEBUG_WAKEUP_PAYLOAD: ");
                 debugSerial.println(DEBUG_WAKEUP_PAYLOAD ? "ON" : "OFF");
                 if (!DEBUG_WAKEUP_PAYLOAD) clearRTCAlarms();
-                else setRTCAlarms();
+                else DS3231setRTCAlarm2();
                 break;
                 
             case KEY_2:
@@ -777,7 +803,7 @@ void handleDebugMenu(void)
                 debugSerial.print("DEBUG_INTERVAL_1SEC: ");
                 debugSerial.println(DEBUG_INTERVAL_1SEC ? "ON" : "OFF");
                 if (!DEBUG_INTERVAL_1SEC) clearRTCAlarms();
-                else setRTCAlarms();
+                else DS3231setRTCAlarm1();
                 break;
                 
             case KEY_3:
