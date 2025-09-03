@@ -10,7 +10,10 @@
 //  DDDD    H   H     T     22222   22222
 // /////////////////////////////////////////////////////////////////////////////
 // ---------------------------------------------------------------------------*
-// Read temp and Humidity with DHT22                              
+// @brief Read temp and Humidity with DHT22                              
+// @param DHT
+// @return void
+// #define debugSerialread_DHT  // decommenter pour les messages debugSerial
 // ---------------------------------------------------------------------------*
 void read_DHT(DHT dht)
 {
@@ -23,7 +26,9 @@ void read_DHT(DHT dht)
   // Check if any reads failed and exit early (to try again).
   if (isnan(Data_LoRa.DHT_Hum) || isnan(Data_LoRa.DHT_Temp))
   {
+#ifdef debugSerialread_DHT
     debugSerial.println(F("Failed to read from DHT sensor!"));
+#endif    
     Data_LoRa.DHT_Hum = DHT_H_ERR;
     Data_LoRa.DHT_Temp = DHT_T_ERR;
     return;

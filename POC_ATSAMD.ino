@@ -19,6 +19,8 @@
 
 #define __MAIN__
 
+//#define __SerialDebugPoc      // decommenter pour afficher messages debug
+
 // ===== INCLUDES PROJET =====
 #include ".\define.h"
 
@@ -49,53 +51,40 @@ void setup()
     OLEDDebugDisplay("OLEDInit OK"); // scrolling lors du setup(); 
   }
 
-  init2483A();
-  initLoRa();
-
-// void DS3231CompleteReset() si DS3231 out!
-
-  // Initialisation RTC
-  initRTC();
-  OLEDDebugDisplay("initRTC OK");
-
+ 
   // Initialisation configuration
   initConfig();
   OLEDDebugDisplay("initConfig OK");
         
-  // Configuration des alarmes RTC 1 et 2
+  init2483A();
+  sprintf(OLEDbuf,"ID: %s",Module_ID);
+  OLEDDebugDisplay(OLEDbuf);
+  initLoRa();
+
+// void DS3231CompleteReset() si DS3231 out!
+
+// Initialisation RTC
+  initRTC();
+// Configuration des alarmes RTC 1 et 2
   DS3231setRTCAlarm1();
   DS3231setRTCAlarm2();
-  OLEDDebugDisplay("setRTCAlarms OK");
-    
-  // Configuration interruption externe
+  OLEDDebugDisplay("Set RTC Alarms OK");
+// Configuration interruption externe
   pinMode(RTC_INTERRUPT_PIN, INPUT_PULLUP);
 // AJOUTÉ: Debug configuration
 debugSerial.print("Configuration interruption sur pin ");
 debugSerial.println(RTC_INTERRUPT_PIN);
 
-// AJOUTÉ: Test état initial
-debugSerial.print("État initial pin RTC: ");
-debugSerial.println(digitalRead(RTC_INTERRUPT_PIN) ? "HIGH" : "LOW");
 
-// AJOUTÉ: Configuration DS3231 AVANT interruption
+// Configuration DS3231 AVANT interruption
   rtc.writeSqwPinMode(DS3231_OFF);
   rtc.clearAlarm(1);
   rtc.clearAlarm(2);
-    
   LowPower.attachInterruptWakeup(RTC_INTERRUPT_PIN, onRTCAlarm, FALLING);
-    
- // AJOUTÉ: Tests supplémentaires
-debugSerial.println("Interruption RTC attachée");
-delay(1000);
-debugSerial.print("État pin après config: ");
-debugSerial.println(digitalRead(RTC_INTERRUPT_PIN) ? "HIGH" : "LOW");
-
 debugSerial.println("Initialisation terminee");
 
-  forcerSynchronisationDS3231();
-
+//  forcerSynchronisationDS3231();
 debugSerial.println("Mise à l'heure");
-
   dht.begin();
   read_DHT(dht);
 
@@ -103,49 +92,31 @@ debugSerial.println("Mise à l'heure");
   debugSerial.println(serialbuf); 
   sprintf(serialbuf,"Temperature : %.2f °C",Data_LoRa.DHT_Temp );
   debugSerial.println(serialbuf); 
-
 getVBatMoy();
-getVBatMoy();
-getVBatMoy();
-getVBatMoy();
-getVBatMoy();
-getVBatMoy();
-getVBatMoy();
-getVBatMoy();
-getVBatMoy();
-getVBatMoy();
-
 getVSolMoy();
-
-/*    
-  if (OLED) 
-  {
-    OLEDDebugDisplay("Init terminee");
-    delay(2000);
-    OLEDClear();
-  }
-//  vider cache : OLEDDebugDisplay()  
-*/
  OLEDDebugDisplayReset();
  debugSerial.println("Start loop(); =====================================");
-
 }
 
 
 
-//int cnt=0;
-
 // ===== LOOP PRINCIPAL =====
 void loop() 
 {  static int index=0; 
-   static int counter1s=1,counter15m=1;   
+   static int counter1s=0,counter15m=0;   
 
 
 //debugSerial.println("M");
 // *** TRAITEMENT CLAVIER NON-BLOQUANT ***
   processContinuousKeyboard();
+#ifdef __SerialDebugPoc
+debugSerial.print("1");  // 111111111111111111111111111
+#endif
 // *** UTILISATION DES TOUCHES ***
-  key_code_t touche = readKeyNonBlocking();
+  touche = readKeyNonBlocking();
+#ifdef __SerialDebugPoc
+debugSerial.print("2");   // 22222222222222222222222
+#endif  
   if (touche != KEY_NONE)
   {
     // Traiter la touche
@@ -155,134 +126,145 @@ void loop()
 
 // *** APPEL OBLIGATOIRE À CHAQUE CYCLE ***
     gererLEDsNonBloquant(); 
-  
+#ifdef __SerialDebugPoc
+debugSerial.print("3");   // 333333333333333333333333333
+#endif  
 // Vérification du mode
   modeExploitation = digitalRead(PIN_PE);
   if (modeExploitation)         // OK, validé, GreenLED => couleur Red
   {
-  debugSerial.println("H"); 
-  handleOperationMode();    // normalement rien à faire dans ce mode.
-  debugSerial.println("h"); 
+    handleOperationMode();    // normalement rien à faire dans ce mode.
   } 
   else                          // OK, validé, BlueLED
   {
-//debugSerial.println("H"); 
     handleProgrammingMode();  // faire gestion Clavier et actions associées
-//debugSerial.println("h");
   }
- 
-/*
-if (!(index%10)) // tous les 10 loop
-{
-  read_DHT(dht);
-  sprintf(serialbuf,"Humidité : %.2f ",Data_LoRa.DHT_Hum );
-  debugSerial.println(serialbuf); 
-  sprintf(serialbuf,"Temperature : %.2f °C",Data_LoRa.DHT_Temp );
-  debugSerial.println(serialbuf); 
-}
-index++;
-*/
-    
+#ifdef __SerialDebugPoc  
+debugSerial.print("4");   // 444444444444444444444444444444
+#endif
+
+ //executeProgrammingMode();
+
 // Gestion des interruptions traitées en dehors de 
 // handleProgrammingMode() et handleOperationMode()
-  if (wakeupPayload)                                    // Envoi LoRa, LED Activité LoRa
-  {
-    wakeupPayload = false;
-sprintf(serialbuf, "IRQ2 15m %d =====", counter15m);
-debugSerial.println(serialbuf); 
-/* 
- sprintf(OLEDbuf,  "IRQ2 15m %d ", counter15m);
-OLEDDebugDisplay(OLEDbuf);   
-*/       
-counter15m++;
-
-
-
-    
- debugSerial.println("PROG/Réveil payload");
-/*    if (OLED) 
-    {
-        OLEDDebugDisplay("PROG/Reveil payload");
-    }
-*/
-    turnOnRedLED();     // PCB donne GREEN?
-#ifdef __SendLoRa
-    Send_LoRa_Mess((uint8_t*)testPayload,7);
-#endif    
-    turnOffRedLED();
-    OLEDDrawScreenTime(0, 0); // Affiche Time/Date au complet
-  }
   
   if (wakeup1Sec) // && !modeExploitation)                  // màj heure, blink LED
-  {     
-//sprintf(serialbuf, "IRQ1 1s %4d =====", counter1s);
-//debugSerial.print(serialbuf); 
-/* 
- sprintf(OLEDbuf,  "IRQ1 1s %d ", counter1);
-OLEDDebugDisplay(OLEDbuf);   
-*/       
-counter1s++;
+  {    
+#ifdef __SerialDebugPoc     
+debugSerial.print("I1$"); 
+#endif
+    wakeup1Sec = false;   
+    counter1s++;
+    switch (counter1s %10)
+    {
+      case 0 :    // Rafraichir OLED
+               OLEDDisplayHivesDatas();
+               break;
+      case 1 :   //  read_DHT(dht);  // Reading temperature or humidity takes about 250 milliseconds!
+               read_DHT(dht); // initialise : Data_LoRa.DHT_Temp et Data_LoRa.DHT_Hum
+               break;
+     case 2 :
+               Data_LoRa.Brightness = getLuminance();
+//  Data_LoRa.Lux = ???();
+//  Data_LoRa.ProcessorTemp = getTemperature(); // lecture Temp en String
+               Data_LoRa.Bat_Voltage=getVBatMoy();
+              Data_LoRa.Solar_Voltage=getVSolMoy();
+               break;
+     case 3 :
+               Poids_Peson(0) = GetPoids(1); // à ranger dans Structure 
+              break;
+     case 4 :
+               Poids_Peson(1) = GetPoids(2); // à ranger dans Structure 
+               break;
+     case 5 :
+               Poids_Peson(2) = GetPoids(3); // à ranger dans Structure 
+               break;
+     case 6 :
+               Poids_Peson(3) = GetPoids(4); // à ranger dans Structure 
+              break;
+     case 7 :
+              readingT=getTemperature();
+               break;
+      case 8 :
 
-if (!(counter1s %5))
-{ float poidsTest;
-  take_All_Measure();
-//sprintf(serialbuf, ", poids 1 %f =====", poidsTest);
-//debugSerial.println(serialbuf); 
-}
-
-//debugSerial.println("S"); 
-    wakeup1Sec = false;
-    LEDStartBlue();
+              break;
+      case 9 :      // Alive: '.' sur OLED
+debugSerial.print(".");
+              break;
+      default : // WTF
+debugSerial.print("WTF");  
+               break;
+    }
+#ifdef __SerialDebugPoc      
+ debugSerial.print("5");    // 55555555555555555555555555555555555
+#endif 
+    config.applicatif.blueLedDuration = 100;  // Clignotement Blue = 100 ms
+    LEDStartBlue();                           //Clignotement 100ms
     if (OLED) 
     {
       OLEDDrawScreenRefreshTime(0, 0); // partial refresh Time/Date every second
     }
-//debugSerial.println("s"); 
   }
-    
-    // Entrée en veille si activée
+#ifdef __SerialDebugPoc  
+debugSerial.print("6");   // 666666666666666666666666666666666666666666666
+#endif
+  if (wakeupPayload)                                    // Envoi LoRa, LED Activité LoRa
+  {
+    wakeupPayload = false;
+    counter15m++;
+#ifdef __SerialDebugPoc    
+sprintf(serialbuf, "I2£%d ", counter15m); debugSerial.println(serialbuf); 
+#endif
+    turnOnRedLED();     // PCB donne GREEN?
+    buildLoraPayload();
+#ifdef __SendLoRa
+  sendLoRaPayload((uint8_t*)hexPayload,19);
+#endif    
+    turnOffRedLED();
+    OLEDDrawScreenTime(0, 0); // Affiche Time/Date au complet
+debugSerial.println("Fin Payload, Reactive IRQ1");    
+    alarm1_enabled = true;   // Réactiver alarme 1 
+#ifdef __SerialDebugPoc  
+debugSerial.print("7");   // 777777777777777777777777777777777777
+#endif
+  }
+#ifdef __SerialDebugPoc    
+debugSerial.println("8");   // 888888888888888888888888888888888888
+#endif
+// lire une grandeur à chaque seconde 
+// 00 :  Rafraichir OLED
+// 01 :  read_DHT(dht);  // Reading temperature or humidity takes about 250 milliseconds!
+// 02 :  LDR, VBat, VSol   // lectures ANA (une seule lecture, moyenne calculée quand nécéssaire).
+// 03 :  Poids Balance 1
+// 04 :  Poids Balance 2
+// 05 :  Poids Balance 3
+// 06 :  Poids Balance 4
+// 07 :  Température µC
+// 08 : 
+// 09 : '.' sur OLED
+// rafraichir horloge à chaque seconde
+// Flash LED 100 ms
+
+  
+// Entrée en veille si activée
   if (DEBUG_LOW_POWER && modeExploitation) // pas de low power en config
   {
-debugSerial.println("L");     
+debugSerial.println("Low");     
     debugSerial.flush();  
     sleep();
-debugSerial.println("l"); 
+debugSerial.println("low"); 
   }
 }
 
 // ===== IMPLÉMENTATION DES FONCTIONS =====
-
-
-
-/**
- * @brief Définit la configuration par défaut
- * @param Aucun
- * @return void
- */
-void setDefaultConfig(void) 
-{
-    config.materiel.version = CONFIG_VERSION;
-    config.materiel.adresseRTC = DS3231_ADDRESS;    // Adresse RTC Module DS3231
-    config.materiel.adresseOLED = OLED_ADDRESS;     // Adresse écran OLED
-    config.materiel.adresseEEPROM = EEPROM_ADDRESS; // Adresse EEPROM Module DS3231
-   
-    config.applicatif.redLedDuration = RED_LED_DURATION;
-    config.applicatif.greenLedDuration = GREEN_LED_DURATION;
-    config.applicatif.blueLedDuration = BLUE_LED_DURATION;
-    config.applicatif.builtinLedDuration = BUILTIN_LED_DURATION;
-    config.applicatif.wakeupIntervalPayload = WAKEUP_INTERVAL_PAYLOAD;
-    config.applicatif.interval1Sec = INTERVAL_1SEC;
-    
-    config.checksum = calculateChecksum(&config);
-}
 
 /**
  * @brief Gestion du mode exploitation
  * @param Aucun
  * @return void
  */
-void handleOperationMode(void) 
-{ // Mode exploitation : seulement réveil payload
+void handleOperationMode(void) // Mode exploitation : que réveil payload
+{ 
   if (OLED) 
   {
     if (switchToOperationMode)    // affiche qu'une fois
@@ -293,6 +275,9 @@ void handleOperationMode(void)
       switchToOperationMode = false;
     }  
   }
+#ifdef __SerialDebugPoc    
+debugSerial.print("M");   // MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
+#endif
 }
 
 /**
@@ -309,52 +294,24 @@ void handleProgrammingMode(void)
       switchToOperationMode = true;
       OLEDClear();
       OLEDDrawScreenTime(0,0);
-      OLEDDrawText(1, 7, 0, "MODE PROGRAMMATION");
+//      OLEDDrawText(1, 7, 0, "MODE PROGRAMMATION");
       switchToProgrammingMode = false;
     } 
-//    else 
-  //    OLEDDrawScreenRefreshTime(0, 0); // fait par IRQ1
   }
-}
+#ifdef __SerialDebugPoc    
+debugSerial.print("M");   // MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
+#endif
+// Affiche menu 000
 
-/**
- * @brief Fonction d'interruption RTC
- * @param Aucun
- * @return void
- */
-void onRTCAlarm(void) 
-{
-// ALARME 1 : Toutes les secondes (mode programmation)
-  if (rtc.alarmFired(1)) 
-  {
-    rtc.clearAlarm(1);
-    wakeup1Sec = true;
-// en mode  DS3231_A1_PerSecond, ne pas reprogrammer l'alarme
-// L'alarme DS3231_A1_PerSecond se répète automatiquement
-// Seulement reprogrammer si le mode change
-// reprogramer si DS3231_A1_Second, faire :  
-// Reprogrammer l'alarme 1 seconde si en mode programmation
-// ici toutes les minutes quand la seconded programmée survient
-    if (DEBUG_INTERVAL_1SEC && !modeExploitation) 
-    {
-//      DateTime nextSecond = rtc.now() + TimeSpan(0, 0, 0, 1);
- //     rtc.setAlarm1(nextSecond, DS3231_A1_Second);
-//     rtc.setAlarm1(nextSecond, DS3231_A1_PerSecond);  
-// DS3231setRTCAlarm1();
-     
-// debugSerialPrintNextAlarm(nextSecond, 1); 
-    }
-  }
-  
-  // ALARME 2 : Payload périodique    
-  if (rtc.alarmFired(2)) 
-  {
-    wakeupPayload = true;
-    rtc.clearAlarm(2);      
-    DS3231setRTCAlarm2(); // Reprogrammer prochaine alarme
-  }
-}
+////executeProgrammingMode();   // entrée dans les menus. Voir si viable
 
+// Execute selon touche
+// 1 : displaySystemInfo(); // Version, compile...
+// 2 : displayLoRaInfo();   // 
+// 3 :    // 
+// 4 : 
+// 5 : Reset Soft
+}
 
 
 void non_forceTestAlarm(void)
@@ -403,6 +360,11 @@ void sleep(void)
     // AJOUTÉ: Forcer envoi série avant veille
     debugSerial.flush();
     delay(10);
+
+    // Configuration DS3231 AVANT interruption
+  rtc.writeSqwPinMode(DS3231_OFF);
+  rtc.clearAlarm(1);
+  rtc.clearAlarm(2);
     
     LowPower.sleep();  // ← VEILLE
     
@@ -427,447 +389,13 @@ void sleep(void)
  */
 void configureLowPowerMode(void)
 {
-    // Désactiver les périphériques non utilisés pour économiser l'énergie
-    // Configuration spécifique ATSAMD21
+// Désactiver les périphériques non utilisés pour économiser l'énergie
+// Configuration spécifique ATSAMD21
     
-    // Désactiver l'USB si non utilisé en mode exploitation
-    if (modeExploitation && DEBUG_LOW_POWER)
-    {
-       USB->DEVICE.CTRLA.bit.ENABLE = 0;
-    }
-    
-    debugSerial.println("Mode basse consommation configuré");
-}
-
-/**
- * @brief Vérifie l'état des alarmes RTC et met à jour les flags - ALARMES ÉCHANGÉES
- * @param Aucun
- * @return void
- */
-void checkRTCStatus(void)
-{
-// Vérification de l'alarme 1 (1 seconde)
-  if (rtc.alarmFired(1))
+// Désactiver l'USB si non utilisé en mode exploitation
+  if (modeExploitation && DEBUG_LOW_POWER)
   {
-    debugSerial.println("*** ALARME 1 DÉTECTÉE (1 SECONDE) ***");
-    wakeup1Sec = true;
-    rtc.clearAlarm(1);
- // même remarque que dans : void onRTCAlarm(void)    
+    USB->DEVICE.CTRLA.bit.ENABLE = 0;
   }
-    
-    // Vérification de l'alarme 2 (payload)
-  if (rtc.alarmFired(2))
-  {
-    debugSerial.println("*** ALARME 2 DÉTECTÉE (PAYLOAD) ***");
-    wakeupPayload = true;
-    rtc.clearAlarm(2);
-        
-    // Reprogrammer l'alarme payload
-    if (DEBUG_WAKEUP_PAYLOAD)
-    {
-      DateTime nextPayload = rtc.now() + TimeSpan(0, 0, config.applicatif.wakeupIntervalPayload, 0);
-      rtc.setAlarm2(nextPayload, DS3231_A2_Minute);
- debugSerialPrintNextAlarm(nextPayload,2);           
-    }
-  }
-    
-    // Debug périodique de l'état des alarmes (toutes les 60 secondes)
-    static unsigned long lastAlarmDebug = 0;
-  if (millis() - lastAlarmDebug > 60000)
-  {
-    lastAlarmDebug = millis();
-        
-    debugSerial.println("=== ÉTAT ALARMES RTC (ÉCHANGÉES) ===");
-    debugSerial.print("Alarme 1 (1 sec) activée: ");
-    debugSerial.println((DEBUG_INTERVAL_1SEC && !modeExploitation) ? "OUI" : "NON");
-    debugSerial.print("Alarme 2 (payload) activée: ");
-    debugSerial.println(DEBUG_WAKEUP_PAYLOAD ? "OUI" : "NON");
-    debugSerial.print("Mode: ");
-    debugSerial.println(modeExploitation ? "EXPLOITATION" : "PROGRAMMATION");
-       
-    // Afficher l'heure actuelle
-    DateTime now = rtc.now();
-    debugSerial.print("Heure actuelle: ");
-    debugSerial.print(now.hour()); debugSerial.print(":");
-    debugSerial.print(now.minute()); debugSerial.print(":");
-    debugSerial.println(now.second());
-  }
-}
-
-
-/**
- * @brief Gère l'affichage et les actions du mode exploitation
- * @param Aucun
- * @return void
- */
-void executeOperationMode(void)     // pas appelé à la base....
-{
-    static unsigned long lastModeDisplay = 0;
-    
-    // Affichage périodique du mode (toutes les 10 secondes)
-    if (millis() - lastModeDisplay > 10000)
-    {
-        lastModeDisplay = millis();
-        
-        if (OLED)
-        {
-            OLEDClear();
-            OLEDDrawText(1,0, 0, PROJECT_NAME);
-            OLEDDrawText(1,1, 0, "Mode: EXPLOITATION");
-            OLEDDrawText(1,2, 0, "PIN_PE = HIGH");
-            
-            sprintf(OLEDbuf, "Reveil: %d min", config.applicatif.wakeupIntervalPayload);
-            OLEDDrawText(1,4, 0, OLEDbuf);
-            
-            OLEDDrawScreenTime(0, 0);   // 0, 6 ????
-            
-            // Affichage état debug
-            OLEDDrawText(1, 7, 0, DEBUG_LOW_POWER ? "Sleep: ON" : "Sleep: OFF");
-        }
-        
-        debugSerial.println("=== MODE EXPLOITATION ===");
-        debugSerial.print("Prochain réveil payload dans: ");
-        debugSerial.print(config.applicatif.wakeupIntervalPayload);
-        debugSerial.println(" minutes");
-    }
-}
-
-/**
- * @brief Gère l'affichage et les actions du mode programmation
- * @param Aucun
- * @return void
- */
-void executeProgrammingMode(void)
-{ static unsigned long lastModeDisplay = 0;
-  static bool menuDisplayed = false;
-    
-  // Affichage initial du menu
-  if (!menuDisplayed || (millis() - lastModeDisplay > 30000))
-  {
-    lastModeDisplay = millis();
-    menuDisplayed = true;
-        
-    if (OLED)
-    {
-      OLEDClear();
-      OLEDDrawText(1,0, 0, "MODE PROGRAMMATION");
-      OLEDDrawText(1,1, 0, "PIN_PE = LOW");
-      OLEDDrawText(1,3, 0, "T1: Test clavier");
-      OLEDDrawText(1,4, 0, "T2: Config");
-      OLEDDrawText(1,5, 0, "T3: Heure/Date");
-      OLEDDrawText(1,6, 0, "T4: Debug");
-      OLEDDrawText(1,7, 0, "T5: Infos");
-    }
-    debugSerial.println("=== MODE PROGRAMMATION ===");
-    debugSerial.println("Menu principal affiché");
-  }
-    
-  // Traitement des touches du menu principal    
-  key_code_t touche = readKey();
-  if (touche != KEY_NONE)
-  {
-    menuDisplayed = false; // Forcer le réaffichage du menu après action
-        
-    switch (touche)
-    {
-      case KEY_1:
-          debugSerial.println("Test clavier sélectionné");
-          if (OLED)
-          {
-            OLEDDisplayMessageL8("Test clavier...", false, false);
-          }
-          // La fonction testKbd() sera appelée automatiquement dans la boucle
-          break;
-                
-      case KEY_2:
-          debugSerial.println("Configuration sélectionnée");
-          handleConfigurationMenu();
-          break;
-                
-      case KEY_3:
-          debugSerial.println("Heure/Date sélectionnée");
-          handleTimeDateRegisterMenu();
-          break;
-                
-      case KEY_4:
-          debugSerial.println("Debug sélectionné");
-          handleDebugMenu();
-          break;
-              
-      case KEY_5:
-          debugSerial.println("Infos sélectionnées");
-          displaySystemInfo();
-          break;
-                
-      default:
-          break;
-    }
-  }
-  // Test clavier en continu en mode programmation
-  debugSerialPrintKbdKey();
-}
-
-/**
- * @brief Gère le menu de configuration
- * @param Aucun
- * @return void
- */
-void handleConfigurationMenu(void)
-{
-    bool menuConfig = true;
-    
-    while (menuConfig)
-    {
-        if (OLED)
-        {
-            OLEDClear();
-            OLEDDrawText(1,0, 0, "=== CONFIGURATION ===");
-            OLEDDrawText(1,2, 0, "T1: Duree LED rouge");
-            OLEDDrawText(1,3, 0, "T2: Duree LED builtin");
-            OLEDDrawText(1,4, 0, "T3: Intervalle payload");
-            OLEDDrawText(1,5, 0, "T4: Sauvegarder");
-            OLEDDrawText(1,7, 0, "T5: Retour");
-        }
-        
-        key_code_t touche = readKey();
-        switch (touche)
-        {
-            case KEY_1:
-            {
-                uint32_t nouvelleDuree = inputDecimal("Duree LED rouge (ms)", config.applicatif.redLedDuration);
-                config.applicatif.redLedDuration = nouvelleDuree;
-                OLEDDisplayMessageL8("Duree LED modifiee", false, false);
-                break;
-            }
-            
-            case KEY_2:
-            {
-                uint32_t nouvelleDuree = inputDecimal("Duree LED builtin (ms)", config.applicatif.builtinLedDuration);
-                config.applicatif.builtinLedDuration = nouvelleDuree;
-                OLEDDisplayMessageL8("Duree LED modifiee", false, false);
-                break;
-            }
-            
-            case KEY_3:
-            {
-                uint32_t nouvelIntervalle = inputDecimal("Intervalle payload (min)", config.applicatif.wakeupIntervalPayload);
-                config.applicatif.wakeupIntervalPayload = nouvelIntervalle;
-                OLEDDisplayMessageL8("Intervalle modifie", false, false);
-                break;
-            }
-            
-            case KEY_4:
-                saveConfigToEEPROM();
-                OLEDDisplayMessageL8("Configuration sauvee!", false, false);
-                break;
-                
-            case KEY_5:
-                menuConfig = false;
-                break;
-                
-            default:
-                break;
-        }
-        
-        delay(100);
-    }
-}
-
-/**
- * @brief Gère le menu de configuration Heure/Date
- * @param Aucun
- * @return void
- */
-void handleTimeDateRegisterMenu(void)
-{
-    bool menuHeure = true;
-    
-    while (menuHeure)
-    {
-        if (OLED)
-        {
-            OLEDClear();
-            OLEDDrawText(1,0, 0, "=== HEURE / DATE ===");
-            OLEDDrawText(1,2, 0, "T1: Saisir heure");
-            OLEDDrawText(1,3, 0, "T2: Saisir date");
-            OLEDDrawText(1,4, 0, "T3: Afficher temps");
-            OLEDDrawText(1,5, 0, "T4: Comparer horloges");
-            OLEDDrawText(1,7, 0, "T5: Retour");
-        }
-        
-        key_code_t touche = readKey();
-        switch (touche)
-        {
-            case KEY_1:
-            {
-                char heureStr[9] = "12:34:56";
-                DateTime maintenant = rtc.now();
-                sprintf(heureStr, "%02d:%02d:%02d", maintenant.hour(), maintenant.minute(), maintenant.second());
-                inputTime(heureStr);
-                
-                // Mettre à jour le RTC avec la nouvelle heure
-                int hh = (heureStr[0]-'0')*10 + (heureStr[1]-'0');
-                int mm = (heureStr[3]-'0')*10 + (heureStr[4]-'0');
-                int ss = (heureStr[6]-'0')*10 + (heureStr[7]-'0');
-                
-                DateTime nouvelleHeure(maintenant.year(), maintenant.month(), maintenant.day(), hh, mm, ss);
-                rtc.adjust(nouvelleHeure);
-                
-                OLEDDisplayMessageL8("Heure mise a jour!", false, false);
-                break;
-            }
-            
-            case KEY_2:
-            {
-                char dateStr[11] = "01/01/2025";
-                DateTime maintenant = rtc.now();
-                sprintf(dateStr, "%02d/%02d/%04d", maintenant.day(), maintenant.month(), maintenant.year());
-                inputDate(dateStr);
-                
-                // Mettre à jour le RTC avec la nouvelle date
-                int jj = (dateStr[0]-'0')*10 + (dateStr[1]-'0');
-                int mm = (dateStr[3]-'0')*10 + (dateStr[4]-'0');
-                int yyyy = (dateStr[6]-'0')*1000 + (dateStr[7]-'0')*100 + (dateStr[8]-'0')*10 + (dateStr[9]-'0');
-                
-                DateTime nouvelleDate(yyyy, mm, jj, maintenant.hour(), maintenant.minute(), maintenant.second());
-                rtc.adjust(nouvelleDate);
-                
-                OLEDDisplayMessageL8("Date mise a jour!", false, false);
-                break;
-            }
-            
-            case KEY_3:
-                printTimeOndebugSerial();
-                OLEDDisplayMessageL8("Temps affiche serie", false, false);
-                break;
-                
-            case KEY_4:
-                printTimeComparison();
-                OLEDDisplayMessageL8("Comparaison serie", false, false);
-                break;
-                
-            case KEY_5:
-                menuHeure = false;
-                break;
-                
-            default:
-                break;
-        }
-        
-        delay(100);
-    }
-}
-
-/**
- * @brief Gère le menu de debug
- * @param Aucun
- * @return void
- */
-void handleDebugMenu(void)
-{
-    bool menuDebug = true;
-    
-    while (menuDebug)
-    {
-        if (OLED)
-        {
-            OLEDClear();
-            OLEDDrawText(1,0, 0, "=== DEBUG ===");
-            
-            sprintf(OLEDbuf, "Payload: %s", DEBUG_WAKEUP_PAYLOAD ? "ON" : "OFF");
-            OLEDDrawText(1,2, 0, OLEDbuf);
-            
-            sprintf(OLEDbuf, "1Sec: %s", DEBUG_INTERVAL_1SEC ? "ON" : "OFF");
-            OLEDDrawText(1,3, 0, OLEDbuf);
-            
-            sprintf(OLEDbuf, "Sleep: %s", DEBUG_LOW_POWER ? "ON" : "OFF");
-            OLEDDrawText(1,4, 0, OLEDbuf);
-            
-            OLEDDrawText(1,6, 0, "T1/T2/T3: Toggle");
-            OLEDDrawText(1,7, 0, "T5: Retour");
-        }
-        
-        key_code_t touche = readKey();
-        switch (touche)
-        {
-            case KEY_1:
-                DEBUG_WAKEUP_PAYLOAD = !DEBUG_WAKEUP_PAYLOAD;
-                debugSerial.print("DEBUG_WAKEUP_PAYLOAD: ");
-                debugSerial.println(DEBUG_WAKEUP_PAYLOAD ? "ON" : "OFF");
-                if (!DEBUG_WAKEUP_PAYLOAD) clearRTCAlarms();
-                else DS3231setRTCAlarm2();
-                break;
-                
-            case KEY_2:
-                DEBUG_INTERVAL_1SEC = !DEBUG_INTERVAL_1SEC;
-                debugSerial.print("DEBUG_INTERVAL_1SEC: ");
-                debugSerial.println(DEBUG_INTERVAL_1SEC ? "ON" : "OFF");
-                if (!DEBUG_INTERVAL_1SEC) clearRTCAlarms();
-                else DS3231setRTCAlarm1();
-                break;
-                
-            case KEY_3:
-                DEBUG_LOW_POWER = !DEBUG_LOW_POWER;
-                debugSerial.print("DEBUG_LOW_POWER: ");
-                debugSerial.println(DEBUG_LOW_POWER ? "ON" : "OFF");
-                configureLowPowerMode();
-                break;
-                
-            case KEY_5:
-                menuDebug = false;
-                break;
-                
-            default:
-                break;
-        }
-        
-        delay(100);
-    }
-}
-
-
-/**
- * @brief Affiche les informations système
- * @param Aucun
- * @return void
- */
-void displaySystemInfo(void)  // remplacer par OLED et serialDebug
-{
-    if (OLED)
-    {
-        OLEDClear();
-        OLEDDrawText(1,0, 0, "=== INFOS SYSTEME ===");
-        OLEDDrawText(1,1, 0, PROJECT_NAME);
-        OLEDDrawText(1,2, 0, "Version: " VERSION);
-        
-        sprintf(OLEDbuf, "Mode: %s", modeExploitation ? "EXPLOIT" : "PROGRAM");
-        OLEDDrawText(1,3, 0, OLEDbuf);
-        
-        sprintf(OLEDbuf, "Config v: %d.%02d", config.materiel.version/100, config.materiel.version%100);
-        OLEDDrawText(1,4, 0, OLEDbuf);
-        
-        OLEDDrawText(1,6, 0, "Appuyer pour continuer");
-    }
-    
-    debugSerial.println("=== INFORMATIONS SYSTEME ===");
-    debugSerial.println("Projet: " PROJECT_NAME);
-    debugSerial.println("Version: " VERSION);
-    debugSerial.print("Mode actuel: ");
-    debugSerial.println(modeExploitation ? "EXPLOITATION" : "PROGRAMMATION");
-    debugSerial.print("Configuration version: ");
-    debugSerial.print(config.materiel.version/100);
-    debugSerial.print(".");
-    debugSerial.println(config.materiel.version%100);
-    debugSerial.print("Compilation: ");
-    debugSerial.print(__DATE__);
-    debugSerial.print(" ");
-    debugSerial.println(__TIME__);
-    
-    // Attendre une touche pour continuer
-    while (readKey() == KEY_NONE)
-    {
-        delay(100);
-    }
-    
-    OLEDDisplayMessageL8("Retour menu principal", false, false);
+  debugSerial.println("Mode basse consommation configuré");
 }

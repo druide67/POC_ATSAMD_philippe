@@ -8,25 +8,43 @@
  * @param Aucun
  * @return void
  */
+#define debugSerialinitRTC  // decommenter pour les messages debugSerial
 void initRTC(void) 
 {
   if (!rtc.begin()) 
   {
-    debugSerial.println("Erreur: RTC introuvable");
+#ifdef debugSerialinitRTC
+  debugSerial.println("Erreur: RTC introuvable");
+OLEDDebugDisplay("RTC introuvable");  
+#endif  
     DS3231hardReset();
     if (!rtc.begin()) 
     {
-      debugSerial.println("Erreur: RESET RTC pas OK");
-      while (1) delay(10);
+#ifdef debugSerialinitRTC
+  debugSerial.println("Erreur: RESET RTC pas OK => FIN");
+#endif  
+      while (1) 
+      {
+        blinkBlueLED();
+        delay(300);
+      }
     }
   }
-   
-  if (rtc.lostPower()) 
+  else
   {
-    debugSerial.println("RTC a perdu l'heure, mise à jour avec l'heure de compilation");
-    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+ #define REFRESHCLOCK 0    // 1 pour mise à l'heure compil forcée   
+    if (rtc.lostPower() || REFRESHCLOCK) 
+    {
+#ifdef debugSerialinitRTC
+  debugSerial.println("RTC a perdu l'heure, mise à jour avec l'heure de compilation");
+#endif  
+      rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));  
+    }
+#ifdef debugSerialinitRTC
+    debugSerial.println("RTC initialisé");
+#endif  
+    OLEDDebugDisplay("initRTC OK");
   }
-  debugSerial.println("RTC initialisé");
 }
 
 /**
@@ -47,21 +65,16 @@ DateTime getSystemTime(void)
  */
 void DS3231setRTCAlarm1(void) 
 {
-  clearRTCAlarms();
-debugSerial.println("=== CONFIGURATION ALARMES RTC + INTERRUPTIONS ===");
+// Configuration DS3231 AVANT interruption
+//  rtc.writeSqwPinMode(DS3231_OFF);
+  rtc.clearAlarm(1);
+debugSerial.print("=== CONFIGURATION ALARME1 ");
   if (DEBUG_INTERVAL_1SEC) // && !modeExploitation) 
   {
     DateTime nextSecond = rtc.now() + TimeSpan(0, 0, 0, 1);
-debugSerial.println("s"); 
-rtc.setAlarm1(nextSecond, DS3231_A1_PerSecond);
-//    rtc.setAlarm1(nextSecond, DS3231_A1_Second);
-//debugSerialPrintNextAlarm(nextSecond, 1);  
+    rtc.setAlarm1(nextSecond, DS3231_A1_PerSecond);
   }
-debugSerial.print("État pin RTC après config alarmes: ");
-debugSerial.println(digitalRead(RTC_INTERRUPT_PIN) ? "HIGH" : "LOW");
-debugSerial.println("=== FIN CONFIGURATION ALARMES + INTERRUPTIONS ===");
-// Activer les interruptions
-  rtc.writeSqwPinMode(DS3231_OFF); 
+debugSerial.println("=== 1s DONE ===");
 }
 
  /**
@@ -72,22 +85,36 @@ debugSerial.println("=== FIN CONFIGURATION ALARMES + INTERRUPTIONS ===");
  */
 void DS3231setRTCAlarm2(void) 
 {
-  clearRTCAlarms();
-debugSerial.println("=== CONFIGURATION ALARMES RTC + INTERRUPTIONS ===");
+    // Désactiver TOUTES les interruptions temporairement
+//    noInterrupts();
+    
+    // Effacer les flags
+// Configuration DS3231 AVANT interruption
+//      rtc.writeSqwPinMode(DS3231_OFF);
+//      rtc.clearAlarm(1);
+      rtc.clearAlarm(2);
+
+   // AJOUTEZ ceci pour être sûr :
+  //  rtc.alarmFired(1);  // Lit et efface le flag alarme 1
+ //   rtc.alarmFired(2);  // Lit et efface le flag alarme 2
+   
+    // Reprogrammer A2
+//debugSerial.println("=== CONFIGURATION ALARMES RTC + INTERRUPTIONS ===");
   // ALARME 2 : Payload toutes les X minutes
   if (DEBUG_WAKEUP_PAYLOAD) 
   {
-    DateTime nextPayload = rtc.now() + TimeSpan(0, 0, config.applicatif.wakeupIntervalPayload, 0);
-   rtc.setAlarm2(nextPayload, DS3231_A2_Minute);
+    nextPayload = rtc.now() + TimeSpan(0, 0, config.applicatif.wakeupIntervalPayload, 0);
+    rtc.setAlarm2(nextPayload, DS3231_A2_Minute);
 debugSerialPrintNextAlarm(nextPayload,2);
-OLEDDrawScreenNextPayload(6, 0, nextPayload );
+OLEDDrawScreenNextPayload(7, 0, nextPayload );  // Status message
   }
-  
-debugSerial.print("État pin RTC après config alarmes: ");
-debugSerial.println(digitalRead(RTC_INTERRUPT_PIN) ? "HIGH" : "LOW");
-debugSerial.println("=== FIN CONFIGURATION ALARMES + INTERRUPTIONS ===");
+//debugSerial.println("=== FIN CONFIGURATION ALARMES + INTERRUPTIONS ===");
+
 // Activer les interruptions
   rtc.writeSqwPinMode(DS3231_OFF); 
+  
+// Réactiver les interruptions
+//    interrupts();
 }
 
 /**
@@ -149,35 +176,6 @@ void DS3231CompleteReset() {
     
     // Redémarrer l'oscillateur
     rtc.begin();
-}
-
-/**
- * @brief Affiche heure et status Alarmes sur SerialDebug
- * @param Aucun
- * @return void
- */
-void testConnexionDS3231(void)
-{
-    debugSerial.println("=== TEST CONNEXION DS3231 ===");
-    
-    // Test lecture heure
-    DateTime now = rtc.now();
-    debugSerial.print("Heure lue: ");
-    debugSerial.print(now.hour()); debugSerial.print(":");
-    debugSerial.print(now.minute()); debugSerial.print(":");
-    debugSerial.println(now.second());
-    
-    // Test état alarmes
-    debugSerial.print("Alarme 1 fired: ");
-    debugSerial.println(rtc.alarmFired(1) ? "OUI" : "NON");
-    debugSerial.print("Alarme 2 fired: ");
-    debugSerial.println(rtc.alarmFired(2) ? "OUI" : "NON");
-    
-    // Test pin interruption
-    debugSerial.print("Pin interruption état: ");
-    debugSerial.println(digitalRead(RTC_INTERRUPT_PIN) ? "HIGH" : "LOW");
-    
-    debugSerial.println("=== FIN TEST DS3231 ===");
 }
 
 
@@ -275,7 +273,6 @@ void copyDS3231TimeToMicro(bool forcer)
                     heureDS3231.hour(), heureDS3231.minute(), heureDS3231.second());
             OLEDDisplayMessageL8(OLEDbuf, false, false);
         }
-        
         derniereCopie = millis();
     }
     else
@@ -291,80 +288,10 @@ void copyDS3231TimeToMicro(bool forcer)
  */
 void forcerSynchronisationDS3231(void)
 {
-    debugSerial.println("=== SYNCHRONISATION FORCÉE ===");
+    debugSerial.println("=== SYNCHRONISATION FORCEE ===");
     copyDS3231TimeToMicro(true);
     
     // Vérification après synchronisation
     delay(100);
-    printTimeComparison();
-}
-
-
-/**
- * @brief Affiche l'heure système et l'heure RTC côte à côte pour comparaison
- * @param Aucun
- * @return void
- */
-void printTimeComparison(void)
-{
-    DateTime systemTime = getSystemTime();
-    DateTime rtcTime = rtc.now();
-    debugSerial.println();
-    debugSerial.println("=== COMPARAISON DES HORLOGES ===");
-    
-    debugSerial.print("Système: ");
-    debugSerial.print(systemTime.day()); debugSerial.print("/");
-    debugSerial.print(systemTime.month()); debugSerial.print("/");
-    debugSerial.print(systemTime.year()); debugSerial.print(" ");
-    debugSerial.print(systemTime.hour()); debugSerial.print(":");
-    debugSerial.print(systemTime.minute()); debugSerial.print(":");
-    debugSerial.println(systemTime.second());
-    
-    debugSerial.print("RTC:     ");
-    debugSerial.print(rtcTime.day()); debugSerial.print("/");
-    debugSerial.print(rtcTime.month()); debugSerial.print("/");
-    debugSerial.print(rtcTime.year()); debugSerial.print(" ");
-    debugSerial.print(rtcTime.hour()); debugSerial.print(":");
-    debugSerial.print(rtcTime.minute()); debugSerial.print(":");
-    debugSerial.println(rtcTime.second());
-    
-    long diff = systemTime.unixtime() - rtcTime.unixtime();
-    debugSerial.print("Différence: ");
-    debugSerial.print(diff);
-    debugSerial.println(" secondes");
-    debugSerial.println("===============================");
-}
-
-
-/**
- * @brief Affiche l'heure et la date système sur le port série
- * @param Aucun
- * @return void
- */
-void printTimeOndebugSerial(void)
-{
-    DateTime systemTime = getSystemTime();
-    debugSerial.println();
-    debugSerial.println("=== HEURE SYSTÈME ===");
-    
-    debugSerial.print("Système: ");
-    debugSerial.print(systemTime.day()); debugSerial.print("/");
-    debugSerial.print(systemTime.month()); debugSerial.print("/");
-    debugSerial.print(systemTime.year()); debugSerial.print(" ");
-    debugSerial.print(systemTime.hour()); debugSerial.print(":");
-    debugSerial.print(systemTime.minute()); debugSerial.print(":");
-    debugSerial.println(systemTime.second());
-    
-    print2digits(systemTime.hour());
-    debugSerial.print(":");
-    print2digits(systemTime.minute());
-    debugSerial.print(":");
-    print2digits(systemTime.second());
-    debugSerial.print(" ");
-    print2digits(systemTime.day());
-    debugSerial.print("/");
-    print2digits(systemTime.month());
-    debugSerial.print("/");
-    print2digits(systemTime.year());
-    debugSerial.println("");
+    debugSerialPrintTimeComparison();
 }

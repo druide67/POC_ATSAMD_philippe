@@ -2,14 +2,110 @@
 #define __INIT_DONE
 #include "define.h"
 
+/**
+ * @brief Affiche heure et status Alarmes sur SerialDebug
+ * @param Aucun
+ * @return void
+ */
+void debugSerialTestConnexionDS3231(void)
+{
+    debugSerial.println("=== TEST CONNEXION DS3231 ===");
+    
+    // Test lecture heure
+    DateTime now = rtc.now();
+    debugSerial.print("Heure lue: ");
+    debugSerial.print(now.hour()); debugSerial.print(":");
+    debugSerial.print(now.minute()); debugSerial.print(":");
+    debugSerial.println(now.second());
+    
+    // Test état alarmes
+    debugSerial.print("Alarme 1 fired: ");
+    debugSerial.println(rtc.alarmFired(1) ? "OUI" : "NON");
+    debugSerial.print("Alarme 2 fired: ");
+    debugSerial.println(rtc.alarmFired(2) ? "OUI" : "NON");
+    
+    // Test pin interruption
+    debugSerial.print("Pin interruption état: ");
+    debugSerial.println(digitalRead(RTC_INTERRUPT_PIN) ? "HIGH" : "LOW");
+    
+    debugSerial.println("=== FIN TEST DS3231 ===");
+}
 
+
+/**
+ * @brief Affiche l'heure système et l'heure RTC côte à côte pour comparaison
+ * @param Aucun
+ * @return void
+ */
+void debugSerialPrintTimeComparison(void)
+{
+    DateTime systemTime = getSystemTime();
+    DateTime rtcTime = rtc.now();
+    debugSerial.println();
+    debugSerial.println("=== COMPARAISON DES HORLOGES ===");
+    
+    debugSerial.print("Système: ");
+    debugSerial.print(systemTime.day()); debugSerial.print("/");
+    debugSerial.print(systemTime.month()); debugSerial.print("/");
+    debugSerial.print(systemTime.year()); debugSerial.print(" ");
+    debugSerial.print(systemTime.hour()); debugSerial.print(":");
+    debugSerial.print(systemTime.minute()); debugSerial.print(":");
+    debugSerial.println(systemTime.second());
+    
+    debugSerial.print("RTC:     ");
+    debugSerial.print(rtcTime.day()); debugSerial.print("/");
+    debugSerial.print(rtcTime.month()); debugSerial.print("/");
+    debugSerial.print(rtcTime.year()); debugSerial.print(" ");
+    debugSerial.print(rtcTime.hour()); debugSerial.print(":");
+    debugSerial.print(rtcTime.minute()); debugSerial.print(":");
+    debugSerial.println(rtcTime.second());
+    
+    long diff = systemTime.unixtime() - rtcTime.unixtime();
+    debugSerial.print("Différence: ");
+    debugSerial.print(diff);
+    debugSerial.println(" secondes");
+    debugSerial.println("===============================");
+}
+
+/**
+ * @brief Affiche l'heure et la date système sur le port série
+ * @param Aucun
+ * @return void
+ */
+void debugSerialPrintTime(void)
+{
+    DateTime systemTime = getSystemTime();
+    debugSerial.println();
+    debugSerial.println("=== HEURE SYSTÈME ===");
+    
+    debugSerial.print("Système: ");
+    debugSerial.print(systemTime.day()); debugSerial.print("/");
+    debugSerial.print(systemTime.month()); debugSerial.print("/");
+    debugSerial.print(systemTime.year()); debugSerial.print(" ");
+    debugSerial.print(systemTime.hour()); debugSerial.print(":");
+    debugSerial.print(systemTime.minute()); debugSerial.print(":");
+    debugSerial.println(systemTime.second());
+    
+    debugSerialPrint2digits(systemTime.hour());
+    debugSerial.print(":");
+    debugSerialPrint2digits(systemTime.minute());
+    debugSerial.print(":");
+    debugSerialPrint2digits(systemTime.second());
+    debugSerial.print(" ");
+    debugSerialPrint2digits(systemTime.day());
+    debugSerial.print("/");
+    debugSerialPrint2digits(systemTime.month());
+    debugSerial.print("/");
+    debugSerialPrint2digits(systemTime.year());
+    debugSerial.println("");
+}
 
 /**
  * @brief Affiche un nombre avec 2 chiffres minimum
  * @param number Nombre à afficher
  * @return void
  */
-void print2digits(int number) 
+void debugSerialPrint2digits(int number) 
 {
   if (number >= 0 && number < 10) 
   {
@@ -27,8 +123,11 @@ void print2digits(int number)
  * @return void
  */
 void debugSerialPrintLoraPayload(uint8_t *payload, uint8_t len)
-{
-    int i;
+{ int i;
+/*
+13:58:16.925 -> hexPayload: 00AC266300000000000000000000000000000
+13:58:16.925 -> hexPayload: 3030333033333330333333333333333033333 len : 19
+*/
     for (i = 0; i < len; i++) 
     {
         sprintf(&hexPayload[i * 2], "%02X", payload[i]);  
@@ -69,9 +168,8 @@ void printOndebugSerial(char *txt, char len)
 
 void debugSerialPrintNextAlarm(DateTime nextPayload, int IRQ)  
 {
-  sprintf(serialbuf,"Interruption Alarme %d activée, reprogrammée pour: ",IRQ );
-  debugSerial.print(serialbuf); 
-  sprintf(serialbuf,"%02d:%02d:%02d",nextPayload.hour(),nextPayload.minute(),nextPayload.second());
+  sprintf(serialbuf,"Interruption Alarme %d activée, reprogrammée pour: %02d:%02d:%02d",
+          IRQ, nextPayload.hour(),nextPayload.minute(),nextPayload.second());
   debugSerial.println(serialbuf); 
 }
 

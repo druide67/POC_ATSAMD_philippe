@@ -536,6 +536,62 @@ void OLEDDisplayTime(char *h, uint8_t pos)
 }
 
 
+/**
+ * @brief Affiche les informations système sur écran
+// 01 :  read_DHT(dht);  // Reading temperature or humidity takes about 250 milliseconds!
+// 02 :  LDR, VBat, VSol   // lectures ANA (une seule lecture, moyenne calculée quand nécéssaire).
+// 03 :  Poids Balance 1
+// 04 :  Poids Balance 2
+// 05 :  Poids Balance 3
+// 06 :  Poids Balance 4
+// 07 :  Température µC
+ * @param Aucun
+ * @return void
+ */
+void OLEDDisplayHivesDatas(void)
+{
+    if (OLED)
+    {
+        OLEDClear();
+        OLEDDrawScreenTime(0, 0); // Affiche Time/Date au complet
+
+        //OLEDDrawText(1,0, 0, );  // conserver rafraichissement Heure/Date
+
+        OLEDDrawText(1,1, 0, "=== INFOS Ruches ===");
+        
+        sprintf(OLEDbuf, "Tem: %4.1f - Hum: %4.1f", Data_LoRa.DHT_Temp , Data_LoRa.DHT_Hum);
+        OLEDDrawText(1,2, 0, OLEDbuf );
+        
+        sprintf(OLEDbuf, "LDR: %4.1f -  VB: %4.1f", Data_LoRa.Brightness, Data_LoRa.Bat_Voltage);
+        OLEDDrawText(1,3, 0, OLEDbuf);
+        
+        sprintf(OLEDbuf, "VSo: %4.1f -  mT: %4.1f", Data_LoRa.Solar_Voltage, readingT);
+        OLEDDrawText(1,4, 0, OLEDbuf);
+
+        sprintf(OLEDbuf, "Ba1: %4.1f - Ba2: %4.1f", Poids_Peson(0), Poids_Peson(1));
+        OLEDDrawText(1,5, 0, OLEDbuf);
+
+        sprintf(OLEDbuf, "Ba3: %4.1f - Ba4: %4.1f", Poids_Peson(2), Poids_Peson(3));
+        OLEDDrawText(1,6, 0, OLEDbuf);
+
+// Eviter, Status Line
+//        sprintf(OLEDbuf, "Next PL:  %02d", , );
+//        OLEDDrawText(1,7, 0, OLEDbuf);
+        OLEDDrawScreenNextPayload(7, 0, nextPayload );
+        
+
+    }
+/*
+     // Attendre une touche pour continuer
+    while (readKey() == KEY_NONE)
+    {
+        delay(100);
+    }
+    
+    OLEDDisplayMessageL8("Retour menu principal", false, false);
+*/
+}
+
 
 /**
  * @brief Affiche les informations système sur écran

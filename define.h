@@ -8,12 +8,12 @@
 #define VERSION "1.1.1-PL"
 
 // ===== TIMING CONSTANTS =====
-#define RED_LED_DURATION 100     // Durée d'allumage LED rouge 300 ms
-#define GREEN_LED_DURATION 100     // Durée d'allumage LED verte 300 ms
-#define BLUE_LED_DURATION 100     // Durée d'allumage LED bleue 300 ms
-#define BUILTIN_LED_DURATION 100  // Durée d'allumage LED builtin 100 ms
-#define WAKEUP_INTERVAL_PAYLOAD 5 // Intervalle de réveil en minutes (2 minute pour test)
-#define INTERVAL_1SEC 1000        // Intervalle 1 seconde en millisecondes
+#define RED_LED_DURATION 100        // Durée d'allumage LED rouge 300 ms
+#define GREEN_LED_DURATION 100      // Durée d'allumage LED verte 300 ms
+#define BLUE_LED_DURATION 100       // Durée d'allumage LED bleue 300 ms
+#define BUILTIN_LED_DURATION 100    // Durée d'allumage LED builtin 100 ms
+#define WAKEUP_INTERVAL_PAYLOAD 15  // Intervalle de réveil en minutes (2 minute pour test)
+#define INTERVAL_1SEC 1000          // Intervalle 1 seconde en millisecondes
 
 // I2C Addresses
 #define DS3231_ADDRESS  0x68  // Adresse RTC Module DS3231
@@ -27,7 +27,7 @@
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // noms courts et explicites, parametrer (num: 0..3) par Macro
 #define Poids_Peson(num)      Data_LoRa.HX711Weight[num]   //  Data_LoRa de type LoRa_Var (ligne 38)
-#define Temp_Peson(num)       Data_LoRa.Temp_Peson[num]
+//#define Temp_Peson(num)       Data_LoRa.Temp_Peson[num]
 #define Tare_Peson(num)       Jauge[Peson[Ruche.Num_Carte][num]][0]
 #define Echelle_Peson(num)    Jauge[Peson[Ruche.Num_Carte][num]][1]
 //#define BalPoids(num)  (Contrainte_List[num]-Jauge[Peson[Ruche.Num_Carte][num]][0])/Jauge[Peson[Ruche.Num_Carte][num]][1]/1000) //retourne float
@@ -76,7 +76,7 @@
 
 
 #define LIBRE0  49    // PB09
-#define LIBRE1  50    // PA18 sur DS1820
+#define LIBRE1  50    // PA18 
 #define LIBRE2  51    // PA19 sur SD_CS
 #define LIBRE3  52    // PB22
 #define LIBRE4  53    // PB23
@@ -84,7 +84,6 @@
 #define LIBRE6  55    // PA28 sur RD_VBAT
 #define LIBRE7  56    // PB12
 
-#define DS1820  LIBRE1    // PA18
 #define SD_CS   LIBRE2    // PA19, testé OK
 #define RD_VBAT LIBRE6    // PA28
 
@@ -93,7 +92,6 @@
 #define DHT_T_ERR 99
 #define DHT_H_ERR 99
 #define TEMP_ERR 99
-#define DS18A20_ERR 99
 
 // Pour OLED selon type sélectionné
 #ifdef OLED096
@@ -158,8 +156,8 @@
 #define ANNULER_4 KEY_4   //
 
 // RN2483A
-#define PAYLOADSIZE 27
-#define HEXPAYLOADSIZE 60
+#define PAYLOADSIZE 19
+#define HEXPAYLOADSIZE 38
 
 
 // ****************************************************************************
@@ -185,16 +183,6 @@
 // ****************************************************************************
 #include "DHT.h"
 #define DHT_TYPE DHT22   // DHT 22  (AM2302), AM2321
-
-// ****************************************************************************
-// OneWire DS18S20, DS18B20, DS1822 Temperature Example
-// https://www.pjrc.com/teensy/td_libs_OneWire.html
-//
-// The DallasTemperature library can do all this work for you!
-// https://github.com/milesburton/Arduino-Temperature-Control-Library
-// ****************************************************************************
-#include <OneWire.h> // V2.3.8
-
 
 
 #include ".\struct.h"

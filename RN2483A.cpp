@@ -204,6 +204,20 @@ bool setupLoRaOTAA()
   }
 }
 
+/*
+
+
+13:58:18.326 -> The device is not connected to the network in Send_LoRa_Mess(). The program will reset the RN module...=== STATUS LoRa ===
+13:58:26.426 ->  => RN2483#04
+13:58:26.426 -> DevEUI =  0004A30B00EEA5D5
+13:58:26.426 -> AppEUI =  414245494C4C4534
+13:58:26.426 -> AppKey =  5048494C495050454C4F56454C414B4F
+13:58:26.426 -> =====================
+13:58:26.426 -> setupLoRaOTAA(), Network connection failed!
+
+
+
+*/
 // ---------------------------------------------------------------------------*
 // Construit le message HEXA                              
 // faire: 
@@ -214,7 +228,7 @@ bool setupLoRaOTAA()
 // byte payload[PAYLOADSIZE];
 //
 // ---------------------------------------------------------------------------*
-void BuildLoraPayload(void)
+void buildLoraPayload(void)
 { // Construction hexPayload[] pour envoi LoRa : Payload + complément de '7'
 //-------------------------------------------------------
 // Build the payload
@@ -247,23 +261,18 @@ void BuildLoraPayload(void)
 
   for (i = 0; i < 4; i++) 
   {
-debugSerial.print(i);  debugSerial.print("/");debugSerial.println(indice);
+//debugSerial.print(i);  debugSerial.print("/");debugSerial.println(indice);
     char dummy[10];
     int Masse = (int)(Data_LoRa.HX711Weight[i] * 100); // We multiple the values below because we then divide them on AllThingsTalk and don't need to send floats which use more data
-debugSerial.print("IntWeigth: "); debugSerial.println(Masse);
+//debugSerial.print("IntWeigth: "); debugSerial.println(Masse);
     payload[indice++] = ((uint8_t*)&Masse)[0];	// Hive1 to 4 Weigth
     payload[indice++] = ((uint8_t*)&Masse)[1];
-
-    int Temperature = (int)Data_LoRa.Temp_Peson[i];
-debugSerial.print("IntTemp: "); debugSerial.println(Temperature);
-    payload[indice++] = ((uint8_t*)&Temperature)[0];	// Hive1 to 4 Temperature (DHT_T)
-    payload[indice++] = ((uint8_t*)&Temperature)[1];
   }
-debugSerial.print("final i/payload[indice]"); debugSerial.print(i);  debugSerial.print("/");
-debugSerial.println(indice);
+//debugSerial.print("final i/payload[indice]"); debugSerial.print(i);  debugSerial.print("/");
+//debugSerial.println(indice);
 
 
-// rappel payloadsize = 27
+// rappel payloadsize = 19    //  27 -8:(DS18B20)
 // rappel hexPayloadSize = 60
   for (i = 0; i < payloadSize; i++) 
     {
@@ -272,20 +281,79 @@ debugSerial.println(indice);
 // remplissage Payload de '7'
 for (i = payloadSize * 2; i < hexPayloadSize; i++) 
     {
-      hexPayload[i] = '7'; // Pad with leading zeros to reach the required 50 bytes
+      hexPayload[i] = '7'; // Pad with leading zeros to reach the required nn bytes
     }
+ 
+  
   hexPayload[hexPayloadSize - 1] = '\0'; // Null terminate
 debugSerial.print("final hexpayload[i]"); debugSerial.println(i); 
 debugSerial.print("hexPayload: "); debugSerial.println(hexPayload);
+/*
+13:58:16.925 -> final hexpayload[i] 38
+13:58:16.925 -> hexPayload: 00AC266300000000000000000000000000000
+*/
+}
+
+// ---------------------------------------------------------------------------
+// envoi toutes les IRQ2
+// ---------------------------------------------------------------------------
+void sendLoRaPayload(uint8_t *Datas,uint8_t len)
+{ 
+debugSerialPrintLoraPayload(Datas,len);
+debugSerial.println("appel LoRaBee.send");
+
+    switch (LoRaBee.send(1,Datas,len))
+    {
+    case NoError:
+      debugSerial.println("NOError Successful transmission in Send_LoRa_Mess().");
+      break;
+    case NoResponse:
+      debugSerial.println("There was no response from the device in Send_LoRa_Mess().");
+      break;
+    case Timeout:
+      debugSerial.println("Connection timed-out in Send_LoRa_Mess(). Check your serial connection to the device! Sleeping for 20sec.");
+      delay(20000);
+      break;
+    case PayloadSizeError:
+      debugSerial.println("The size of the payload is greater than allowed in Send_LoRa_Mess(). Transmission failed!");
+    break;
+    case InternalError:
+      debugSerial.print("\nOh No! This shouldn't happen in Send_LoRa_Mess(). Something is really wrong! The program will reset the RN module...");
+      setupLoRa();
+      // renvoyer MESSAGE
+   LoRaBee.send(1,Datas, len);
+    break;
+    case Busy:
+      debugSerial.println("The device is busy in Send_LoRa_Mess(). Sleeping for 10 extra seconds.");
+      delay(10000);
+      break;
+    case NetworkFatalError:
+      debugSerial.println("\nThere is a non-recoverable error with the network connection in Send_LoRa_Mess(). The program will reset the RN module...");
+      setupLoRa();
+       // renvoyer MESSAGE
+   LoRaBee.send(1,Datas, len);
+       break;
+    case NotConnected:
+      debugSerial.print("\nThe device is not connected to the network in Send_LoRa_Mess(). The program will reset the RN module...");
+      setupLoRa();
+      // renvoyer MESSAGE
+  LoRaBee.send(1,Datas, len);
+      break;
+    case NoAcknowledgment:
+      debugSerial.print("There was no acknowledgment sent back! in Send_LoRa_Mess()");
+      break;
+    default:
+      break;
+    }  // Fin Switch
 }
 
 
+
 // ---------------------------------------------------------------------------*
-//                               
+// INITIALISE LA CHAINE TEXTE A ENVOYER                   
 // ---------------------------------------------------------------------------*
 String Build_Lora_String(String dataGrafana)
-{  // INITIALISE LA CHAINE TEXTE A ENVOYER
-
+{ 
 // N° carte
     sprintf(serialbuf, "%2c",'3');         // ????? %2c = '3' ?????
     dataGrafana +=serialbuf; 
@@ -293,11 +361,11 @@ String Build_Lora_String(String dataGrafana)
 // température DHT
     sprintf(serialbuf, "%5.1f",Data_LoRa.DHT_Temp);
     dataGrafana +=serialbuf;  
-
+/*
 // température Peson
     sprintf(serialbuf,"%5.1f",Temp_Peson(2));        // DHT_Hum); sp
     dataGrafana +=serialbuf; 
-
+*/
 // Luminance LDR
     sprintf(serialbuf, "%5.1f",Data_LoRa.Brightness);        // DHT_Hum);sp
     dataGrafana +=serialbuf;//Data_LoRa.Brightness;  
@@ -356,10 +424,11 @@ String Build_CSV_String(String dataString)
 // température DHT
     sprintf(serialbuf,"%5.2f;",Data_LoRa.DHT_Temp);
     dataString +=serialbuf; 
-    
+/*    
 // température Peson
     sprintf(serialbuf,"%5.2f;",Temp_Peson(2));        // DHT_Hum); sp
     dataString +=serialbuf;
+*/
     
 // Luminance LDR
     sprintf(serialbuf, "%5.1f;",Data_LoRa.Brightness);        // DHT_Hum);sp
@@ -477,59 +546,7 @@ char chardata[256]="";
  debugSerial.println(dataGrafana);
  debugSerial.println(chardata); 
  debugSerial.println("-------------------------------------------------------------------------------------------------------------------------------------------------");
-  Send_LoRa_Mess((uint8_t *)chardata,47);
-}
-
-
-// ---------------------------------------------------------------------------*
-void Send_LoRa_Mess(uint8_t *Datas,uint8_t len)
-{ 
-debugSerialPrintLoraPayload(Datas,len);
-debugSerial.println("appel LoRaBee.send");
-
-    switch (LoRaBee.send(1,Datas,len))
-    {
-    case NoError:
-      debugSerial.println("NOError Successful transmission in Send_LoRa_Mess().");
-      break;
-    case NoResponse:
-      debugSerial.println("There was no response from the device in Send_LoRa_Mess().");
-      break;
-    case Timeout:
-      debugSerial.println("Connection timed-out in Send_LoRa_Mess(). Check your serial connection to the device! Sleeping for 20sec.");
-      delay(20000);
-      break;
-    case PayloadSizeError:
-      debugSerial.println("The size of the payload is greater than allowed in Send_LoRa_Mess(). Transmission failed!");
-    break;
-    case InternalError:
-      debugSerial.print("\nOh No! This shouldn't happen in Send_LoRa_Mess(). Something is really wrong! The program will reset the RN module...");
-      setupLoRa();
-      // renvoyer MESSAGE
-   LoRaBee.send(1,Datas, len);
-    break;
-    case Busy:
-      debugSerial.println("The device is busy in Send_LoRa_Mess(). Sleeping for 10 extra seconds.");
-      delay(10000);
-      break;
-    case NetworkFatalError:
-      debugSerial.println("\nThere is a non-recoverable error with the network connection in Send_LoRa_Mess(). The program will reset the RN module...");
-      setupLoRa();
-       // renvoyer MESSAGE
-   LoRaBee.send(1,Datas, len);
-       break;
-    case NotConnected:
-      debugSerial.print("\nThe device is not connected to the network in Send_LoRa_Mess(). The program will reset the RN module...");
-      setupLoRa();
-      // renvoyer MESSAGE
-  LoRaBee.send(1,Datas, len);
-      break;
-    case NoAcknowledgment:
-      debugSerial.print("There was no acknowledgment sent back! in Send_LoRa_Mess()");
-      break;
-    default:
-      break;
-    }  // Fin Switch
+  sendLoRaPayload((uint8_t *)chardata,47);
 }
 
 

@@ -13,10 +13,11 @@ bool OLED = true;                    // Activer/désactiver OLED
 
 // ===== VARIABLES GLOBALES =====
 RTC_DS3231 rtc;
+DateTime nextPayload;
 
 // variables clavier
 clavier_context_t clavierContext = {KEY_NONE, KEY_NONE, 0, 0, false};
-
+key_code_t touche; 
 
 
 #ifdef OLED096
@@ -30,6 +31,7 @@ char serialbuf[SERIALBUFLEN];
 bool debugOLEDDrawText = false;
 
 // Variables pour gestion des interruptions
+volatile bool alarm1_enabled = true;
 volatile bool wakeupPayload = false;
 volatile bool wakeup1Sec = false;
 volatile bool modeExploitation = true;
@@ -129,9 +131,7 @@ float Jauge[21][4] = {                // Tare , Echelle , TareTemp , CompTemp
       {0,0,0,0},     // J00 => pas de peson connecté
       {178666,108.5,20,0},    // J01 20kg
       {30250,21.2,20,0},      // J02
-
       {21000,22000,20,0},     // J03 évolution valeurs en négatif. tester sur bornier
-      
       {31000,32000,20,0},     // J04
       {41000,42000,20,0},     // J05
       {68971,19.56,19.7,0},     // J06  BAL_A  200kg  le 19/03/2021
@@ -143,20 +143,12 @@ float Jauge[21][4] = {                // Tare , Echelle , TareTemp , CompTemp
       {179568,1056.40,20,0},  // J12 2kg
       {20369,19.93,20,-2},   // J13MS proto1 Master 200kg (53kg ok 5kg => 3.12!!!)
       {53753,21.425,17.1,-1},    // J14 warré 200kg
-  
       {139983,20.46,17.1,0.048341},    // J15SFX proto1 SLC 200kg (OK à 5 et 50kg)
-//      {128885,20.43,5.1,0},    // J15SFX proto1 SLC 200kg (OK à 5 et 50kg)
-//      {125777,25.42,3.2,0},    // J15SFX proto1 SLC 200kg (OK à 5 et 50kg)
-//      {65931,21.59,20,0} J15 première tare ???(-12 mois)
-
       {123199.65,103.59,20,1},    // J16 proto1  20kg (OK à 1 et 5kg)
       {123199.65,103.59,20,2},    // J17 a refaire
-//      {123199.65,103.59,20,3},    // J18 proto1  20kg (OK à 1 et 5kg)
       {30804.50,103.77,20,0},    // J18 proto1  20kg (OK à 1 et 5kg)
-//      {123199.65,103.59,20,0}     // J19 proto1  20kg (OK à 1 et 5kg)
-
-     {22005.70,97.49,20,0},    // J18 proto1  20kg (OK à 1 et 5kg)
-     {22005.70,97.49,20,0},    // J19
+      {22005.70,97.49,20,0},    // J18 proto1  20kg (OK à 1 et 5kg)
+      {22005.70,97.49,20,0},    // J19
 };
 
 // paramètres et données des dispositif de pesée A,B,C,D
@@ -174,9 +166,9 @@ int Peson [10][4] = {
       {0,0,0,0},    // Module LoRa pas Lu; pas de Peson
       {0,0,0,17},    // 0004A30B0020300A carte 1 HS; sur Carte PROTO2 en service le 05/03/2021
       {13,8,9,0}, //15},    // 0004A30B0024BF45 carte 2; en service le 10/05/2020
-      {16,18,0,0},    // 0004A30B00EEEE01 Carte PROTO1 mis en service Loess le 08/03/2021
+      {19,18,0,0},    // 0004A30B00EEEE01 Carte PROTO1 mis en service Loess le 08/03/2021
       {0,5,0,0},    // complter
-      {5,0,0,0},
+      {19,21,17,14},
       {6,0,0,0},
       {7,0,0,0},
       {8,0,0,0},
@@ -194,34 +186,6 @@ float Contrainte_List [4] = {
          -999   // pas de balance, Affiche "N/A"
        };
 
-
-byte DS18B20[20][8]={
-            {0x28, 0xFF, 0xDF, 0xE4, 0x64, 0x15, 0x01, 0x48}, // jauge n°:
-            {0x28, 0xFF, 0xF4, 0xAA, 0x64, 0x15, 0x03, 0x89}, // jauge n°:
-            {0x28, 0xFF, 0xB9, 0xBD, 0x64, 0x15, 0x03, 0x32}, // jauge n°:
-            {0x28, 0xFF, 0x2D, 0xF6, 0x64, 0x15, 0x03, 0xEE}, // jauge n°:
-            {0,0,0,0,0,0,0,0}, // jauge n°:
-            {0,0,0,0,0,0,0,0},
-            {0,0,0,0,0,0,0,0},
-            {0,0,0,0,0,0,0,0},
-            {0,0,0,0,0,0,0,0},
-            {0,0,0,0,0,0,0,0},
-            {0,0,0,0,0,0,0,0},
-            {0,0,0,0,0,0,0,0},
-            {0,0,0,0,0,0,0,0},
-            {0,0,0,0,0,0,0,0},
-            {0,0,0,0,0,0,0,0},
-            {0,0,0,0,0,0,0,0},
-            {0,0,0,0,0,0,0,0},
-            {0,0,0,0,0,0,0,0},
-            {0,0,0,0,0,0,0,0},
-            {0,0,0,0,0,0,0,0},
-};
-
-
-
-// DS1820
-OneWire  ds(DS1820);  // on pin PA18 (a 4.7K pull up resistor is necessary)
 
 // DHT22 => 3V3/DHT_SENSOR/GND
 DHT dht(DHT_SENSOR, DHT_TYPE);
@@ -275,11 +239,17 @@ extern bool DEBUG_LOW_POWER;         // Activer/désactiver basse consommation
 extern bool OLED;                    // Activer/désactiver OLED
 
 // Variables pour gestion des interruptions
+extern volatile bool alarm1_enabled;
 extern volatile bool wakeupPayload;
 extern volatile bool wakeup1Sec;
 extern volatile bool modeExploitation;
 extern int switchToProgrammingMode;
 extern int switchToOperationMode;
+
+// variables clavier
+extern clavier_context_t clavierContext;
+extern key_code_t touche;
+
 
 // gestion des leds non bloquantes
 extern volatile bool redLedActive;           // LED rouge en cours
@@ -306,6 +276,7 @@ extern bool blinkState;
 extern bool debugOLEDDrawText;
 
 extern RTC_DS3231 rtc;
+extern DateTime nextPayload;
 
 #ifdef OLED096
   extern Adafruit_SSD1306 display; //(OLED_RESET);
@@ -349,10 +320,6 @@ extern HW_equipement Ruche;
 extern LoRa_configuration LoRa_Config; 
 extern LoRa_Var Data_LoRa;
 extern float Contrainte_List [];
-
-// DS1820
-extern byte DS18B20[][8];
-extern OneWire  ds;  // on pin PA18 (a 4.7K pull up resistor is necessary)
 
 // DHT22 => 3V3/DHT_SENSOR/GND
 extern DHT dht;

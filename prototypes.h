@@ -2,6 +2,7 @@
 
 // ===== PROTOTYPES DE FONCTIONS DE SETUP.CPP=====
 void initDebugSerial(void);
+void softReset(void);
 void DHTInit(void);
 
 
@@ -20,20 +21,14 @@ void DS3231hardReset(void);
 void DS3231CompleteReset(void);
 
 // encore dans POC...cpp, déplacer?
-void checkRTCStatus(void);
-
-// deplacer RS
-void printTimeComparison(void);     // Affiche heure système et heure RTC côte à côte pour comparaison
-void printTimeOndebugSerial(void);  // Affiche heure et date système sur le port serialDebug
-void print2digits(int number);
-
 // Gestion Config et EEPROM
+void setDefaultConfig(void);
 void initConfig(void);
 void loadConfigFromEEPROM(void);
 void readConfigFromEEPROM(void);
 void saveConfigToEEPROM(void);
 uint16_t calculateChecksum(ConfigGenerale_t* cfg);
-void setDefaultConfig(void);
+
 
 // Gestion LEDs
 void initLEDs(void);        // Initialise les LEDs RGB et builtin
@@ -86,6 +81,8 @@ void OLEDEraseText(int16_t col, int16_t lig, int16_t Ncar);
 void OLEDDisplayDate(char *d, uint8_t pos);
 void OLEDDisplayTime(char *h, uint8_t pos);
 void OLEDSetDebug(bool actif);
+void OLEDDisplayHivesDatas(void);
+void OLEDDisplaySystemInfo(void);
 
 // Gestion saisies
 bool isDateValid(const char *d);
@@ -101,7 +98,10 @@ uint32_t inputDecimal(const char* variable, uint32_t valeurInitiale);
 char* strToChar(String s);
 
 // Gestion serialDebug 
-void print2digits(int number); 
+void debugSerialTestConnexionDS3231(void);
+void debugSerialPrintTimeComparison(void);     // Affiche heure système et heure RTC côte à côte pour comparaison
+void debugSerialPrintTime(void); // Affiche heure et date système sur le port serialDebug
+void debugSerialPrint2digits(int number); 
 void debugSerialPrintLoraPayload(uint8_t *payload, uint8_t len);
 void debugSerialPrintText(char *txt, char len);
 void debugSerialPrintLoRaStatus();
@@ -137,11 +137,13 @@ String readLoRaResponse(int timeoutMs); // Lit la réponse du modem avec timeout
  
 bool setupLoRa(void);   // appelé par Send_Lora_Mess() et setup()
 bool setupLoRaOTAA(void);
+
 void Send_DATA_LoRa(void);
-void Send_LoRa_Mess(uint8_t *, uint8_t);
+
+void buildLoraPayload(void);
+void sendLoRaPayload(uint8_t *, uint8_t);
 
 
-void BuildLoraPayload(void);
 // basse conso.
 void sleep_LoRa(void);
 void wake_LoRa(void);
@@ -170,7 +172,3 @@ float getLuminance(void);
 // µC ANA
 float getVBatMoy(void);
 float getVSolMoy(void);
-
-
-// DS18B20
-float get_DS(byte *DS18B20);

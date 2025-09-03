@@ -11,16 +11,20 @@ void initDebugSerial(void)
     debugSerial.println(PROJECT_NAME);
 }
 
-
-
-void init2483A(void)
+void softReset() 
 {
-// Init 2483 ---- Init 2483 ---- Init 2483 ---- Init 2483 ---- Init 2483 
+// Reset immédiat du microcontrôleur
+  NVIC_SystemReset();
+// Le code ne continue jamais après cette ligne
+}
+
+void init2483A(void)  // Init 2483 ---- Init 2483 ---- Init 2483 ---- Init 2483 
+{
 debugSerial.println("------------------------------------------------------------------");
 debugSerial.println("INIT 2483...");
 
 //  LoRaBee.setDiag(debugSerial);  // Debug des commandes
-  OLEDDebugDisplay("Initializing 2483");
+//  OLEDDebugDisplay("Initializing 2483");
   
   loraSerial.begin(LoRaBee.getDefaultBaudRate());
   
@@ -34,17 +38,17 @@ debugSerial.println("INIT 2483...");
       {
         debugSerial.print(" Init 2483 done with card : ");
         debugSerial.println(Ruche.Num_Carte);
-        OLEDDebugDisplay("2483    Initialized");
+        OLEDDebugDisplay("2483A    Initialized");
       }
       else
       {
         debugSerial.println(" NO 2483 present.");
-        OLEDDebugDisplay("2483    Failed");
+        OLEDDebugDisplay("2483A   Failed");
       }
     else 
     {
       debugSerial.println(" Init 2483 failed");    
-      OLEDDebugDisplay("2483    Failed");
+      OLEDDebugDisplay("2483A   Failed");
     }  
 // debugSerialPrintLoRaStatus();
 }
@@ -56,16 +60,14 @@ void initLoRa(void)
 debugSerial.println("------------------------------------------------------------------");
 debugSerial.println("INIT LoRa...");
 //  Reset_LoRa();  // initialise pas sur reset chaud.
-  setupLoRa();
+//  setupLoRa();
 
   if (setupLoRa())
   {
 //debugSerial.println("Reboot message SENT");
 debugSerial.println("Init LoRa done.");
-debugSerial.println("------------------------------------------------------------------");
 debugSerial.println("Test sending LoRa testPayload (7) (Restart)..."); 
-  OLEDDebugDisplay("Sending testPayload");
-  Send_LoRa_Mess((uint8_t*)testPayload,7);
+  sendLoRaPayload((uint8_t*)testPayload,7);
   OLEDDebugDisplay("LoRa    Initialized");
   }
   else
@@ -80,10 +82,10 @@ debugSerial.println("Test sending LoRa testPayload (7) (Restart)...");
 // set FLASH to deep sleep & reset SPI pins for min. energy consumption
   DFlashUltraDeepSleep(); 
 */
-  OLEDDebugDisplay("---- SETUP DONE ----");
-delay(1000);
-  display.clearDisplay();
-  display.display();
+//  OLEDDebugDisplay("---- SETUP DONE ----");
+//delay(1000);
+//  display.clearDisplay();
+//  display.display();
 }
 
 // INIT DHT22 ---- INIT DHT22 ---- INIT DHT22 ---- INIT DHT22 ---- 

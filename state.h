@@ -1,4 +1,109 @@
 /*
+ * volatile bool alarm1_enabled = true;
+
+void alarm1ISR() {
+    if (!alarm1_enabled) return;
+    
+    // Traitement alarme 1
+    rtc.alarmFired(1);  // Efface le flag
+}
+
+void alarm2ISR() {
+    alarm1_enabled = false;  // Bloquer alarme 1
+    
+    // Traitement alarme 2 (prioritaire)
+    rtc.alarmFired(2);
+    
+    // Votre code spécifique IRQ2...
+    
+    alarm1_enabled = true;   // Réactiver alarme 1
+}
+ * 
+ * affiche en taille 2 pendat envoi : 
+ * SENDIND
+ * PAYLOAD
+ * 
+15:38:15.938 -> 712346
+15:38:15.938 -> 712346
+15:38:15.938 -> 7$12341$56
+15:38:16.269 -> 712346
+15:38:16.269 -> 712346
+15:38:16.269 -> 712346
+...
+15:38:16.920 -> 712346
+15:38:16.920 -> 712346
+15:38:16.920 -> 712346
+15:38:16.920 -> 712346
+15:38:16.920 -> 712346
+15:38:16.920 -> 712346
+15:38:16.920 -> 71234$£Interruption Alarme 2 activée, reprogrammée pour: 15:33:00
+15:38:16.969 -> 
+15:38:16.969 -> 2£1 
+15:38:16.969 -> final hexpayload[i]38
+15:38:16.969 -> hexPayload: 00AC266300000000000000000000000000000
+15:38:17.017 -> hexPayload: 3030333033333330333333333333333033333 len : 19
+15:38:17.017 -> appel LoRaBee.send
+15:38:17.951 -> $
+15:38:18.417 -> The device is not connected to the network in Send_LoRa_Mess(). The program will reset the RN module...$$$$$$$$=== STATUS LoRa ===
+15:38:26.525 ->  => RN2483#04
+15:38:26.525 -> DevEUI =  0004A30B00EEA5D5
+15:38:26.525 -> AppEUI =  414245494C4C4534
+15:38:26.525 -> AppKey =  5048494C495050454C4F56454C414B4F
+15:38:26.525 -> =====================
+15:38:26.525 -> setupLoRaOTAA(), Network connection failed!
+15:38:26.949 -> $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+
+
+
+
+
+
+
+
+
+
+  rtc.writeSqwPinMode(DS3231_OFF); bloque les interrupts
+
+
+Payload: 19 Octets
+
+// N° de rucher  
+  payload[0] 
+// temperature DHT22
+  payload[1]  // Temperature: Least significant byte first, little endian
+  payload[2]  
+// humidity  DHT22
+  payload[3]
+  payload[4] 
+// Brightness (LDR)
+  payload[5] 
+  payload[6]
+// tension moyenne des 10 dernières lectures (VBat)   => ne calculer la moyenne que lors de l'envoie/Affichage, pas à chaque lecture.
+  payload[7] 
+  payload[8]
+// tension moyenne des 10 dernières lectures (VSol)   => Idem
+  payload[9]
+  payload[10]
+// Balance 1
+  payload[11]
+  payload[12] 
+// Balance 2
+  payload[13] 
+  payload[14]
+// Balance 3
+  payload[15]
+  payload[16]
+// Balance 4
+  payload[17] 
+  payload[18]
+
+
+  // Reading temperature or humidity takes about 250 milliseconds!
+
+
+
+
+i2c ASSYCHRONE 
 
 
 degraisser : 

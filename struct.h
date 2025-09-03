@@ -63,8 +63,9 @@ typedef struct
 typedef struct 
 {
   uint8_t Num_Carte;  // Numéro de carte
-  uint8_t MediaCOM;       // True
-  //uint8_t _noBlueTooth;  //False
+// Forcement LoRa
+//  uint8_t MediaCOM;       // True
+//  uint8_t _noBlueTooth;  //False
   uint8_t Rtc;        // True or False, autodetect?
   uint8_t KBD_Ana;    // True or False
   uint8_t Oled;       // True or False
@@ -72,7 +73,6 @@ typedef struct
   uint8_t LiPo;       // True or False
   uint8_t Solaire;    // True or False Aabandonné?
   uint8_t Balance[4];   // True or False or N° Peson
-  uint8_t DS18B20[4][8];   // uint8_t XH711;      // True or False, autodetect
 }  HW_equipement;
 
 
@@ -90,11 +90,11 @@ typedef struct
   float   Bat_Voltage;      // Tension BAT en V     xx,xx  Float (uint16_t)
   float   Solar_Voltage;    // Tension BAT en V     xx,xx  Float (uint16_t)
   float   HX711Weight[4];    // masse Ruche 1 en kg xxx,xx (précision affich. 10g)
-  float   Temp_Peson[4];     // température peson 1 en °C xx,xx  Float
+//  float   Temp_Peson[4];     // température peson 1 en °C xx,xx  Float
   float   VSol[11];
   float   VBat[11];   
-  float   _noLux;              // temp µC, ne sera pas conservé 
-  float   _noProcessorTemp;    // temp µC, ne sera pas conservé 
+//  float   _noLux;              // VLux, ne sera pas conservé 
+  float   ProcessorTemp;    // temp µC, conservé en backup DHT22 
 } LoRa_Var;
 
 typedef struct  
@@ -138,9 +138,8 @@ typedef struct     // regroupe tous les paramètres de EEPROM
   float   HX711Scaling_3;
 //  float   HX711Cor_Temp_3;
   float   LDRBrightnessScale;   // 
-  float   VSolScale;            //  Luxmetre abandonné
+  float   VSolScale;            //  
   float   VBatScale;
-// DS18B20 ???  
 } ConfigBalance;
 
 

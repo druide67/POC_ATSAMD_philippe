@@ -4,6 +4,29 @@
 
 
 /**
+ * @brief Définit la configuration par défaut
+ * @param Aucun
+ * @return void
+ */
+void setDefaultConfig(void) 
+{
+    config.materiel.version = CONFIG_VERSION;
+    config.materiel.adresseRTC = DS3231_ADDRESS;    // Adresse RTC Module DS3231
+    config.materiel.adresseOLED = OLED_ADDRESS;     // Adresse écran OLED
+    config.materiel.adresseEEPROM = EEPROM_ADDRESS; // Adresse EEPROM Module DS3231
+   
+    config.applicatif.redLedDuration = RED_LED_DURATION;
+    config.applicatif.greenLedDuration = GREEN_LED_DURATION;
+    config.applicatif.blueLedDuration = BLUE_LED_DURATION;
+    config.applicatif.builtinLedDuration = BUILTIN_LED_DURATION;
+    config.applicatif.wakeupIntervalPayload = WAKEUP_INTERVAL_PAYLOAD;
+    config.applicatif.interval1Sec = INTERVAL_1SEC;
+    
+    config.checksum = calculateChecksum(&config);
+}
+
+
+/**
  * @brief Initialise la configuration par défaut
  * @param Aucun
  * @return void
