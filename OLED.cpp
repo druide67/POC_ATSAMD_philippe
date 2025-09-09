@@ -231,22 +231,22 @@ int val;
  */
 void OLEDDebugDisplay(char* message) 
 {
-    if (!modeDebugActif) return;
+  if (!modeDebugActif) return;
     
-    for (int i = 0; i < MAX_LIGNES - 1; i++) 
-    {
-        strcpy(lignesDebug[i], lignesDebug[i+1]);
-    }
-    strcpy(lignesDebug[MAX_LIGNES - 1], message);
+  for (int i = 0; i < MAX_LIGNES - 1; i++) 
+  {
+    strcpy(lignesDebug[i], lignesDebug[i+1]);
+  }
+  strcpy(lignesDebug[MAX_LIGNES - 1], message);
     
-    display.clearDisplay();
-    for (uint8_t i = 1; i < MAX_LIGNES; i++) // uint8_t i = 0 => reserve L0 pour Time/Date
-    {
-        display.setCursor(0, i * TAILLE_LIGNE);
-        OLEDDrawText(1,i, 0, lignesDebug[i]);
-    }
-    display.display();
-    delay(delaiAffichage);
+  display.clearDisplay();
+  for (uint8_t i = 1; i < MAX_LIGNES; i++) // uint8_t i = 0 => reserve L0 pour Time/Date
+  {
+    display.setCursor(0, i * TAILLE_LIGNE);
+    OLEDDrawText(1,i, 0, lignesDebug[i]);
+  }
+  display.display();
+  delay(delaiAffichage);
 }
 
 
@@ -256,25 +256,24 @@ void OLEDDebugDisplay(char* message)
  * @return void
  */
 void OLEDDebugDisplayReset(void) 
-{ char message[21];
-   
-    if (!modeDebugActif) return;
+{    
+  if (!modeDebugActif) return;
     
-    for (int i = 1; i < MAX_LIGNES; i++) // int i = 0, on garde time/date dispo
-    {
+  for (int i = 1; i < MAX_LIGNES; i++) // int i = 0, on garde time/date dispo
+  {
  
- //           sprintf(message, " --- %02d --- ",i);     
-        strcpy(lignesDebug[i], "                    ");
-    }
+ //           sprintf(OLEDbuf, " --- %02d --- ",i);     
+    strcpy(lignesDebug[i], "                    ");
+  }
     
-    display.clearDisplay();
-    for (uint8_t i = 0; i < MAX_LIGNES; i++) 
-    {
-        display.setCursor(0, i * TAILLE_LIGNE);
-        OLEDDrawText(1,i, 0, lignesDebug[i]);
-    }
-    display.display();
-    delay(delaiAffichage);
+  display.clearDisplay();
+  for (uint8_t i = 0; i < MAX_LIGNES; i++) 
+  {
+    display.setCursor(0, i * TAILLE_LIGNE);
+    OLEDDrawText(1,i, 0, lignesDebug[i]);
+  }
+  display.display();
+  delay(delaiAffichage);
 }
 
 
@@ -313,30 +312,29 @@ void OLEDPrintChar(uint8_t ligne, uint8_t colonne, char c)
  * @return void
  */
 void OLEDPrintVar(uint8_t ligne, uint8_t col, const void *valeur, char type) 
-{   char serialbuf[21];
-    switch (type) 
-    {
-        case 'c':
-            sprintf(OLEDbuf, "%c", *((char *)valeur));
-  
-            break;
-        case 's':
-            sprintf(OLEDbuf, "%s", (char *)valeur);
-            break;
-        case 'i':
-        case 'I':
-            sprintf(OLEDbuf, "%02d", *((int *)valeur));
+{   
+  switch (type) 
+  {
+    case 'c':
+              sprintf(OLEDbuf, "%c", *((char *)valeur));
+              break;
+    case 's':
+              sprintf(OLEDbuf, "%s", (char *)valeur);
+              break;
+    case 'i':
+    case 'I':
+              sprintf(OLEDbuf, "%02d", *((int *)valeur));
  // %02d arrangement temporaire           
-            break;
-        case 'f':
-        case 'F':
-            sprintf(OLEDbuf, "%.2f", *((float *)valeur));
-            break;
-        default:
-            sprintf(OLEDbuf, "<inconnu>");
-            break;
-    }
-    OLEDDrawText(1,ligne, col, OLEDbuf);
+              break;
+    case 'f':
+    case 'F':
+              sprintf(OLEDbuf, "%.2f", *((float *)valeur));
+              break;
+    default:
+              sprintf(OLEDbuf, "<inconnu>");
+              break;
+  }
+  OLEDDrawText(1,ligne, col, OLEDbuf);
 }
 
 /**
@@ -408,44 +406,43 @@ void OLEDPrintFormatted(uint8_t ligne, uint8_t col, const void *valeur, char typ
  */
 void OLEDDisplayMessageL8(const char* message, bool defilant, bool inverse) 
 {
-    debugSerial.print("OLEDDisplayMessageL8() => "); 
-    debugSerial.println(message);
+  debugSerial.print("OLEDDisplayMessageL8() => "); 
+  debugSerial.println(message);
     
-    display.clearDisplay();
-    display.setTextSize(1);
+  display.clearDisplay();
+  display.setTextSize(1);
     
-    if (inverse) 
-    {
-        display.setTextColor(BLACK, WHITE);
-    }
-    else 
-    {
-        display.setTextColor(WHITE);
-    }
-    
-    int len = strlen(message);
-    
-    if (defilant && len > (SCREEN_WIDTH / 6)) 
-    {
-        for (int offset = 0; offset <= (len * 6 - SCREEN_WIDTH); offset += 2) 
-        {
-            display.clearDisplay();
-            display.setCursor(-offset, pixelLine);
-            display.print(message);
-            display.display();
-            delay(30);
-        }
-        delay(500);
-    } 
-    else 
-    {
-        display.setCursor((SCREEN_WIDTH - len * 6) / 2, pixelLine);
-        display.print(message);
-        display.display();
-        delay(1000);
-    }
-    
+  if (inverse) 
+  {
+    display.setTextColor(BLACK, WHITE);
+  }
+  else 
+  {
     display.setTextColor(WHITE);
+  }
+    
+  int len = strlen(message);
+    
+  if (defilant && len > (SCREEN_WIDTH / 6)) 
+  {
+    for (int offset = 0; offset <= (len * 6 - SCREEN_WIDTH); offset += 2) 
+    {
+      display.clearDisplay();
+      display.setCursor(-offset, pixelLine);
+      display.print(message);
+      display.display();
+      delay(30);
+    }
+    delay(500);
+  } 
+  else 
+  {
+    display.setCursor((SCREEN_WIDTH - len * 6) / 2, pixelLine);
+    display.print(message);
+    display.display();
+    delay(1000);
+  }
+  display.setTextColor(WHITE);
 }
 
 
@@ -459,28 +456,28 @@ void OLEDDisplayMessageL8(const char* message, bool defilant, bool inverse)
  */
 void OLEDDrawText(int8_t Txt_Size, uint8_t ligne, uint8_t colonne, const char *text)
 {
-    if (OLED)
-    {
-        display.setTextSize(Txt_Size);
-        OLEDEraseText(colonne, ligne, strlen(text));
+  if (OLED)
+  {
+    display.setTextSize(Txt_Size);
+    OLEDEraseText(colonne, ligne, strlen(text));
 //   debugOLEDDrawText =1;     
-        if (debugOLEDDrawText)
-        {
-            debugSerial.print("txt: "); debugSerial.println(text);
-            debugSerial.print("NB Car: "); debugSerial.print(strlen(text));
-            debugSerial.print("dColonne: "); debugSerial.print(colonne); 
-            debugSerial.print("/"); debugSerial.println((colonne*OLED_Col)-(colonne?0:0));
-        }
-//   debugOLEDDrawText=0;     
-        display.setTextColor(WHITE); 
-        display.setCursor((colonne*OLED_Col)-(colonne?0:0), (ligne*OLED_L1));
-        
-        for (uint8_t i = 0; i < strlen(text); i++)
-        {
-            display.write(text[i]);
-        }      
-        display.display();
+    if (debugOLEDDrawText)
+    {
+      debugSerial.print("txt: "); debugSerial.println(text);
+      debugSerial.print("NB Car: "); debugSerial.print(strlen(text));
+      debugSerial.print("dColonne: "); debugSerial.print(colonne); 
+      debugSerial.print("/"); debugSerial.println((colonne*OLED_Col)-(colonne?0:0));
     }
+//   debugOLEDDrawText=0;     
+    display.setTextColor(WHITE); 
+    display.setCursor((colonne*OLED_Col)-(colonne?0:0), (ligne*OLED_L1));
+        
+    for (uint8_t i = 0; i < strlen(text); i++)
+    {
+      display.write(text[i]);
+    }      
+    display.display();
+  }
 }
 
 
@@ -493,20 +490,28 @@ void OLEDDrawText(int8_t Txt_Size, uint8_t ligne, uint8_t colonne, const char *t
  */
 void OLEDDisplayDate(char *d, uint8_t pos) 
 {
-    if (millis() - lastBlink >= 500) 
-    {
-        lastBlink = millis();
-        blinkState = !blinkState;
-    }
+
+
+  sprintf(serialbuf,"OLEDDisplayDate:%s",d);
+  debugSerial.println(serialbuf); 
+
+
+
+  
+  if (millis() - lastBlink >= 500) 
+  {
+    lastBlink = millis();
+    blinkState = !blinkState;
+  }
     
-    char ligne[11];
-    for (int i = 0; i < 10; i++) 
-        ligne[i] = (i == pos && blinkState) ? '_' : d[i];
-    ligne[10] = '\0';
+  char ligne[11];
+  for (int i = 0; i < 10; i++) 
+    ligne[i] = (i == pos && blinkState) ? '_' : d[i];
+  ligne[10] = '\0';
     
-    OLEDClear();
-    OLEDDrawText(1,0, 0, "Saisir la date :");
-    OLEDDrawText(1,1, 0, ligne);
+  OLEDClear();
+  OLEDDrawText(1,0, 0, "Saisir la date :");
+  OLEDDrawText(1,1, 0, ligne);
 }
 
 
@@ -519,20 +524,20 @@ void OLEDDisplayDate(char *d, uint8_t pos)
  */
 void OLEDDisplayTime(char *h, uint8_t pos) 
 {
-    if (millis() - lastBlink >= 500) 
-    {
-        lastBlink = millis();
-        blinkState = !blinkState;
-    }
+  if (millis() - lastBlink >= 500) 
+  {
+    lastBlink = millis();
+    blinkState = !blinkState;
+  }
     
-    char ligne[9];
-    for (int i = 0; i < 8; i++) 
-        ligne[i] = (i == pos && blinkState) ? '_' : h[i];
-    ligne[8] = '\0';
+  char ligne[9];
+  for (int i = 0; i < 8; i++) 
+    ligne[i] = (i == pos && blinkState) ? '_' : h[i];
+  ligne[8] = '\0';
     
-    OLEDClear();
-    OLEDDrawText(1,0, 0, "Saisir l'heure :");
-    OLEDDrawText(1,1, 0, ligne);
+  OLEDClear();
+  OLEDDrawText(1,0, 0, "Saisir l'heure :");
+  OLEDDrawText(1,1, 0, ligne);
 }
 
 
@@ -547,40 +552,64 @@ void OLEDDisplayTime(char *h, uint8_t pos)
 // 07 :  Température µC
  * @param Aucun
  * @return void
+ 
+ typedef struct   
+{
+  uint8_t rucher_ID;  // 0:non affecté, 1: Fleurs, 2: Acacia, 3: Tilleul, 4: Chataignier
+                      // 5: Sapin 6: Jachère 7: Forêt  8: Phacélie 9: Pommes 
+  float   DHT_Temp;         // Temp DHT en °C    xx,x  Float
+  float   DHT_Hum;          // Hum DHT en %      xx,x  Float
+  float   Brightness;       // %Lum en LUX      xxxxx  uint16_t
+  float   Bat_Voltage;      // Tension BAT en V     xx,xx  Float (uint16_t)
+  float   Solar_Voltage;    // Tension BAT en V     xx,xx  Float (uint16_t)
+  float   HX711Weight[4];    // masse Ruche 1 en kg xxx,xx (précision affich. 10g)
+  float   VSol[11];
+  float   VBat[11];   
+//  float   _noLux;              // VLux, ne sera pas conservé 
+  float   ProcessorTemp;    // temp µC, conservé en backup DHT22 
+} LoRa_Var;
  */
 void OLEDDisplayHivesDatas(void)
 {
-    if (OLED)
-    {
-        OLEDClear();
-        OLEDDrawScreenTime(0, 0); // Affiche Time/Date au complet
+  if (OLED)
+  {
+    OLEDClear();
+    OLEDDrawScreenTime(0, 0); // Affiche Time/Date au complet
 
-        //OLEDDrawText(1,0, 0, );  // conserver rafraichissement Heure/Date
+    //OLEDDrawText(1,0, 0, );  // conserver rafraichissement Heure/Date
 
-        OLEDDrawText(1,1, 0, "=== INFOS Ruches ===");
+    OLEDDrawText(1,1, 0, "=== INFOS Ruches ===");
+       
+    sprintf(OLEDbuf, "Tem: %4.1f - Hum: %4.1f", Data_LoRa.DHT_Temp , Data_LoRa.DHT_Hum);
+    OLEDDrawText(1,2, 0, OLEDbuf );
         
-        sprintf(OLEDbuf, "Tem: %4.1f - Hum: %4.1f", Data_LoRa.DHT_Temp , Data_LoRa.DHT_Hum);
-        OLEDDrawText(1,2, 0, OLEDbuf );
+    sprintf(OLEDbuf, "LDR: %4.1f -  VB: %4.1f", Data_LoRa.Brightness, Data_LoRa.Bat_Voltage);
+    OLEDDrawText(1,3, 0, OLEDbuf);
         
-        sprintf(OLEDbuf, "LDR: %4.1f -  VB: %4.1f", Data_LoRa.Brightness, Data_LoRa.Bat_Voltage);
-        OLEDDrawText(1,3, 0, OLEDbuf);
-        
-        sprintf(OLEDbuf, "VSo: %4.1f -  mT: %4.1f", Data_LoRa.Solar_Voltage, readingT);
-        OLEDDrawText(1,4, 0, OLEDbuf);
+    sprintf(OLEDbuf, "VSo: %4.1f -  mT: %4.1f", Data_LoRa.Solar_Voltage, readingT);
+    OLEDDrawText(1,4, 0, OLEDbuf);
 
-        sprintf(OLEDbuf, "Ba1: %4.1f - Ba2: %4.1f", Poids_Peson(0), Poids_Peson(1));
-        OLEDDrawText(1,5, 0, OLEDbuf);
+//#define Poids_Peson(num)      Data_LoRa.HX711Weight[num]   //  Data_LoRa de type LoRa_Var (ligne 38)
 
-        sprintf(OLEDbuf, "Ba3: %4.1f - Ba4: %4.1f", Poids_Peson(2), Poids_Peson(3));
-        OLEDDrawText(1,6, 0, OLEDbuf);
+
+////    sprintf(OLEDbuf, "Ba1: %4.1f - Ba2: %4.1f", Poids_Peson(0), Poids_Peson(1));
+
+
+ float poids = (float)Poids_Peson(0);
+       poids = poids/1000;
+//Data_LoRa.HX711Weight[0]=123456;
+       
+    sprintf(OLEDbuf, "Ba1: %4.1f - Ba2: %4.1f", Data_LoRa.HX711Weight[0]/1000, 15.22); //Poids_Peson(1));
+    OLEDDrawText(1,5, 0, OLEDbuf);
+
+    sprintf(OLEDbuf, "Ba3: %4.1f - Ba4: %4.1f", Poids_Peson(2), Poids_Peson(3));
+    OLEDDrawText(1,6, 0, OLEDbuf);
 
 // Eviter, Status Line
 //        sprintf(OLEDbuf, "Next PL:  %02d", , );
 //        OLEDDrawText(1,7, 0, OLEDbuf);
-        OLEDDrawScreenNextPayload(7, 0, nextPayload );
-        
-
-    }
+    OLEDDrawScreenNextPayload(7, 0, nextPayload );
+  }
 /*
      // Attendre une touche pour continuer
     while (readKey() == KEY_NONE)
@@ -600,28 +629,28 @@ void OLEDDisplayHivesDatas(void)
  */
 void OLEDDisplaySystemInfo(void)
 {
-    if (OLED)
-    {
-        OLEDClear();
-        OLEDDrawText(1,0, 0, "=== INFOS SYSTEME ===");
-        OLEDDrawText(1,1, 0, PROJECT_NAME);
-        OLEDDrawText(1,2, 0, "Version: " VERSION);
+  if (OLED)
+  {
+    OLEDClear();
+    OLEDDrawText(1,0, 0, "=== INFOS SYSTEME ===");
+    OLEDDrawText(1,1, 0, PROJECT_NAME);
+    OLEDDrawText(1,2, 0, "Version: " VERSION);
         
-        sprintf(OLEDbuf, "Mode: %s", modeExploitation ? "EXPLOIT" : "PROGRAM");
-        OLEDDrawText(1,3, 0, OLEDbuf);
+    sprintf(OLEDbuf, "Mode: %s", modeExploitation ? "EXPLOIT" : "PROGRAM");
+    OLEDDrawText(1,3, 0, OLEDbuf);
         
-        sprintf(OLEDbuf, "Config v: %d.%02d", config.materiel.version/100, config.materiel.version%100);
-        OLEDDrawText(1,4, 0, OLEDbuf);
-//      OLEDDrawText(1,6, 0, "Appuyer pour continuer");
-    }
+    sprintf(OLEDbuf, "Config v: %d.%02d", config.materiel.version/100, config.materiel.version%100);
+    OLEDDrawText(1,4, 0, OLEDbuf);
+//   OLEDDrawText(1,6, 0, "Appuyer pour continuer");
+  }
 /*
      // Attendre une touche pour continuer
-    while (readKey() == KEY_NONE)
-    {
-        delay(100);
-    }
+  while (readKey() == KEY_NONE)
+  {
+    delay(100);
+  }
     
-    OLEDDisplayMessageL8("Retour menu principal", false, false);
+  OLEDDisplayMessageL8("Retour menu principal", false, false);
 */
 }
 
@@ -634,5 +663,5 @@ void OLEDDisplaySystemInfo(void)
  */
 void OLEDSetDebug(bool actif) 
 {
-    modeDebugActif = actif;
+  modeDebugActif = actif;
 }

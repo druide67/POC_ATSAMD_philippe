@@ -30,6 +30,21 @@
 // ===== SETUP =====
 void setup() 
 {
+
+// INITIALISE LA STRUCTURE A ENVOYER
+Data_LoRa.rucher_ID = 67;   // compris entre 0 et 99
+Data_LoRa.DHT_Temp = 25;
+Data_LoRa.DHT_Hum = 69;
+Data_LoRa.Brightness = 91;
+Data_LoRa.Bat_Voltage = 3.69;
+Data_LoRa.Solar_Voltage = 4.69;
+Data_LoRa.HX711Weight[0] = 12.34; // 
+Data_LoRa.HX711Weight[1] = 23.45;
+Data_LoRa.HX711Weight[2] = 34.56;
+Data_LoRa.HX711Weight[3] = 45.67;
+Data_LoRa.ProcessorTemp = 21.18;   // temp µC, ne sera pas conservé 
+
+  
   initDebugSerial(); 
   // Initialisation des LEDs
   initLEDs();
@@ -55,10 +70,54 @@ void setup()
   // Initialisation configuration
   initConfig();
   OLEDDebugDisplay("initConfig OK");
-        
+
   init2483A();
   sprintf(OLEDbuf,"ID: %s",Module_ID);
   OLEDDebugDisplay(OLEDbuf);
+
+// config balance connue 10 lecture + moyenne
+  Poids_Peson(0) = GetPoids(1,10);
+
+  float temp = ((analogRead(TEMP_SENSOR) * 3300.0 / 1023.0) - 500.0) / 10.0; // Lecture temp µC  
+            // put the ADC in sleep mode
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// temp : utiliser DHT22 si existe sinon temperature interne µC
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// Rappel:
+// #define Poids_Peson(num)      Data_LoRa.HX711Weight[num]   //  Data_LoRa de type LoRa_Var (ligne 38)
+// #define Tare_Peson(num)       Jauge[Peson[Ruche.Num_Carte][num]][0]
+// #define Echelle_Peson(num)    Jauge[Peson[Ruche.Num_Carte][num]][1]
+// #define BalPoids(num) (Contrainte_List[num]-Tare_Peson(num))/Echelle_Peson(num)/1000 //retourne float
+// float GetPoids(int num)  // ?????   
+// lecture brute => poids en gr
+int num = 0;
+float pesonTare  = Jauge[Peson[Ruche.Num_Carte][num]][0];  // correction pour avoir valeur balance sans charge.
+float pesonScale = Jauge[Peson[Ruche.Num_Carte][num]][1];  // Mise à l'Echelle de pesonValue vers peson Poids
+float pesonValue = Poids_Peson(num) - pesonTare;           // valeur à convertir
+float pesonPoids = pesonValue / pesonScale;                // poids correspondant
+float pesee;                                               // 
+  //  Poids_List [num] = pesee*(1-Jauge[Peson[carte][num]][3]*(Jauge[Peson[carte][num]][2]/temp));
+  Contrainte_List [num] = pesee; // *(1-Jauge[Peson[carte][num]][3]*(Jauge[Peson[carte][num]][2]/temp));
+  // (peson-tare)/echelle
+  pesee = BalPoids(num);   // ( pesee - Jauge[Peson[Ruche.Num_Carte][num]][0] ) / Jauge[Peson[Ruche.Num_Carte][num]][1] / 1000; 
+  sprintf(serialbuf,"temp %5.2f, lu %5.2f, tare %5.2f, echelle %5.2f,  tare en moins %5.2f, poids %5.2f ",
+          temp,Poids_Peson(num) , pesonTare, pesonScale,  pesonValue, pesonPoids  );
+  debugSerial.println(serialbuf);
+/*
+15:20:10.162 ->  7892  7936  7884  7852  7785  7839  7999  8066  8076  7969  M 7929 
+15:20:10.162 -> temp 28.39, lu 7929.00, tare 22005.70, echelle 97.49,  tare en moins -14076.70, poids -144.39 
+*/
+
+
+
+  OLEDDebugDisplay("getWeigth 1 Done");
+Poids_Peson(1) = GetPoids(2,10);
+  OLEDDebugDisplay("getWeigth 2 Done");
+Poids_Peson(2) = GetPoids(3,10);
+  OLEDDebugDisplay("getWeigth 3 Done"); 
+Poids_Peson(3) = GetPoids(4,10);
+  OLEDDebugDisplay("getWeigth 4 Done");
+
   initLoRa();
 
 // void DS3231CompleteReset() si DS3231 out!
@@ -85,17 +144,24 @@ debugSerial.println("Initialisation terminee");
 
 //  forcerSynchronisationDS3231();
 debugSerial.println("Mise à l'heure");
+
+ 
   dht.begin();
   read_DHT(dht);
+//  sprintf(serialbuf,"Humidité : %.2f %%\nTemperature : %.2f °C",Data_LoRa.DHT_Hum,Data_LoRa.DHT_Temp);
+//  debugSerial.println(serialbuf); 
+  OLEDDebugDisplay("DHT Done");
 
-  sprintf(serialbuf,"Humidité : %.2f ",Data_LoRa.DHT_Hum );
-  debugSerial.println(serialbuf); 
-  sprintf(serialbuf,"Temperature : %.2f °C",Data_LoRa.DHT_Temp );
-  debugSerial.println(serialbuf); 
-getVBatMoy();
-getVSolMoy();
+getVBatMoy();   // calcul moyenne de 10 lectures
+getVSolMoy();   // calcul moyenne de 10 lectures
+
  OLEDDebugDisplayReset();
+
  debugSerial.println("Start loop(); =====================================");
+
+
+buildLoraPayload();
+setupDone = true;
 }
 
 
@@ -104,7 +170,6 @@ getVSolMoy();
 void loop() 
 {  static int index=0; 
    static int counter1s=0,counter15m=0;   
-
 
 //debugSerial.println("M");
 // *** TRAITEMENT CLAVIER NON-BLOQUANT ***
@@ -122,6 +187,10 @@ debugSerial.print("2");   // 22222222222222222222222
     // Traiter la touche
     debugSerial.print("Touche pressée: ");
     debugSerial.println(keyToString(touche));
+
+static char saisieDate[20]="08/09/2025";
+
+//inputDate(saisieDate);
   }
 
 // *** APPEL OBLIGATOIRE À CHAQUE CYCLE ***
@@ -171,16 +240,16 @@ debugSerial.print("I1$");
               Data_LoRa.Solar_Voltage=getVSolMoy();
                break;
      case 3 :
-               Poids_Peson(0) = GetPoids(1); // à ranger dans Structure 
-              break;
+               Poids_Peson(0) =  GetPoids(1,1); // à ranger dans Structure 
+               break;
      case 4 :
-               Poids_Peson(1) = GetPoids(2); // à ranger dans Structure 
+               Poids_Peson(1) = GetPoids(2,1); // à ranger dans Structure 
                break;
      case 5 :
-               Poids_Peson(2) = GetPoids(3); // à ranger dans Structure 
+               Poids_Peson(2) = GetPoids(3,1); // à ranger dans Structure 
                break;
      case 6 :
-               Poids_Peson(3) = GetPoids(4); // à ranger dans Structure 
+               Poids_Peson(3) = GetPoids(4,1); // à ranger dans Structure 
               break;
      case 7 :
               readingT=getTemperature();
@@ -218,7 +287,7 @@ sprintf(serialbuf, "I2£%d ", counter15m); debugSerial.println(serialbuf);
     turnOnRedLED();     // PCB donne GREEN?
     buildLoraPayload();
 #ifdef __SendLoRa
-  sendLoRaPayload((uint8_t*)hexPayload,19);
+  sendLoRaPayload((uint8_t*)payload,19);   // hex
 #endif    
     turnOffRedLED();
     OLEDDrawScreenTime(0, 0); // Affiche Time/Date au complet
@@ -316,7 +385,7 @@ debugSerial.print("M");   // MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 
 void non_forceTestAlarm(void)
 {
-    debugSerial.println("=== TEST FORCÉ ALARME (10 SECONDES) ===");
+    debugSerial.println("=== TEST FORCE ALARME (10 SECONDES) ===");
     
     // Alarme dans 10 secondes
     DateTime testTime = rtc.now() + TimeSpan(0, 0, 0, 10);

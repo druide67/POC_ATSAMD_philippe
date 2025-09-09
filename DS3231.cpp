@@ -26,7 +26,7 @@ OLEDDebugDisplay("RTC introuvable");
       while (1) 
       {
         blinkBlueLED();
-        delay(300);
+        delay(600);
       }
     }
   }

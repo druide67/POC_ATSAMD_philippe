@@ -90,12 +90,9 @@ typedef struct
   float   Bat_Voltage;      // Tension BAT en V     xx,xx  Float (uint16_t)
   float   Solar_Voltage;    // Tension BAT en V     xx,xx  Float (uint16_t)
   float   HX711Weight[4];    // masse Ruche 1 en kg xxx,xx (précision affich. 10g)
-//  float   Temp_Peson[4];     // température peson 1 en °C xx,xx  Float
-  float   VSol[11];
-  float   VBat[11];   
-//  float   _noLux;              // VLux, ne sera pas conservé 
   float   ProcessorTemp;    // temp µC, conservé en backup DHT22 
 } LoRa_Var;
+
 
 typedef struct  
 {

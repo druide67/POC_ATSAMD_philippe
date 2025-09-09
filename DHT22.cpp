@@ -13,7 +13,7 @@
 // @brief Read temp and Humidity with DHT22                              
 // @param DHT
 // @return void
-// #define debugSerialread_DHT  // decommenter pour les messages debugSerial
+ #define debugSerialread_DHT  // decommenter pour les messages debugSerial
 // ---------------------------------------------------------------------------*
 void read_DHT(DHT dht)
 {
@@ -38,12 +38,4 @@ void read_DHT(DHT dht)
   //  float hif = dht.computeHeatIndex(DHT_f, Data_LoRa.DHT_Hum);
   // Compute heat index in Celsius (isFahreheit = false)
  // float hic = dht.computeHeatIndex(Data_LoRa.DHT_Temp, Data_LoRa.DHT_Hum, false);
-
-/*
-  debugSerial.print(F(" Humidity: "));
-  debugSerial.print(Data_LoRa.DHT_Hum);
-  debugSerial.print(F("%\n Temperature: "));
-  debugSerial.print(Data_LoRa.DHT_Temp);
-  debugSerial.println(F("°C"));
-*/
 }

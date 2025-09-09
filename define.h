@@ -101,14 +101,15 @@
 #endif
 
 #define BUFF_MAX 256
-#define BUF_LEN 128  
+#define BUF_LEN  128  
 
 
 // ===== PINS ET INTERFACES =====
-#define loraSerial Serial2 
-#define debugSerial SerialUSB
-#define SERIALBUFLEN 128
-#define DEBUG_BAUD 115200
+#define loraSerial     Serial2 
+#define debugSerial    SerialUSB
+#define SERIALBUFLEN   128
+#define OLEDBUFLEN     100 // 21
+#define DEBUG_BAUD     115200
 #define SERIAL_TIMEOUT 5000
 
 // ===== LED RGB CONFIGURATION =====

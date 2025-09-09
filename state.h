@@ -1,6 +1,11 @@
 /*
- * volatile bool alarm1_enabled = true;
 
+
+
+
+
+
+ 
 void alarm1ISR() {
     if (!alarm1_enabled) return;
     

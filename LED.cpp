@@ -12,9 +12,9 @@
  */
 void initLEDs(void) 
 {
-  pinMode(LED_RED, OUTPUT);
-  pinMode(LED_GREEN, OUTPUT);
-  pinMode(LED_BLUE, OUTPUT);
+  pinMode(LED_RED, OUTPUT);         // vert
+  pinMode(LED_GREEN, OUTPUT);       // Rouge
+  pinMode(LED_BLUE, OUTPUT);        // bleue
   pinMode(LED_BUILTIN, OUTPUT);
     
   digitalWrite(LED_RED, LED_OFF);

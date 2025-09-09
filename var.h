@@ -26,7 +26,7 @@ key_code_t touche;
   Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #endif
 
-char OLEDbuf[21] = "12345678901234567890";
+char OLEDbuf[OLEDBUFLEN] = "12345678901234567890";
 char serialbuf[SERIALBUFLEN];
 bool debugOLEDDrawText = false;
 
@@ -59,6 +59,7 @@ unsigned long lastBlink = 0;
 bool blinkState = true;
 
 // Variables config
+bool setupDone = false;
 ConfigGenerale_t config;
 
 // Variables debug
@@ -146,9 +147,9 @@ float Jauge[21][4] = {                // Tare , Echelle , TareTemp , CompTemp
       {139983,20.46,17.1,0.048341},    // J15SFX proto1 SLC 200kg (OK à 5 et 50kg)
       {123199.65,103.59,20,1},    // J16 proto1  20kg (OK à 1 et 5kg)
       {123199.65,103.59,20,2},    // J17 a refaire
-      {30804.50,103.77,20,0},    // J18 proto1  20kg (OK à 1 et 5kg)
-      {22005.70,97.49,20,0},    // J18 proto1  20kg (OK à 1 et 5kg)
-      {22005.70,97.49,20,0},    // J19
+      {34134.50,103.77,20,0},    // J18 proto1  20kg (OK à 1 et 5kg)
+      {7929.70,97.49,20,0},    // J19 proto1  20kg (OK à 1 et 5kg) + DHT22
+      {22005.70,97.49,20,0},    // J20
 };
 
 // paramètres et données des dispositif de pesée A,B,C,D
@@ -179,6 +180,9 @@ HW_equipement Ruche;
 LoRa_configuration LoRa_Config = {9,WAKEUP_INTERVAL_PAYLOAD};      /// => sous IT !!!!!
 LoRa_Var Data_LoRa;
 
+
+
+// n'est ce pas en doublon avec Data_LoRa.HX711Weight[num]
 float Contrainte_List [4] = {
          -999,  // pas de balance, Affiche "N/A"
          -999,  // pas de balance, Affiche "N/A"
@@ -262,7 +266,6 @@ extern volatile bool builtinLedActive;         // LED builtin en cours
 extern volatile unsigned long builtinLedStartTime; // Moment du démarrage
 
 
-
 // Variables pour OLED scrolling
 extern bool modeDebugActif;
 extern unsigned long delaiAffichage;
@@ -304,6 +307,7 @@ extern uint8_t *AppEUI;    // Orange : kit SodaQ RUCHE 0
 extern uint8_t *AppKey;    // Orange : kit SodaQ RUCHE 0 
 
 // Variables config
+extern bool setupDone;
 extern ConfigGenerale_t config;
 
 // Variables debug

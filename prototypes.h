@@ -32,11 +32,11 @@ uint16_t calculateChecksum(ConfigGenerale_t* cfg);
 
 // Gestion LEDs
 void initLEDs(void);        // Initialise les LEDs RGB et builtin
-void turnOnRedLED(void);    // Allume la LED rouge (vert)
-void turnOffRedLED(void);   // Éteint la LED rouge (vert)
-void blinkRedLED(void);     // Fait clignoter la LED Rouge pendant 300ms (vert)
-void turnOnGreenLED(void);  // Allume la LED verte (rouge)
-void turnOffGreenLED(void); // Éteint la LED verte (rouge)
+void turnOnRedLED(void);    // Allume la LED rouge                        (vert)
+void turnOffRedLED(void);   // Éteint la LED rouge                        (vert)
+void blinkRedLED(void);     // Fait clignoter la LED Rouge pendant 300ms  (vert)
+void turnOnGreenLED(void);  // Allume la LED verte                        (rouge)
+void turnOffGreenLED(void); // Éteint la LED verte                        (rouge)
 void blinkGreenLED(void);   // Fait clignoter la LED verte pendant 300 ms (rouge)
 void turnOnBlueLED(void);   // Allume la LED bleue
 void turnOffBlueLED(void);  // Éteint la LED bleue
@@ -163,7 +163,7 @@ void read_DHT(DHT dht);
 void take_All_Measure(void);
 // HX711
 float Set_Scale_Bal(char num, float poids_en_grammes);    // N° de jauges des balances 1 à 4
-float GetPoids(int num);    // N° de jauges des balances 1 à 4
+float GetPoids(int num,int sample);    // N° de jauges des balances 1 à 4
 
 // µC
 float getTemperature(void);

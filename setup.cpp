@@ -60,20 +60,17 @@ void initLoRa(void)
 debugSerial.println("------------------------------------------------------------------");
 debugSerial.println("INIT LoRa...");
 //  Reset_LoRa();  // initialise pas sur reset chaud.
-//  setupLoRa();
 
   if (setupLoRa())
   {
-//debugSerial.println("Reboot message SENT");
 debugSerial.println("Init LoRa done.");
 debugSerial.println("Test sending LoRa testPayload (7) (Restart)..."); 
-  sendLoRaPayload((uint8_t*)testPayload,7);
-  OLEDDebugDisplay("LoRa    Initialized");
+    sendLoRaPayload((uint8_t*)testPayload,7);
+    OLEDDebugDisplay("LoRa    Initialized");
   }
   else
   {
-//debugSerial.println("Reboot message SENT");
-  OLEDDebugDisplay("LoRa    Failed");  
+    OLEDDebugDisplay("LoRa Failed");  
   }
 
 /*

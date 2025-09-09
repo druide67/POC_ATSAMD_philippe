@@ -186,6 +186,7 @@ bool setupLoRa()
 }
 
 // ---------------------------------------------------------------------------*
+// connexion au reseau
 //  in : 
 //  out : 1 OK, 0 Echec                             
 // ---------------------------------------------------------------------------*
@@ -204,20 +205,6 @@ bool setupLoRaOTAA()
   }
 }
 
-/*
-
-
-13:58:18.326 -> The device is not connected to the network in Send_LoRa_Mess(). The program will reset the RN module...=== STATUS LoRa ===
-13:58:26.426 ->  => RN2483#04
-13:58:26.426 -> DevEUI =  0004A30B00EEA5D5
-13:58:26.426 -> AppEUI =  414245494C4C4534
-13:58:26.426 -> AppKey =  5048494C495050454C4F56454C414B4F
-13:58:26.426 -> =====================
-13:58:26.426 -> setupLoRaOTAA(), Network connection failed!
-
-
-
-*/
 // ---------------------------------------------------------------------------*
 // Construit le message HEXA                              
 // faire: 
@@ -226,73 +213,84 @@ bool setupLoRaOTAA()
 // #define PAYLOADSIZE 27
 // int payloadSize = PAYLOADSIZE; 
 // byte payload[PAYLOADSIZE];
-//
+//  => hexPayload sera envoyé???? est ce bien juste?
+// à quoi correspond payload ????
 // ---------------------------------------------------------------------------*
 void buildLoraPayload(void)
-{ // Construction hexPayload[] pour envoi LoRa : Payload + complément de '7'
-//-------------------------------------------------------
-// Build the payload
+{ int indice = 0, i;
 
-  int indice = 0;
-  int i;
+debugSerial.println("buildLoraPayload, datas:");
   
   payload[indice++] = Data_LoRa.rucher_ID;
+//debugSerial.println(Data_LoRa.rucher_ID);
+
   int temperature = (int)(Data_LoRa.DHT_Temp * 100); // We multiple the values below because we then divide them on AllThingsTalk and don't need to send floats which use more data
   payload[indice++] = ((uint8_t*)&temperature)[0];          // Temperature: Least significant byte first, little endian
   payload[indice++] = ((uint8_t*)&temperature)[1];
+//debugSerial.println(temperature);
   
-  int humidity = (int)Data_LoRa.DHT_Hum;
+  int humidity = (int)Data_LoRa.DHT_Hum * 100;
   payload[indice++] = ((uint8_t*)&humidity)[0]; // Humidity
   payload[indice++] = ((uint8_t*)&humidity)[1];
+//debugSerial.println(humidity);
+
+  sprintf(serialbuf,"Rucher: %d temp: %d, Hum.: %d",Data_LoRa.rucher_ID, temperature, humidity);
+  debugSerial.println(serialbuf);
   
   int Brightness = (int)Data_LoRa.Brightness;
   payload[indice++] = ((uint8_t*)&Brightness)[0]; // Brightness
   payload[indice++] = ((uint8_t*)&Brightness)[1];
+//debugSerial.println(Brightness);
     
   // tension moyenne des 10 dernières lectures
-  int VBat = (int)(Data_LoRa.VBat[10] * 100); // We multiple the values below because we then divide them on AllThingsTalk and don't need to send floats which use more data
+  int VBat = (int)(Data_LoRa.Bat_Voltage * 100); // We multiple the values below because we then divide them on AllThingsTalk and don't need to send floats which use more data
   payload[indice++] = ((uint8_t*)&VBat)[0];  // Battery Voltage
   payload[indice++] = ((uint8_t*)&VBat)[1];
+//debugSerial.print(VBat);
   
   // tension moyenne des 10 dernières lectures
-  int VSol = (int)(Data_LoRa.VSol[10] * 100); // We multiple the values below because we then divide them on AllThingsTalk and don't need to send floats which use more data
+  int VSol = (int)(Data_LoRa.Solar_Voltage * 100); // multiple then divide: don't need to send floats
   payload[indice++] = ((uint8_t*)&VSol)[0];  // Solar Panel Voltage
   payload[indice++] = ((uint8_t*)&VSol)[1];
+//debugSerial.println(VSol);
+
+  sprintf(serialbuf,"Lum:    %d Vbat: %d,  Vsol: %d",Brightness, VBat, VSol);
+  debugSerial.println(serialbuf);
+ 
 
   for (i = 0; i < 4; i++) 
   {
 //debugSerial.print(i);  debugSerial.print("/");debugSerial.println(indice);
-    char dummy[10];
-    int Masse = (int)(Data_LoRa.HX711Weight[i] * 100); // We multiple the values below because we then divide them on AllThingsTalk and don't need to send floats which use more data
-//debugSerial.print("IntWeigth: "); debugSerial.println(Masse);
+    int Masse = Data_LoRa.HX711Weight[i] *100; //(int)(Data_LoRa.HX711Weight[i] * 100); 
     payload[indice++] = ((uint8_t*)&Masse)[0];	// Hive1 to 4 Weigth
     payload[indice++] = ((uint8_t*)&Masse)[1];
+//debugSerial.println(Masse);
+
+  sprintf(serialbuf,"Masse%d: %d / ",i, Masse);
+  debugSerial.print(serialbuf);
   }
+debugSerial.println("");
+  
 //debugSerial.print("final i/payload[indice]"); debugSerial.print(i);  debugSerial.print("/");
 //debugSerial.println(indice);
 
+// c'est quoi la suite?
+// rappel : char hexPayload[]
 
-// rappel payloadsize = 19    //  27 -8:(DS18B20)
-// rappel hexPayloadSize = 60
   for (i = 0; i < payloadSize; i++) 
-    {
-      sprintf(&hexPayload[i * 2], "%02X.", payload[i]);  
-    }
-// remplissage Payload de '7'
-for (i = payloadSize * 2; i < hexPayloadSize; i++) 
-    {
-      hexPayload[i] = '7'; // Pad with leading zeros to reach the required nn bytes
-    }
- 
-  
+  {
+    sprintf(&hexPayload[i * 2], "%02X.", payload[i]);  // pourquoi le . dans "%02X."
+  }
+// remplissage Payload de '7'                 // 7 car visible, mettre 0 quand validé
+  for (i = payloadSize * 2; i < hexPayloadSize; i++) // complete si size HEXPAYLOAD > size Payload*2
+  {
+    hexPayload[i] = '7'; // Pad with leading zeros to reach the required nn bytes
+  }
   hexPayload[hexPayloadSize - 1] = '\0'; // Null terminate
-debugSerial.print("final hexpayload[i]"); debugSerial.println(i); 
-debugSerial.print("hexPayload: "); debugSerial.println(hexPayload);
-/*
-13:58:16.925 -> final hexpayload[i] 38
-13:58:16.925 -> hexPayload: 00AC266300000000000000000000000000000
-*/
+//debugSerial.print("final hexpayload[i]"); debugSerial.println(i); 
+debugSerial.print("hexPayload: "); debugSerial.println(hexPayload); // chaine de caractère HEXA de Payload
 }
+
 
 // ---------------------------------------------------------------------------
 // envoi toutes les IRQ2
@@ -549,7 +547,7 @@ char chardata[256]="";
   sendLoRaPayload((uint8_t *)chardata,47);
 }
 
-
+/*
 // ---------------------------------------------------------------------------*
 //                               
 // ---------------------------------------------------------------------------*
@@ -586,3 +584,4 @@ void wake_LoRa()
     LoRa_sleeps = false;
     LoRaBee.wakeUp();
 }
+*/

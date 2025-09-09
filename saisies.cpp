@@ -56,12 +56,18 @@ void inputDate(char *d)
 {
     uint8_t pos = 0;
     bool done = false;
-    
+
+  sprintf(serialbuf,"%s",d);
+  debugSerial.println(serialbuf); 
+
     while (!done) 
     {
         OLEDDisplayDate(d, pos);
-        key_code_t t = readKey();
-        
+        key_code_t t = readKeyOnce();
+
+  sprintf(serialbuf,"Touche : %s / %d", keyToString(t), pos);
+  debugSerial.println(serialbuf); 
+
         switch (t) 
         {
             case LEFT:  
