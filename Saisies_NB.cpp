@@ -27,134 +27,174 @@
 // -------------------------------------------------------------------------------------
 
 /**
- * @brief Traite la sélection dans la liste (à appeler dans loop)
- * @param void
- * @return État actuel de la sélection
- */
-listInputState_t processListInput(void)
+* @brief Initialise l'affichage de la liste au démarrage
+* @param void
+* @return void
+*/
+void initStartupList(void)
 {
-    if (listInputCtx.state != LIST_INPUT_ACTIVE)
-    {
-        return listInputCtx.state;
-    }
-    
-    // Gestion du clignotement du curseur
-    updateListInputCursorBlink();
-    
-    // Traitement des touches
-    if (touche != KEY_NONE)
-    {
-        switch (touche)
-        {
-            case LEFT:
-                       break;
-            case UP:
-                // Remonter dans la liste
-                if (listInputCtx.selectedIndex > 0)
-                {
-                    listInputCtx.selectedIndex--;
-                }
-                else
-                {
-                    listInputCtx.selectedIndex = listInputCtx.maxItems - 1; // Boucler à la fin
-                }
-                listInputCtx.displayRefresh = true;
-                debugSerial.print("Selection index: ");
-                debugSerial.print(listInputCtx.selectedIndex);
-                debugSerial.print(" - ");
-                debugSerial.println(listInputCtx.itemList[listInputCtx.selectedIndex]);
-                break;
-                
-            case RIGHT:
-                       break;
-            case DOWN:
-                // Descendre dans la liste
-                if (listInputCtx.selectedIndex < listInputCtx.maxItems - 1)
-                {
-                    listInputCtx.selectedIndex++;
-                }
-                else
-                {
-                    listInputCtx.selectedIndex = 0; // Boucler au début
-                }
-                listInputCtx.displayRefresh = true;
-                debugSerial.print("Selection index: ");
-                debugSerial.print(listInputCtx.selectedIndex);
-                debugSerial.print(" - ");
-                debugSerial.println(listInputCtx.itemList[listInputCtx.selectedIndex]);
-                break;
-                
-            case VALIDE:
-                listInputCtx.state = LIST_INPUT_COMPLETED;
-                debugSerial.print("Selection validee: ");
-                debugSerial.print(listInputCtx.selectedIndex);
-                debugSerial.print(" - ");
-                debugSerial.println(listInputCtx.itemList[listInputCtx.selectedIndex]);
-                OLEDDisplayMessageL8("Selection acceptee", false, false);
-                break;
-                
-            default:
-                break;
-        }
-        
-        // Reset de la touche après traitement
-        touche = KEY_NONE;
-    }
-    
-    // Rafraîchissement de l'affichage si nécessaire
-    if (listInputCtx.displayRefresh || (millis() - listInputCtx.lastUpdate > 100))
-    {
-        refreshListDisplay();
-        listInputCtx.displayRefresh = false;
-        listInputCtx.lastUpdate = millis();
-    }
-    
-    return listInputCtx.state;
+  // Activer la liste exempleListeValeurs au démarrage
+  startListInput("CHOIX MODE:", exempleListeValeurs, 9, 0);
+  startupListActivated = true;
+  debugSerial.println("Liste de demarrage activee");
 }
 
 /**
  * @brief Démarre la sélection dans une liste de valeurs
  * @param title Titre de la sélection à afficher
  * @param itemList Tableau de pointeurs vers les chaînes de caractères
- * @param numItems Nombre d'éléments dans la liste (maximum 6)
+ * @param numItems Nombre d'éléments dans la liste
  * @param initialIndex Index initial sélectionné
  * @return void
  */
 void startListInput(const char* title, const char** itemList, uint8_t numItems, uint8_t initialIndex)
 {
 debugSerial.print("Param : ");debugSerial.println(itemList[2]);
+  if (listInputCtx.state != LIST_INPUT_IDLE)
+  {
+    return; // Sélection déjà en cours
+  }
   
-    if (listInputCtx.state != LIST_INPUT_IDLE)
-    {
-        return; // Sélection déjà en cours
-    }
-    
-    // Validation des paramètres
-    if (numItems > 6) numItems = 6; // Limitation à 6 éléments max
-    if (initialIndex >= numItems) initialIndex = 0;
-    
-    // Initialisation du contexte
-    listInputCtx.state = LIST_INPUT_ACTIVE;
-    listInputCtx.selectedIndex = initialIndex;
-    listInputCtx.maxItems = numItems;
-    listInputCtx.itemList = itemList;
+  // Validation des paramètres
+  if (initialIndex >= numItems) initialIndex = 0;
+  
+  // Initialisation du contexte
+  listInputCtx.state = LIST_INPUT_ACTIVE;
+  listInputCtx.selectedIndex = initialIndex;
+  listInputCtx.maxItems = numItems;
+  listInputCtx.itemList = itemList;
 debugSerial.print("struct: ");debugSerial.println(listInputCtx.itemList[2]);
-    strncpy(listInputCtx.title, title, 21);
-    listInputCtx.title[20] = '\0';
-    
-    listInputCtx.displayRefresh = true;
-    listInputCtx.lastUpdate = millis();
-    listInputCtx.cursorBlink = true;
-    listInputCtx.lastBlink = millis();
-    
-    debugSerial.println("Selection dans liste demarree: ");
-//    debugSerial.println(title);
-
-debugSerialListStruct();
-
-    OLEDDisplayMessageL8("Choisissez une valeur", false, false);
+  strncpy(listInputCtx.title, title, 21);  
+  listInputCtx.title[20] = '\0';
+  
+  // Calcul du décalage initial pour centrer l'élément sélectionné
+  if (initialIndex < 3)
+  {
+    listInputCtx.scrollOffset = 0;
+  }
+  else if (initialIndex >= numItems - 3)
+  {
+    listInputCtx.scrollOffset = (numItems > 6) ? numItems - 6 : 0;
+  }
+  else
+  {
+    listInputCtx.scrollOffset = initialIndex - 3;
+  }
+  
+  listInputCtx.displayRefresh = true;
+  listInputCtx.lastUpdate = millis();
+  listInputCtx.cursorBlink = true;
+  listInputCtx.lastBlink = millis();
+  
+  debugSerial.print("Selection dans liste demarree: ");
+  debugSerial.println(title);
+  OLEDDisplayMessageL8("Choix d'une valeur", false, false);
 }
 
+/**
+ * @brief Traite la sélection dans la liste (à appeler dans loop)
+ * @param void
+ * @return État actuel de la sélection
+ */
+listInputState_t processListInput(void)
+{
+  if (listInputCtx.state != LIST_INPUT_ACTIVE)
+  {
+    return listInputCtx.state;
+  }
+  
+  // Gestion du clignotement du curseur
+  updateListInputCursorBlink();
+  
+  // Traitement des touches
+  if (touche != KEY_NONE)
+  {
+    switch (touche)
+    {
+      case LEFT:
+                  break;
+      case UP:
+        // Remonter dans la liste
+        if (listInputCtx.selectedIndex > 0)
+        {
+          listInputCtx.selectedIndex--;
+          
+          // Gestion du défilement vers le haut
+          if (listInputCtx.selectedIndex < listInputCtx.scrollOffset)
+          {
+            listInputCtx.scrollOffset = listInputCtx.selectedIndex;
+          }
+        }
+        else
+        {
+          listInputCtx.selectedIndex = listInputCtx.maxItems - 1; // Boucler à la fin
+          
+          // Ajuster le décalage pour afficher la fin de la liste
+          if (listInputCtx.maxItems > 6)
+          {
+            listInputCtx.scrollOffset = listInputCtx.maxItems - 6;
+          }
+        }
+        listInputCtx.displayRefresh = true;
+        debugSerial.print("Selection index: ");
+        debugSerial.print(listInputCtx.selectedIndex);
+        debugSerial.print(" - ");
+        debugSerial.println(listInputCtx.itemList[listInputCtx.selectedIndex]);
+        break;
+        
+      case RIGHT:
+                  break;
+      case DOWN:
+        // Descendre dans la liste
+        if (listInputCtx.selectedIndex < listInputCtx.maxItems - 1)
+        {
+          listInputCtx.selectedIndex++;
+          
+          // Gestion du défilement vers le bas
+          if (listInputCtx.selectedIndex >= listInputCtx.scrollOffset + 6)
+          {
+            listInputCtx.scrollOffset = listInputCtx.selectedIndex - 5;
+          }
+        }
+        else
+        {
+          listInputCtx.selectedIndex = 0; // Boucler au début
+          listInputCtx.scrollOffset = 0;  // Remettre au début de l'affichage
+        }
+        listInputCtx.displayRefresh = true;
+        debugSerial.print("Selection index: ");
+        debugSerial.print(listInputCtx.selectedIndex);
+        debugSerial.print(" - ");
+        debugSerial.println(listInputCtx.itemList[listInputCtx.selectedIndex]);
+        break;
+        
+      case VALIDE:
+        listInputCtx.state = LIST_INPUT_COMPLETED;
+        debugSerial.print("Selection validee: ");
+        debugSerial.print(listInputCtx.selectedIndex);
+        debugSerial.print(" - ");
+        debugSerial.println(listInputCtx.itemList[listInputCtx.selectedIndex]);
+        OLEDDisplayMessageL8("Selection acceptee", false, false);
+        break;
+        
+      default:
+        break;
+    }
+    
+    // Reset de la touche après traitement
+    touche = KEY_NONE;
+  }
+  
+  // Rafraîchissement de l'affichage si nécessaire
+  if (listInputCtx.displayRefresh || (millis() - listInputCtx.lastUpdate > 100))
+  {
+    refreshListDisplay();
+    listInputCtx.displayRefresh = false;
+    listInputCtx.lastUpdate = millis();
+  }
+  
+  return listInputCtx.state;
+}
 
 /**
  * @brief Finalise la sélection et récupère l'index choisi
@@ -163,23 +203,23 @@ debugSerialListStruct();
  */
 uint8_t finalizeListInput(void)
 {
-    uint8_t selectedIndex = 0;
+  uint8_t selectedIndex = 0;
+  
+  if (listInputCtx.state == LIST_INPUT_COMPLETED)
+  {
+    selectedIndex = listInputCtx.selectedIndex;
     
-    if (listInputCtx.state == LIST_INPUT_COMPLETED)
-    {
-        selectedIndex = listInputCtx.selectedIndex;
-        
-        // Reset du contexte
-        listInputCtx.state = LIST_INPUT_IDLE;
-        listInputCtx.selectedIndex = 0;
-        listInputCtx.maxItems = 0;
-        listInputCtx.itemList = NULL;
-        
-        debugSerial.print("Index final selectionne: ");
-        debugSerial.println(selectedIndex);
-    }
+    // Reset du contexte
+    listInputCtx.state = LIST_INPUT_IDLE;
+    listInputCtx.selectedIndex = 0;
+    listInputCtx.scrollOffset = 0;
+    listInputCtx.maxItems = 0;
+    listInputCtx.itemList = NULL;
     
-    return selectedIndex;
+    debugSerial.print("Index final selectionne: ");
+    debugSerial.println(selectedIndex);
+  }
+  return selectedIndex;
 }
 
 /**
@@ -189,12 +229,12 @@ uint8_t finalizeListInput(void)
  */
 void cancelListInput(void)
 {
-    listInputCtx.state = LIST_INPUT_CANCELLED;
-    debugSerial.println("Selection dans liste annulee");
-    OLEDDisplayMessageL8("Selection annulee", false, false);
-    
-    // Reset du contexte après un délai
-    listInputCtx.state = LIST_INPUT_IDLE;
+  listInputCtx.state = LIST_INPUT_CANCELLED;
+  debugSerial.println("Selection dans liste annulee");
+  OLEDDisplayMessageL8("Selection annulee", false, false);
+  
+  // Reset du contexte après un délai
+  listInputCtx.state = LIST_INPUT_IDLE;
 }
 
 /**
@@ -204,60 +244,64 @@ void cancelListInput(void)
  */
 bool isListInputActive(void)
 {
-    return (listInputCtx.state == LIST_INPUT_ACTIVE);
+  return (listInputCtx.state == LIST_INPUT_ACTIVE);
 }
 
 /**
- * @brief Rafraîchit l'affichage de la liste avec curseur
+ * @brief Rafraîchit l'affichage de la liste avec curseur et défilement
  * @param void
  * @return void
  */
 void refreshListDisplay(void)
 {
-    // Afficher le titre
-    OLEDDrawText(1, 0, 0, listInputCtx.title);
+  // Afficher le titre (ligne 0)
+  OLEDDrawText(1, 0, 0, listInputCtx.title);
+  
+  // Calcul du nombre d'éléments à afficher (maximum 6 lignes disponibles)
+  uint8_t displayCount = (listInputCtx.maxItems < 6) ? listInputCtx.maxItems : 6;
+  
+  // Afficher les éléments de la liste avec défilement (lignes 1 à 6)
+  for (uint8_t i = 0; i < displayCount; i++)
+  {
+    uint8_t itemIndex = listInputCtx.scrollOffset + i;
+    if (itemIndex >= listInputCtx.maxItems) break;
     
-    // Afficher les éléments de la liste
-    for (uint8_t i = 0; i < listInputCtx.maxItems && i < 6; i++) // Maximum 6 lignes affichables
+    char lineBuffer[32];
+    
+    // Préparer la ligne avec indicateur de sélection
+    if (itemIndex == listInputCtx.selectedIndex && listInputCtx.cursorBlink)
     {
-  //      char lineBuffer[32];
-        
-        // Préparer la ligne avec indicateur de sélection
-        if (i == listInputCtx.selectedIndex && listInputCtx.cursorBlink)
-        {
-            sprintf(OLEDbuf/*lineBuffer*/, "> %s", listInputCtx.itemList[i]);
-        }
-        else if (i == listInputCtx.selectedIndex)
-        {
-            sprintf(OLEDbuf/*lineBuffer*/, "  %s", listInputCtx.itemList[i]);
-        }
-        else
-        {
-            sprintf(OLEDbuf/*lineBuffer*/, "  %s", listInputCtx.itemList[i]);
-        }
-//debugSerial.println(listInputCtx.itemList[i]);
-//debugSerial.println(OLEDbuf);        
-        // Afficher la ligne
-        OLEDDrawText(1, i+1, 0, OLEDbuf/*lineBuffer*/);
+      sprintf(lineBuffer, "> %s", listInputCtx.itemList[itemIndex]);
     }
-//displayListDebug = true;
-  if (displayListDebug)                       // Afficher infos debug
-  {       
-    // Si plus de 4 éléments, afficher un indicateur de scroll
-    if (listInputCtx.maxItems > 4)
+    else if (itemIndex == listInputCtx.selectedIndex)
     {
-        char scrollInfo[16];
-        sprintf(scrollInfo, "(%d/%d)", listInputCtx.selectedIndex + 1, listInputCtx.maxItems);
-        OLEDDrawText(1, 6, 0, scrollInfo);
+      sprintf(lineBuffer, "  %s", listInputCtx.itemList[itemIndex]);
+    }
+    else
+    {
+      sprintf(lineBuffer, "  %s", listInputCtx.itemList[itemIndex]);
+    }
+//debugSerial.println(listInputCtx.itemList[i]);
+//debugSerial.println(OLEDbuf);            
+    // Afficher la ligne (lignes 1 à 6)
+    OLEDDrawText(1, i + 1, 0, lineBuffer);
+  }
+displayListDebug = true;  
+  if (displayListDebug)                       // Afficher infos debug
+  {  // Afficher l'indicateur de position si plus de 6 éléments
+    if (listInputCtx.maxItems > 6)
+    {
+      char scrollInfo[16];
+      sprintf(scrollInfo, "(%d/%d)", listInputCtx.selectedIndex + 1, listInputCtx.maxItems);
+      OLEDDrawText(1, 6, 15, scrollInfo); // Colonne 15 pour alignement à droite
     }
   }   
-// displayListDebug = false;
-
-    // Afficher les instructions en bas
-    if (listInputCtx.cursorBlink)
-    {
-        OLEDDrawText(1, 7, 0, "+/- : Nav  VALIDE : OK");
-    }
+ displayListDebug = false;  
+  // Afficher les instructions en bas (ligne 7)
+  if (listInputCtx.cursorBlink)
+  {
+    OLEDDrawText(1, 7, 0, "+/- : Nav  VALIDE : OK");
+  }
 }
 
 /**
@@ -267,13 +311,14 @@ void refreshListDisplay(void)
  */
 void updateListInputCursorBlink(void)
 {
-    if (millis() - listInputCtx.lastBlink > 500) // Clignotement toutes les 500ms
-    {
-        listInputCtx.cursorBlink = !listInputCtx.cursorBlink;
-        listInputCtx.lastBlink = millis();
-        listInputCtx.displayRefresh = true;
-    }
+  if (millis() - listInputCtx.lastBlink > 500) // Clignotement toutes les 500ms
+  {
+    listInputCtx.cursorBlink = !listInputCtx.cursorBlink;
+    listInputCtx.lastBlink = millis();
+    listInputCtx.displayRefresh = true;
+  }
 }
+
 // -------------------------------------------------------------------------------------
 // ===== FONCTIONS DE SAISIE NUMÉRIQUE =====
 // -------------------------------------------------------------------------------------

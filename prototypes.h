@@ -31,6 +31,7 @@ uint16_t calculateChecksum(ConfigGenerale_t* cfg);
 
 
 // Fonctions de sélection dans une liste
+void initStartupList(void);      // Fonction d'initialisation
 void startListInput(const char* title, const char** itemList, uint8_t numItems, uint8_t initialIndex);
 listInputState_t processListInput(void);
 uint8_t finalizeListInput(void);

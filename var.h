@@ -27,8 +27,9 @@ clavier_context_t clavierContext = {KEY_NONE, KEY_NONE, 0, 0, false};
 key_code_t touche; 
 
 // ===== VARIABLES GLOBALES MACHINE A ETAT SAISIES=====
+bool startupListActivated = false;    // Flag pour activer la liste au démarrage
 char stringSaisie[OLEDBUFLEN]="azerty";   // 128/retour de toutes les fonctions de saisie non bloquantes
-listInputContext_t listInputCtx = {LIST_INPUT_IDLE, 0, 6, false, 0, false, 0, "", NULL};
+listInputContext_t listInputCtx = {LIST_INPUT_IDLE, 0, 0, 10, false, 0, false, 0, "", NULL};
 bool displayListDebug = false;
 numberInputContext_t numberInputCtx = {NUMBER_INPUT_IDLE, 0, "", 10, false, 0, false, 0, "", false};
 bool displayNumberDebug = false;
@@ -39,16 +40,15 @@ bool displayStringDebug = false;
 
 // Exemple de liste de valeurs alphanumériques
 const char* exempleListeValeurs[] = {
-    "MODE_AUTO",
-    "MODE_MANUEL", 
-    "MODE_TEST",
-    "MODE_MAINTENANCE",
-    "MODE_CALIBRATION0",
-    "MODE_CALIBRATION1",
-    "MODE_CALIBRATION2",
-    "MODE_CALIBRATION3",
-    "MODE_CALIBRATION4",
-    "MODE_STANDBY"
+  "LISTE_MENU1 ",
+  "LISTE_MENU2 ", 
+  "LISTE_MENU3 ",
+  "LISTE_MENU4 ",
+  "LISTE_MENU5 ",
+  "LISTE_MENU6 ",
+  "LISTE_MENU7 ",
+  "LISTE_MENU8 ",
+  "MODE_STANDBY"
 };
 
 // Exemple de liste 
@@ -364,6 +364,7 @@ extern RTC_DS3231 rtc;
 extern DateTime nextPayload;
 
 // ===== VARIABLES GLOBALES MACHINE A ETAT SAISIES=====
+extern bool startupListActivated;
 extern char *stringSaisie;
 extern listInputContext_t listInputCtx;
 extern bool displayListDebug;

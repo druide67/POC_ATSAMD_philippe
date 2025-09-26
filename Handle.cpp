@@ -46,16 +46,17 @@ void handleProgrammingMode(void)
     OLEDDrawScreenTime(0,0);
 //    OLEDDrawText(1, 7, 0, "MODE PROGRAMMATION");
     switchToProgrammingMode = false;
-    } 
+  }
+
+ // Activer la liste au démarrage si pas encore fait
+  if (!startupListActivated)
+  {
+    initStartupList();
+  }
+   
 #ifdef __SerialDebugPoc    
 //debugSerial.print("P");   // PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
 #endif
-
-
-
-
-
-
 
 // ------------------------------------------------
 // Vérifier si une sélection de liste est en cours
@@ -91,8 +92,6 @@ debugSerial.println(exempleListeValeurs[selectedModeIndex]);
 
                 OLEDClear();// Effacer écran
                 OLEDDrawScreenTime(0, 0); // Affiche Time/Date au complet    
-
-                
                 break;
                 
       case LIST_INPUT_CANCELLED:
@@ -216,7 +215,7 @@ debugSerial.print("K");   // KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
         case KEY_2: // Touche 2 - Test sélection dans une liste
                     {
                         static uint8_t currentModeIndex = 0; // Index actuel (peut être sauvegardé)
-                        startListInput("CHOIX MODE:", exempleListeValeurs, 10, currentModeIndex);
+                        startListInput("CHOIX MODE:", exempleListeValeurs, 9, currentModeIndex);
                     }
                     break;
                     

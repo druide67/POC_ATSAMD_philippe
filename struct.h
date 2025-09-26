@@ -62,15 +62,16 @@ typedef struct {
  */
 typedef struct 
 {
-    listInputState_t state;     // État actuel
-    uint8_t selectedIndex;      // Index de l'élément sélectionné (0-5)
-    uint8_t maxItems;           // Nombre maximum d'éléments dans la liste
-    bool displayRefresh;        // Flag pour rafraîchir l'affichage
-    unsigned long lastUpdate;   // Dernier rafraîchissement affichage
-    bool cursorBlink;           // État du clignotement curseur
-    unsigned long lastBlink;    // Dernier clignotement
-    char title[21];             // Titre de la sélection
-    const char** itemList;      // Pointeur vers la liste des éléments
+  listInputState_t state;     // État actuel
+  uint8_t selectedIndex;      // Index de l'élément sélectionné
+  uint8_t scrollOffset;       // Décalage de défilement pour l'affichage
+  uint8_t maxItems;           // Nombre maximum d'éléments dans la liste
+  bool displayRefresh;        // Flag pour rafraîchir l'affichage
+  unsigned long lastUpdate;   // Dernier rafraîchissement affichage
+  bool cursorBlink;           // État du clignotement curseur
+  unsigned long lastBlink;    // Dernier clignotement
+  char title[21];             // Titre de la sélection
+  const char** itemList;      // Pointeur vers la liste des éléments
 } listInputContext_t;
 
 /**
