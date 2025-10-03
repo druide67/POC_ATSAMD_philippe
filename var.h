@@ -1,3 +1,6 @@
+#include ".\Menu.h"
+
+
 #ifdef __MAIN__
 
 // Cas typiques nécessitant volatile
@@ -11,11 +14,13 @@
 bool DEBUG_WAKEUP_PAYLOAD = true;    // Activer/désactiver réveil payload
 //bool DEBUG_WAKEUP_PAYLOAD = false;    // Activer/désactiver réveil payload
 
-//bool DEBUG_INTERVAL_1SEC = true;     // Activer/désactiver réveil 1 seconde
-bool DEBUG_INTERVAL_1SEC = false;     // Activer/désactiver réveil 1 seconde
+bool DEBUG_INTERVAL_1SEC = true;     // Activer/désactiver réveil 1 seconde
+//bool DEBUG_INTERVAL_1SEC = false;     // Activer/désactiver réveil 1 seconde
 
 //bool DEBUG_LOW_POWER = true;         // Activer/désactiver basse consommation
 bool DEBUG_LOW_POWER = false;         // Activer/désactiver basse consommation
+
+unsigned long loopWDT = 0;
 
 
 // ===== VARIABLES GLOBALES =====
@@ -32,52 +37,32 @@ uint8_t currentMenuDepth = 0;
 
 
 // ===== VARIABLES GLOBALES MACHINE A ETAT SAISIES=====
+// Contexte de Listes et menus
 bool startupListActivated = false;    // Flag pour activer la liste au démarrage
 char stringSaisie[OLEDBUFLEN]="azerty";   // 128/retour de toutes les fonctions de saisie non bloquantes
 //listInputContext_t listInputCtx = {LIST_INPUT_IDLE, 0, 0, 10, false, 0, false, 0, 0, 0, "", NULL};
 bool displayListDebug = false;
 
 listInputContext_t listInputCtx = {LIST_INPUT_IDLE, 0, 0, 10, 0, 0, false, false, 0, false, 0, 0, 0, "", NULL};
-
+// Contexte de saisie Numérique
 numberInputContext_t numberInputCtx = {NUMBER_INPUT_IDLE, 0, "", 10, false, 0, false, 0, "", false};
 bool displayNumberDebug = false;
+// Contexte de saisie Alphanumérique
 stringInputContext_t stringInputCtx = {STRING_INPUT_IDLE, 0, "", 20, false, 0, false, 0, ""};
 bool displayStringDebug = false;
+// Contexte de saisie HEXA
+hexInputContext_t hexInputCtx = {HEX_INPUT_IDLE, 0, 0xFF, "", "", false, 0, false, false, 0, 0, 0xFF, 16, 0, 30000, false, true,0xFFFFFFFF};
+// Contexte de saisie d'heure
+timeInputContext_t timeInputCtx = {TIME_INPUT_IDLE, 0, 0xFF, "", "", false, 0, false, false, 0, 0, 30000, false, true};
+// Contexte de saisie de date
+dateInputContext_t dateInputCtx = {DATE_INPUT_IDLE, 0, 0xFF, "", "", false, 0, false, false, 0, 0, 30000, false, true};
+
+
+
 
 // État de l'écran d'information
 infoScreenState_t infoScreenState = INFO_SCREEN_IDLE;
-
-
-// Exemple de liste de valeurs alphanumériques
-// Définition des menus
-const char* menu000Demarrage[] = {
-  "LISTE_MENU0       ",    // 0 : Libre
-  "Page INFOS     (P)",    // 1 : Infos produit => OLEDdisplayInfoScreen();
-  "CONFIG. SYSTEME(F)",    // 2 : Date, Time, N° LoRa
-  "CONNEX. RESEAU (F)",    // 3 : Lora: DevEUI, AppEUI, SF, Délai Payload
-  "CALIB. Volt (M040)",    // 4 : VBat, Vsol, Lum => menu040CalibTensions
-  "CALIB. BALANCES(F)",    // 5 : Bal1, Bal2, Bal3, Bal4    puis sous menu ou fonction Tare, Echelle, Comp T° par Bal
-  "SAISIE DATE    (S)",    // 6 : test rapide date
-  "SAISIE HEURE   (S)",    // 7 : Test rapide Time
-  "LISTE_MENU8    (F)"     // 8 : Libre
-};
-
-const char* menu040CalibTensions[] = {
-  "Calib. VBAT    (F)",      // Mise à Echelle VBat
-  "Calib. VSOL    (F)",      // Mise à Echelle VSol
-  "Calib. LUM     (F)",      // Mise à Echelle VLum
-  "Reserve     (M043)",    // Libre
-  "RET  popMenu(M000)"     // Rertour menu principal
-};
-
-
-const char* menu043Reserve040[] = {
-  "menu043-0       (F)",      // Mise à Echelle VBat
-  "menu043-1       (F)",      // Mise à Echelle VSol
-  "menu043-2       (F)",      // Mise à Echelle VLum
-  "menu043-3       (F)",    // Libre
-  "RET   popMenu(M040)"     // Rertour menu principal
-};
+bool infoScreenRefreshTime = false;
 
 // Exemple de liste 
 /*
@@ -351,6 +336,8 @@ extern bool DEBUG_INTERVAL_1SEC;     // Activer/désactiver réveil 1 seconde
 extern bool DEBUG_LOW_POWER;         // Activer/désactiver basse consommation
 extern bool OLED;                    // Activer/désactiver OLED
 
+extern unsigned long loopWDT;
+
 // Variables pour gestion des interruptions
 extern volatile bool alarm1_enabled;
 extern volatile bool wakeupPayload;
@@ -404,22 +391,13 @@ extern numberInputContext_t numberInputCtx;
 extern bool displayNumberDebug;
 extern stringInputContext_t stringInputCtx;
 extern bool displayStringDebug;
+extern hexInputContext_t hexInputCtx;
+extern timeInputContext_t timeInputCtx;
+extern dateInputContext_t dateInputCtx;     // Contexte de saisie de date
 
 // État de l'écran d'information
 extern infoScreenState_t infoScreenState;
-
-// Exemple de liste de valeurs alphanumériques
-extern const char* menu000Demarrage[];
-extern const char* menu040CalibTensions[];
-extern const char* menu043Reserve040[];
-
-// Exemple de Menus
-/*
-extern const char* menu00ListeValeurs[];
-extern const char* menu0ListeValeurs[];
-extern const char* menu11ListeValeurs[];
-extern const char* menu21ListeValeurs[];
-*/
+extern bool infoScreenRefreshTime;
 
 #ifdef OLED096
   extern Adafruit_SSD1306 display; //(OLED_RESET);

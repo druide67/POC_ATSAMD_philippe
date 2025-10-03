@@ -188,7 +188,7 @@ void debugSerialTestConnexionDS3231(void)
  */
 void debugSerialPrintTimeComparison(void)
 {
-    DateTime systemTime = getSystemTime();
+    DateTime systemTime = rtc.now();
     DateTime rtcTime = rtc.now();
     debugSerial.println();
     debugSerial.println("=== COMPARAISON DES HORLOGES ===");
@@ -223,7 +223,7 @@ void debugSerialPrintTimeComparison(void)
  */
 void debugSerialPrintTime(void)
 {
-    DateTime systemTime = getSystemTime();
+    DateTime systemTime = rtc.now();
     debugSerial.println();
     debugSerial.println("=== HEURE SYSTÈME ===");
     
@@ -315,7 +315,7 @@ void debugSerialPrintHEXA(char *txt, char len)
 
 
 void debugSerialPrintReprogNextAlarm(int IRQ)  
-{ DateTime systemTime = getSystemTime();
+{ DateTime systemTime = rtc.now();
   
   sprintf(serialbuf,"\nIRQ%d Reprogrammée à %02d:%02d:%02d",
           IRQ, systemTime.hour(),systemTime.minute(),systemTime.second());

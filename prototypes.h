@@ -9,7 +9,7 @@ void DHTInit(void);
 // ===== PROTOTYPES DE FONCTIONS DE POC_ATSAMD.INO=====
 // DS3231, gestion RTC et temps
 void initRTC(void);                       // Initialise le module RTC DS3231
-DateTime getSystemTime(void);             // Retourne l'heure système actuelle
+//DateTime getSystemTime(void);             // Retourne l'heure système actuelle
 void DS3231setRTCAlarm1(void);                  // Configure alarme 1 du RTC
 void DS3231setRTCAlarm2(void);                  // Configure alarme 2 du RTC
 void clearRTCAlarms(void);                // Efface les alarmes du RTC
@@ -34,6 +34,12 @@ uint16_t calculateChecksum(ConfigGenerale_t* cfg);
 void pushMenu(const char* title, const char** menuList, uint8_t menuSize, uint8_t initialIndex);
 void popMenu(void);
 void processMenuSelection(uint8_t selectedIndex);
+
+void menu000_F6_GetDate(void);
+
+void menu000_F7_GetTime(void);
+void menu000_F7_GetTimeDone(void);
+
 
 // Fonctions de gestion des ecrans infos
 void displayInfoScreen(void);
@@ -81,16 +87,50 @@ void updateStringInputCursorBlink(void);
 char getNextAlphaNumChar(char current, int delta);
 void modifyStringChar(char* str, uint8_t pos, int delta);
 
-// Fonctions de saisie (à importer dans le projet)
-// Fonctions de saisie Date
-void startDateInput(const char* initialDate);
-// WithTimeout
-//void startDateInputWithTimeout(const char* title, const char* initialNumber, unsigned long timeoutMs);
+// Fonctions de saisie hexadécimale
+void startHexInput(const char* initialHex);
+hexInputState_t processHexInput(void);
+void finalizeHexInput(char* outputHex);
+void cancelHexInput(void);
+bool isHexInputActive(void);
+void refreshHexDisplay(void);
+void updateHexInputCursorBlink(void);
+void updateHexDisplayOffset(void);
+bool isHexStringValid(const char *hex);
+void modifyHexDigit(char *hex, uint8_t pos, int delta);
+char getNextHexChar(char current, int delta);
+
+
+
 
 // Fonctions de saisie Time
 void startTimeInput(const char* initialTime);
-// WithTimeout
-//void startTimeInputWithTimeout(const char* title, const char* initialNumber, unsigned long timeoutMs);
+timeInputState_t processTimeInput(void);
+void finalizeTimeInput(char* outputTime);
+void cancelTimeInput(void);
+bool isTimeInputActive(void);
+void refreshTimeDisplay(void);
+void updateTimeInputCursorBlink(void);
+uint8_t getNextValidTimePosition(uint8_t currentPos, bool forward);
+bool isTimeValid(const char *t);
+void modifyTimeDigit(char *t, uint8_t pos, int delta);
+
+
+// Fonctions de saisie (à importer dans le projet)
+// Fonctions de saisie Date
+
+// Fonctions de saisie de date
+void startDateInput(const char* initialDate);
+dateInputState_t processDateInput(void);
+void finalizeDateInput(char* outputDate);
+void cancelDateInput(void);
+bool isDateInputActive(void);
+void refreshDateDisplay(void);
+void updateDateInputCursorBlink(void);
+uint8_t getNextValidDatePosition(uint8_t currentPos, bool forward);
+bool isDateValid(const char *d);
+void modifyDateDigit(char *d, uint8_t pos, int delta);
+
 
 // Fonctions de saisie HEX
 // HEXA

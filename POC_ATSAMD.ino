@@ -240,7 +240,7 @@ debugSerial.print("3");   // 333333333333333333333333333
     handleProgrammingMode();  // faire gestion Clavier et actions associées
   }
 
-  
+      loopWDT  = millis();
 #ifdef __SerialDebugPoc  
 debugSerial.print("4");   // 444444444444444444444444444444
 #endif
@@ -254,13 +254,16 @@ static unsigned long noIRQSecLast=0;
       wakeup1Sec = true;
     }
 }
-
-
+// ------------------------------------------------------------
+// ISR1
+// ------------------------------------------------------------
   if (wakeup1Sec) // && !modeExploitation)                  // màj heure, blink LED
   {    
-#ifdef __SerialDebugPoc     
-debugSerial.print("I1$");   //   I1$ I1$ I1$ I1$ I1$ I1$ I1$ I1$
-#endif
+    loopWDT  = millis();
+//#ifdef __SerialDebugPoc     
+debugSerial.print("I1$ ");   //   I1$ I1$ I1$ I1$ I1$ I1$ I1$ I1$
+debugSerial.println(loopWDT);
+//#endif
     wakeup1Sec = false;   
     counter1s++;
     if (!(counter1s %60)) 
@@ -316,11 +319,16 @@ debugSerial.print("I1$");   //   I1$ I1$ I1$ I1$ I1$ I1$ I1$ I1$
 #endif 
     config.applicatif.blueLedDuration = 100;  // Clignotement Blue = 100 ms
     LEDStartBlue();                           //Clignotement 100ms
-//    OLEDDrawScreenRefreshTime(0, 0); // partial refresh Time/Date every second
+// si Affichage menu "INFOS" 
+    if (infoScreenRefreshTime)
+      OLEDDrawScreenRefreshTime(1, 0); // partial refresh Time/Date every second
   }
 #ifdef __SerialDebugPoc  
 debugSerial.print("6");   // 666666666666666666666666666666666666666666666
 #endif
+// ------------------------------------------------------------
+// ISR2
+// ------------------------------------------------------------
   if (wakeupPayload)                                    // Envoi LoRa, LED Activité LoRa
   {
     wakeupPayload = false;
@@ -335,35 +343,16 @@ debugSerial.println(serialbuf);
   sendLoRaPayload((uint8_t*)payload,19);   // hex
 #endif    
     turnOffRedLED();
-    OLEDDrawScreenTime(0, 0); // Affiche Time/Date au complet
+//    OLEDDrawScreenTime(0, 0); // Affiche Time/Date au complet
 debugSerial.println("Fin Payload, Reactive IRQ1");    
     alarm1_enabled = true;   // Réactiver alarme 1 
 #ifdef __SerialDebugPoc  
 debugSerial.print("7");   // 777777777777777777777777777777777777
 #endif
-
-//tentative d'appel partout pour saisie d'une variable.... bloque, voir pourquoi
-/*
-startStringInput("SAISIE TEXTE:", Data_LoRa.RucherName, 20);
-*/
   }
 #ifdef __SerialDebugPoc    
 debugSerial.print("8");   // 888888888888888888888888888888888888
 #endif
-// lire une grandeur à chaque seconde 
-// 00 :  Rafraichir OLED
-// 01 :  read_DHT(dht);  // Reading temperature or humidity takes about 250 milliseconds!
-// 02 :  LDR, VBat, VSol   // lectures ANA (une seule lecture, moyenne calculée quand nécéssaire).
-// 03 :  Poids Balance 1
-// 04 :  Poids Balance 2
-// 05 :  Poids Balance 3
-// 06 :  Poids Balance 4
-// 07 :  Température µC
-// 08 : 
-// 09 : '.' sur OLED
-// rafraichir horloge à chaque seconde
-// Flash LED 100 ms
-
   
 // Entrée en veille si activée
   if (DEBUG_LOW_POWER && modeExploitation) // pas de low power en config

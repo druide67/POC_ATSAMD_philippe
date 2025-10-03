@@ -1199,19 +1199,1343 @@ void modifyStringChar(char* str, uint8_t pos, int delta)
   debugSerial.println("'");
 }
 
+// -------------------------------------------------------------------------------------
+// ===== FONCTIONS DE SAISIE HEXA =====
+// -------------------------------------------------------------------------------------
+/**
+ * @brief Vérifie si une chaîne hexadécimale est valide
+ * @param hex Chaîne de caractères hexadécimale (40 caractères)
+ * @return bool True si la chaîne est valide
+ */
+bool isHexStringValid(const char *hex) 
+{
+  if (strlen(hex) != 40) return false;
+  
+  for (int i = 0; i < 40; i++)
+  {
+    char c = hex[i];
+    if (!((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f')))
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * @brief Obtient le caractère hexadécimal suivant/précédent
+ * @param current Caractère actuel
+ * @param delta Direction (+1 ou -1)
+ * @return Nouveau caractère hexadécimal
+ */
+char getNextHexChar(char current, int delta)
+{
+  const char hexChars[] = "0123456789ABCDEF";
+  const int numChars = 16;
+  
+  // Trouver l'index du caractère actuel
+  int currentIndex = -1;
+  char upperCurrent = toupper(current);
+  
+  for (int i = 0; i < numChars; i++)
+  {
+    if (hexChars[i] == upperCurrent)
+    {
+      currentIndex = i;
+      break;
+    }
+  }
+  
+  if (currentIndex == -1) return '0'; // Caractère invalide, retourner '0'
+  
+  // Calculer le nouvel index avec bouclage
+  int newIndex = currentIndex + delta;
+  if (newIndex < 0) newIndex = numChars - 1;
+  if (newIndex >= numChars) newIndex = 0;
+  
+  return hexChars[newIndex];
+}
+
+/**
+ * @brief Démarre la saisie hexadécimale non-bloquante
+ * @param initialHex Chaîne hexadécimale initiale (40 caractères)
+ * @return void
+ */
+void startHexInput(const char* initialHex)
+{
+  if (hexInputCtx.state != HEX_INPUT_IDLE)
+  {
+    return; // Saisie déjà en cours
+  }
+  
+  // Initialisation du contexte
+  hexInputCtx.state = HEX_INPUT_ACTIVE;
+  hexInputCtx.position = 0;
+  hexInputCtx.lastPosition = 0xFF;
+  hexInputCtx.displayOffset = 0;
+  hexInputCtx.lastDisplayOffset = 0xFF;
+  hexInputCtx.displayWidth = 16; // 16 caractères visibles sur l'écran
+  hexInputCtx.firstDisplay = true;
+  hexInputCtx.lastValidity = false;
+  hexInputCtx.lastCursorBlink = false;
+  hexInputCtx.lastDisplayedTimeout = 0xFFFFFFFF;
+  
+  // Copier la chaîne initiale ou créer une chaîne par défaut
+  if (initialHex && strlen(initialHex) == 40)
+  {
+    strncpy(hexInputCtx.workingHex, initialHex, 40);
+  }
+  else
+  {
+    // Chaîne par défaut (tous des '0')
+    for (int i = 0; i < 40; i++)
+    {
+      hexInputCtx.workingHex[i] = '0';
+    }
+  }
+  hexInputCtx.workingHex[40] = '\0';
+  
+  // Initialiser lastDisplayedHex
+  memset(hexInputCtx.lastDisplayedHex, 0, 17);
+  
+  hexInputCtx.displayRefresh = true;
+  hexInputCtx.lastUpdate = millis();
+  hexInputCtx.cursorBlink = true;
+  hexInputCtx.lastBlink = millis();
+  hexInputCtx.lastActivity = millis();      // Initialiser le timer d'activité
+  hexInputCtx.timeoutDuration = 30000;      // 30 secondes de timeout
+  
+  debugSerial.println("Saisie hexadecimale demarree");
+  OLEDClear(); // Effacer l'écran une seule fois au début
+  OLEDDisplayMessageL8("Modifiez la cle hexa", false, false);
+  delay(1000); // Laisser le message visible
+  OLEDClear();
+}
+
+/**
+ * @brief Met à jour le décalage d'affichage selon la position du curseur
+ * @param void
+ * @return void
+ */
+void updateHexDisplayOffset(void)
+{
+  // Centrer l'affichage sur la position du curseur
+  int idealOffset = hexInputCtx.position - (hexInputCtx.displayWidth / 2);
+  
+  // Limiter les bornes
+  if (idealOffset < 0) idealOffset = 0;
+  if (idealOffset > (40 - hexInputCtx.displayWidth)) idealOffset = 40 - hexInputCtx.displayWidth;
+  
+  if (hexInputCtx.displayOffset != idealOffset)
+  {
+    hexInputCtx.displayOffset = idealOffset;
+    hexInputCtx.displayRefresh = true;
+  }
+}
+
+/**
+ * @brief Traite la saisie hexadécimale (à appeler dans loop)
+ * @param void
+ * @return État actuel de la saisie
+ */
+hexInputState_t processHexInput(void)
+{
+  if (hexInputCtx.state != HEX_INPUT_ACTIVE)
+  {
+    return hexInputCtx.state;
+  }
+  
+  // Gestion du clignotement du curseur
+  updateHexInputCursorBlink();
+  
+  // Vérification du timeout
+  if (hexInputCtx.timeoutDuration > 0 && 
+      (millis() - hexInputCtx.lastActivity > hexInputCtx.timeoutDuration))
+  {
+    hexInputCtx.state = HEX_INPUT_CANCELLED;
+    debugSerial.println("Saisie hexadecimale annulee par timeout");
+    OLEDDisplayMessageL8("Timeout", false, false);
+    return hexInputCtx.state;
+  }
+  
+  // Traitement des touches
+  if (touche != KEY_NONE)
+  {
+    // Réinitialiser le timer d'activité à chaque action utilisateur
+    hexInputCtx.lastActivity = millis();
+    
+    switch (touche)
+    {
+      case LEFT:
+        if (hexInputCtx.position > 0)
+        {
+          hexInputCtx.position--;
+          updateHexDisplayOffset();
+          hexInputCtx.displayRefresh = true;
+          debugSerial.print("Position curseur hex: ");
+          debugSerial.println(hexInputCtx.position);
+        }
+        break;
+        
+      case RIGHT:
+        if (hexInputCtx.position < 39)
+        {
+          hexInputCtx.position++;
+          updateHexDisplayOffset();
+          hexInputCtx.displayRefresh = true;
+          debugSerial.print("Position curseur hex: ");
+          debugSerial.println(hexInputCtx.position);
+        }
+        break;
+        
+      case PLUS:
+        modifyHexDigit(hexInputCtx.workingHex, hexInputCtx.position, +1);
+        hexInputCtx.displayRefresh = true;
+        break;
+        
+      case MOINS:
+        modifyHexDigit(hexInputCtx.workingHex, hexInputCtx.position, -1);
+        hexInputCtx.displayRefresh = true;
+        break;
+        
+      case VALIDE:
+        if (isHexStringValid(hexInputCtx.workingHex))
+        {
+          hexInputCtx.state = HEX_INPUT_COMPLETED;
+          debugSerial.println("Chaine hexadecimale validee");
+          OLEDDisplayMessageL8("Cle hexa acceptee", false, false);
+        }
+        else
+        {
+          debugSerial.println("Chaine hexadecimale invalide");
+          OLEDDisplayMessageL8("Cle hexa invalide !", false, false);
+        }
+        break;
+        
+      default:
+        break;
+    }
+    
+    // Reset de la touche après traitement
+    touche = KEY_NONE;
+  }
+  
+  // Rafraîchissement de l'affichage UNIQUEMENT si nécessaire
+  if (hexInputCtx.displayRefresh)
+  {
+    refreshHexDisplay();
+    hexInputCtx.displayRefresh = false;
+    hexInputCtx.lastUpdate = millis();
+  }
+  
+  return hexInputCtx.state;
+}
+
+/**
+ * @brief Finalise la saisie et récupère la chaîne hexadécimale
+ * @param outputHex Buffer pour stocker la chaîne finale (41 chars minimum)
+ * @return void
+ */
+void finalizeHexInput(char* outputHex)
+{
+  if (hexInputCtx.state == HEX_INPUT_COMPLETED)
+  {
+    strncpy(outputHex, hexInputCtx.workingHex, 40);
+    outputHex[40] = '\0';
+    
+    // Reset du contexte
+    hexInputCtx.state = HEX_INPUT_IDLE;
+    hexInputCtx.position = 0;
+    hexInputCtx.displayOffset = 0;
+    hexInputCtx.firstDisplay = true;
+    
+    debugSerial.print("Chaine hexadecimale finale: ");
+    debugSerial.println(outputHex);
+  }
+}
+
+/**
+ * @brief Annule la saisie hexadécimale
+ * @param void
+ * @return void
+ */
+void cancelHexInput(void)
+{
+  hexInputCtx.state = HEX_INPUT_CANCELLED;
+  debugSerial.println("Saisie hexadecimale annulee");
+  OLEDDisplayMessageL8("Saisie annulee", false, false);
+  
+  // Reset du contexte après un délai
+  hexInputCtx.state = HEX_INPUT_IDLE;
+  hexInputCtx.firstDisplay = true;
+}
+
+/**
+ * @brief Vérifie si une saisie hexadécimale est en cours
+ * @param void
+ * @return true si saisie active
+ */
+bool isHexInputActive(void)
+{
+  return (hexInputCtx.state == HEX_INPUT_ACTIVE);
+}
+
+/**
+ * @brief Rafraîchit l'affichage de la chaîne hexadécimale avec curseur
+ *        VERSION OPTIMISÉE : ne redessine QUE ce qui a changé
+ * @param void
+ * @return void
+ */
+void refreshHexDisplay(void)
+{
+  // 1. Afficher le titre UNIQUEMENT au premier affichage
+  if (hexInputCtx.firstDisplay)
+  {
+    OLEDDrawText(0, 0, 0, "CLE HEXADECIMALE:");
+    hexInputCtx.firstDisplay = false;
+  }
+  
+  // 2. Préparer la portion visible de la chaîne
+  char displayBuffer[17];
+  strncpy(displayBuffer, &hexInputCtx.workingHex[hexInputCtx.displayOffset], 16);
+  displayBuffer[16] = '\0';
+  
+  // Afficher UNIQUEMENT si la portion visible a changé OU si le décalage a changé
+  if (strcmp(displayBuffer, hexInputCtx.lastDisplayedHex) != 0 || 
+      hexInputCtx.displayOffset != hexInputCtx.lastDisplayOffset)
+  {
+    OLEDDrawText(1, 0, 0, displayBuffer);
+    strncpy(hexInputCtx.lastDisplayedHex, displayBuffer, 17);
+    hexInputCtx.lastDisplayOffset = hexInputCtx.displayOffset;
+  }
+  
+  // 3. Gérer le curseur et les infos UNIQUEMENT si l'état a changé
+  if (hexInputCtx.cursorBlink != hexInputCtx.lastCursorBlink ||
+      hexInputCtx.position != hexInputCtx.lastPosition ||
+      hexInputCtx.displayOffset != hexInputCtx.lastDisplayOffset)
+  {
+    int relativePos = hexInputCtx.position - hexInputCtx.displayOffset;
+    
+    if (hexInputCtx.cursorBlink && relativePos >= 0 && relativePos < 16)
+    {
+      // Afficher le curseur
+      char underline[17] = "                ";
+      underline[relativePos] = '^';
+      underline[16] = '\0';
+      OLEDDrawText(2, 0, 0, underline);
+      
+      // Afficher la position absolue
+      char posInfo[20];
+      sprintf(posInfo, "Pos: %02d/40", hexInputCtx.position + 1);
+      OLEDDrawText(3, 0, 0, posInfo);
+      
+      // Afficher les informations de scroll si nécessaire
+      if (hexInputCtx.displayOffset > 0 || hexInputCtx.displayOffset < (40 - 16))
+      {
+        char scrollInfo[20];
+        sprintf(scrollInfo, "<%02d-%02d>", 
+                hexInputCtx.displayOffset + 1, 
+                hexInputCtx.displayOffset + 16);
+        OLEDDrawText(3, 80, 0, scrollInfo);
+      }
+      else
+      {
+        OLEDDrawText(3, 80, 0, "        "); // Effacer l'info de scroll
+      }
+    }
+    else
+    {
+      // Effacer le curseur
+      OLEDDrawText(2, 0, 0, "                ");
+      
+      // Afficher le statut de validité UNIQUEMENT si changé
+      bool isValid = isHexStringValid(hexInputCtx.workingHex);
+      if (isValid != hexInputCtx.lastValidity || hexInputCtx.cursorBlink != hexInputCtx.lastCursorBlink)
+      {
+        if (isValid)
+        {
+          OLEDDrawText(3, 0, 0, "Cle valide      ");
+        }
+        else
+        {
+          OLEDDrawText(3, 0, 0, "Cle invalide    ");
+        }
+        hexInputCtx.lastValidity = isValid;
+      }
+    }
+    
+    hexInputCtx.lastCursorBlink = hexInputCtx.cursorBlink;
+    hexInputCtx.lastPosition = hexInputCtx.position;
+  }
+  
+  // 4. Gérer le timeout UNIQUEMENT si nécessaire
+  if (hexInputCtx.timeoutDuration > 0)
+  {
+    unsigned long remainingTime = (hexInputCtx.timeoutDuration - (millis() - hexInputCtx.lastActivity)) / 1000;
+    
+    if (remainingTime <= 5) 
+    {
+      // Afficher les 5 dernières secondes UNIQUEMENT si changé
+      if (remainingTime != hexInputCtx.lastDisplayedTimeout)
+      {
+        char timeoutMsg[21];
+        snprintf(timeoutMsg, 21, "Timeout: %lds       ", remainingTime);
+        OLEDDrawText(4, 0, 0, timeoutMsg);
+        hexInputCtx.lastDisplayedTimeout = remainingTime;
+      }
+    }
+    else if (hexInputCtx.lastDisplayedTimeout <= 5)
+    {
+      // Revenir à l'affichage normal
+      if (hexInputCtx.cursorBlink)
+      {
+        OLEDDrawText(4, 0, 0, "+/- Modif VALIDE OK ");
+      }
+      else
+      {
+        OLEDDrawText(4, 0, 0, "                    ");
+      }
+      hexInputCtx.lastDisplayedTimeout = 0xFFFFFFFF;
+    }
+  }
+}
+
+/**
+ * @brief Gère le clignotement du curseur pour l'hexadécimal
+ * @param void
+ * @return void
+ */
+void updateHexInputCursorBlink(void)
+{
+  if (millis() - hexInputCtx.lastBlink > 500) // Clignotement toutes les 500ms
+  {
+    hexInputCtx.cursorBlink = !hexInputCtx.cursorBlink;
+    hexInputCtx.lastBlink = millis();
+    hexInputCtx.displayRefresh = true;
+  }
+}
+
+/**
+ * @brief Modifie un caractère hexadécimal
+ * @param hex Chaîne de caractères hexadécimale
+ * @param pos Position du caractère à modifier (0-39)
+ * @param delta Valeur à ajouter (+1 ou -1)
+ * @return void
+ */
+void modifyHexDigit(char *hex, uint8_t pos, int delta) 
+{
+  if (pos >= 40)
+  {
+    return;
+  }
+  
+  hex[pos] = getNextHexChar(hex[pos], delta);
+  
+  debugSerial.print("Position hex ");
+  debugSerial.print(pos);
+  debugSerial.print(" modifiee: ");
+  debugSerial.println(hex[pos]);
+}
+
+
+
 
 
 // -------------------------------------------------------------------------------------
 // ===== FONCTIONS DE SAISIE TIME =====
 // -------------------------------------------------------------------------------------
 
+/**
+ * @brief Vérifie si une heure est valide
+ * @param t Chaîne de caractères représentant l'heure (format HH:MM:SS)
+ * @return bool True si l'heure est valide
+ */
+bool isTimeValid(const char *t) 
+{
+  if (strlen(t) != 8) return false;
+  if (t[2] != ':' || t[5] != ':') return false;
+  
+  int hh = (t[0]-'0')*10 + (t[1]-'0');
+  int mm = (t[3]-'0')*10 + (t[4]-'0');
+  int ss = (t[6]-'0')*10 + (t[7]-'0');
+  
+  return (hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59 && ss >= 0 && ss <= 59);
+}
+
+/**
+ * @brief Démarre la saisie d'heure non-bloquante avec timeout
+ * @param initialTime Heure initiale au format "HH:MM:SS"
+ * @return void
+ */
+void startTimeInput(const char* initialTime)
+{
+  if (timeInputCtx.state != TIME_INPUT_IDLE)
+  {
+    return; // Saisie déjà en cours
+  }
+  
+  // Initialisation du contexte
+  timeInputCtx.state = TIME_INPUT_ACTIVE;
+  timeInputCtx.position = 0;
+  timeInputCtx.lastPosition = 0xFF;
+  strncpy(timeInputCtx.workingTime, initialTime, 8);
+  timeInputCtx.workingTime[8] = '\0';
+  strcpy(timeInputCtx.lastDisplayedTime, "");
+  timeInputCtx.displayRefresh = true;
+  timeInputCtx.lastUpdate = millis();
+  timeInputCtx.cursorBlink = true;
+  timeInputCtx.lastCursorBlink = false;
+  timeInputCtx.lastBlink = millis();
+  timeInputCtx.lastActivity = millis();
+  timeInputCtx.timeoutDuration = 30000; // 30 secondes
+  timeInputCtx.lastValidity = false;
+  timeInputCtx.firstDisplay = true;
+  
+  debugSerial.println("Saisie d'heure demarree");
+  OLEDDisplayMessageL8("Modifiez l'heure", false, false);
+}
+
+/**
+ * @brief Traite la saisie d'heure (à appeler dans loop)
+ * @param void
+ * @return État actuel de la saisie
+ */
+timeInputState_t processTimeInput(void)
+{
+  if (timeInputCtx.state != TIME_INPUT_ACTIVE)
+  {
+    return timeInputCtx.state;
+  }
+  
+  // Gestion du clignotement du curseur
+  updateTimeInputCursorBlink();
+  
+  // Vérification du timeout
+  if (timeInputCtx.timeoutDuration > 0 && (millis() - timeInputCtx.lastActivity > timeInputCtx.timeoutDuration))
+  {
+    timeInputCtx.state = TIME_INPUT_CANCELLED;
+    debugSerial.println("Saisie heure annulee par timeout");
+    OLEDDisplayMessageL8("Timeout", false, false);
+    return timeInputCtx.state;
+  }
+  
+  // Traitement des touches
+  if (touche != KEY_NONE)
+  {
+    // Réinitialiser le timer d'activité à chaque action utilisateur
+    timeInputCtx.lastActivity = millis();
+    
+    switch (touche)
+    {
+      case LEFT:
+        {
+          uint8_t newPos = getNextValidTimePosition(timeInputCtx.position, false);
+          if (newPos != timeInputCtx.position)
+          {
+            timeInputCtx.position = newPos;
+            timeInputCtx.displayRefresh = true;
+            debugSerial.print("Position curseur heure: ");
+            debugSerial.println(timeInputCtx.position);
+          }
+        }
+        break;
+        
+      case RIGHT:
+        {
+          uint8_t newPos = getNextValidTimePosition(timeInputCtx.position, true);
+          if (newPos != timeInputCtx.position)
+          {
+            timeInputCtx.position = newPos;
+            timeInputCtx.displayRefresh = true;
+            debugSerial.print("Position curseur heure: ");
+            debugSerial.println(timeInputCtx.position);
+          }
+        }
+        break;
+        
+      case PLUS:
+        modifyTimeDigit(timeInputCtx.workingTime, timeInputCtx.position, +1);
+        timeInputCtx.displayRefresh = true;
+        break;
+        
+      case MOINS:
+        modifyTimeDigit(timeInputCtx.workingTime, timeInputCtx.position, -1);
+        timeInputCtx.displayRefresh = true;
+        break;
+        
+      case VALIDE:
+        if (isTimeValid(timeInputCtx.workingTime))
+        {
+          timeInputCtx.state = TIME_INPUT_COMPLETED;
+          debugSerial.println("Heure validee");
+          OLEDDisplayMessageL8("Heure OK", false, false);
+        }
+        else
+        {
+          debugSerial.println("Heure invalide, validation refusee");
+          OLEDDisplayMessageL8("Heure invalide !", false, false);
+        }
+        break;
+        
+      default:
+        break;
+    }
+    
+    // Reset de la touche après traitement
+    touche = KEY_NONE;
+  }
+  
+  // Rafraîchissement de l'affichage si nécessaire
+  if (timeInputCtx.displayRefresh || (millis() - timeInputCtx.lastUpdate > 100))
+  {
+    refreshTimeDisplay();
+    timeInputCtx.displayRefresh = false;
+    timeInputCtx.lastUpdate = millis();
+  }
+  
+  return timeInputCtx.state;
+}
+
+/**
+ * @brief Finalise la saisie et récupère l'heure
+ * @param outputTime Buffer pour stocker l'heure finale
+ * @return void
+ */
+void finalizeTimeInput(char* outputTime)
+{
+  if (timeInputCtx.state == TIME_INPUT_COMPLETED)
+  {
+    strncpy(outputTime, timeInputCtx.workingTime, 8);
+    outputTime[8] = '\0';
+    
+    // Reset du contexte
+    timeInputCtx.state = TIME_INPUT_IDLE;
+    timeInputCtx.position = 0;
+    
+    debugSerial.print("Heure finale: ");
+    debugSerial.println(outputTime);
+  }
+}
+
+/**
+ * @brief Annule la saisie d'heure
+ * @param void
+ * @return void
+ */
+void cancelTimeInput(void)
+{
+  timeInputCtx.state = TIME_INPUT_CANCELLED;
+  debugSerial.println("Saisie d'heure annulee");
+  OLEDDisplayMessageL8("Saisie annulee", false, false);
+  
+  // Reset du contexte
+  timeInputCtx.state = TIME_INPUT_IDLE;
+}
+
+/**
+ * @brief Vérifie si une saisie d'heure est en cours
+ * @param void
+ * @return true si saisie active
+ */
+bool isTimeInputActive(void)
+{
+  return (timeInputCtx.state == TIME_INPUT_ACTIVE);
+}
+
+/**
+ * @brief Rafraîchit l'affichage de l'heure avec curseur (optimisé)
+ * @param void
+ * @return void
+ */
+void refreshTimeDisplay(void)
+{
+  bool timeChanged = (strcmp(timeInputCtx.workingTime, timeInputCtx.lastDisplayedTime) != 0);
+  bool positionChanged = (timeInputCtx.position != timeInputCtx.lastPosition);
+  bool cursorBlinkChanged = (timeInputCtx.cursorBlink != timeInputCtx.lastCursorBlink);
+  bool currentValidity = isTimeValid(timeInputCtx.workingTime);
+  bool validityChanged = (currentValidity != timeInputCtx.lastValidity);
+  
+  // Afficher le titre seulement au premier affichage
+  if (timeInputCtx.firstDisplay)
+  {
+    OLEDDrawText(1, 0, 0, "HEURE:");
+    OLEDDrawText(1, 7, 0, "+/- Modif  VALIDE OK");
+    timeInputCtx.firstDisplay = false;
+  }
+  
+  // Afficher l'heure seulement si elle a changé
+  if (timeChanged || timeInputCtx.firstDisplay)
+  {
+    char displayBuffer[10];
+    strncpy(displayBuffer, timeInputCtx.workingTime, 9);
+    OLEDDrawText(1, 2, 7, displayBuffer);
+    strcpy(timeInputCtx.lastDisplayedTime, timeInputCtx.workingTime);
+  }
+  
+  // Afficher l'indicateur de curseur seulement si position ou clignotement a changé
+  if (positionChanged || cursorBlinkChanged || timeInputCtx.firstDisplay)
+  {
+    // Effacer l'ancienne position si elle a changé
+    if (positionChanged && timeInputCtx.lastPosition != 0xFF)
+    {
+      char clearUnderline[10] = "        ";
+      OLEDDrawText(1, 3, 7, clearUnderline);
+    }
+    
+    // Afficher le nouveau curseur si visible
+    if (timeInputCtx.cursorBlink)
+    {
+      char underline[10] = "        ";
+      underline[timeInputCtx.position] = '^';
+      underline[8] = '\0';
+      OLEDDrawText(1, 3, 7, underline);
+    }
+    else if (!positionChanged) // Seulement si la position n'a pas changé
+    {
+      char clearUnderline[10] = "        ";
+      OLEDDrawText(1, 3, 7, clearUnderline);
+    }
+    
+    timeInputCtx.lastPosition = timeInputCtx.position;
+  }
+  
+  // Afficher le statut de validité seulement s'il a changé
+  if (validityChanged || timeInputCtx.firstDisplay)
+  {
+    if (currentValidity)
+    {
+      OLEDDrawText(1, 5, 0, "Heure valide        ");
+    }
+    else
+    {
+      OLEDDrawText(1, 5, 0, "Heure invalide      ");
+    }
+    timeInputCtx.lastValidity = currentValidity;
+  }
+  
+  // Afficher le countdown ou instructions (ligne 7)
+  // Rafraîchir seulement si clignotement change ou timeout proche
+  if (cursorBlinkChanged || timeInputCtx.firstDisplay)
+  {
+    if (timeInputCtx.timeoutDuration > 0)
+    {
+      unsigned long remainingTime = (timeInputCtx.timeoutDuration - (millis() - timeInputCtx.lastActivity)) / 1000;
+      if (remainingTime <= 5)
+      {
+        char timeoutMsg[21];
+        snprintf(timeoutMsg, 21, "Timeout: %lds       ", remainingTime);
+        OLEDDrawText(1, 7, 0, timeoutMsg);
+      }
+
+// 25 ne me plait pas !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      
+      else if (remainingTime >= 29) //timeInputCtx.timeoutDuration-1) // timeInputCtx.timeoutDuration
+        OLEDDrawText(1, 7, 0, "+/- Modif  VALIDE OK");
+/*      
+      else if (timeInputCtx.cursorBlink)
+      {
+        OLEDDrawText(1, 7, 0, "+/- Modif  VALIDE OK");
+      }
+      else
+      {
+        OLEDDrawText(1, 7, 0, "                    ");
+      }
+*/      
+    }
+    else
+    {
+      if (timeInputCtx.cursorBlink)
+      {
+        OLEDDrawText(1, 7, 0, "+/- Modif  VALIDE OK");
+      }
+      else
+      {
+        OLEDDrawText(1, 7, 0, "                    ");
+      }
+    }
+  }  
+  // Sauvegarder les états pour la prochaine comparaison
+  timeInputCtx.lastCursorBlink = timeInputCtx.cursorBlink;
+}
+
+/**
+ * @brief Gère le clignotement du curseur pour l'heure
+ * @param void
+ * @return void
+ */
+void updateTimeInputCursorBlink(void)
+{
+  if (millis() - timeInputCtx.lastBlink > 500) // Clignotement toutes les 500ms
+  {
+    timeInputCtx.cursorBlink = !timeInputCtx.cursorBlink;
+    timeInputCtx.lastBlink = millis();
+    timeInputCtx.displayRefresh = true;
+  }
+}
+
+/**
+ * @brief Calcule la prochaine position valide du curseur pour l'heure
+ * @param currentPos Position actuelle
+ * @param forward true pour avancer, false pour reculer
+ * @return Nouvelle position valide
+ */
+uint8_t getNextValidTimePosition(uint8_t currentPos, bool forward)
+{
+  uint8_t validPositions[] = {0, 1, 3, 4, 6, 7}; // Positions des chiffres (pas les ':')
+  uint8_t numPositions = sizeof(validPositions) / sizeof(validPositions[0]);
+  
+  // Trouver l'index de la position actuelle
+  uint8_t currentIndex = 0;
+  for (uint8_t i = 0; i < numPositions; i++)
+  {
+    if (validPositions[i] == currentPos)
+    {
+      currentIndex = i;
+      break;
+    }
+  }
+  
+  // Calculer la nouvelle position
+  if (forward)
+  {
+    if (currentIndex < numPositions - 1)
+    {
+      return validPositions[currentIndex + 1];
+    }
+    else
+    {
+      return validPositions[0]; // Boucler au début
+    }
+  }
+  else
+  {
+    if (currentIndex > 0)
+    {
+      return validPositions[currentIndex - 1];
+    }
+    else
+    {
+      return validPositions[numPositions - 1]; // Boucler à la fin
+    }
+  }
+}
+
+/**
+ * @brief Modifie un chiffre d'une heure avec gestion des limites
+ * @param t Chaîne de caractères de l'heure
+ * @param pos Position du chiffre à modifier
+ * @param delta Valeur à ajouter (+1 ou -1)
+ * @return void
+ */
+void modifyTimeDigit(char *t, uint8_t pos, int delta) 
+{
+  if (pos >= 8 || t[pos] < '0' || t[pos] > '9') 
+  {
+    return;
+  }
+  
+  int currentVal = t[pos] - '0';
+  int newVal = currentVal + delta;
+  
+  // Gestion des limites selon la position
+  switch (pos)
+  {
+    case 0: // Premier chiffre des heures (0-2)
+      if (newVal < 0) newVal = 2;
+      if (newVal > 2) newVal = 0;
+      break;
+      
+    case 1: // Deuxième chiffre des heures (0-9, mais limité selon le premier)
+      {
+        int firstDigit = t[0] - '0';
+        int maxVal = (firstDigit == 2) ? 3 : 9; // Si premier chiffre = 2, max = 3 (23h)
+        if (newVal < 0) newVal = maxVal;
+        if (newVal > maxVal) newVal = 0;
+      }
+      break;
+      
+    case 3: // Premier chiffre des minutes (0-5)
+      if (newVal < 0) newVal = 5;
+      if (newVal > 5) newVal = 0;
+      break;
+      
+    case 4: // Deuxième chiffre des minutes (0-9)
+      if (newVal < 0) newVal = 9;
+      if (newVal > 9) newVal = 0;
+      break;
+      
+    case 6: // Premier chiffre des secondes (0-5)
+      if (newVal < 0) newVal = 5;
+      if (newVal > 5) newVal = 0;
+      break;
+      
+    case 7: // Deuxième chiffre des secondes (0-9)
+      if (newVal < 0) newVal = 9;
+      if (newVal > 9) newVal = 0;
+      break;
+      
+    default:
+      return;
+  }
+  
+  t[pos] = newVal + '0';
+  
+  debugSerial.print("Position heure ");
+  debugSerial.print(pos);
+  debugSerial.print(" modifiee: ");
+  debugSerial.println(t[pos]);
+}
 
 
 
 // -------------------------------------------------------------------------------------
 // ===== FONCTIONS DE SAISIE DATE =====
 // -------------------------------------------------------------------------------------
+// ===== FONCTIONS DE SAISIE DE DATE =====
 
+/**
+ * @brief Vérifie si une date est valide
+ * @param d Chaîne de caractères représentant la date (format JJ/MM/AAAA)
+ * @return bool True si la date est valide
+ */
+bool isDateValid(const char *d) 
+{
+  if (strlen(d) != 10) return false;
+  if (d[2] != '/' || d[5] != '/') return false;
+  
+  int jj = (d[0]-'0')*10 + (d[1]-'0');
+  int mm = (d[3]-'0')*10 + (d[4]-'0');
+  int yyyy = (d[6]-'0')*1000 + (d[7]-'0')*100 + (d[8]-'0')*10 + (d[9]-'0');
+  
+  if (mm < 1 || mm > 12 || yyyy < 1900 || yyyy > 2099) 
+    return false;
+  
+  int joursMax[] = {31,28,31,30,31,30,31,31,30,31,30,31};
+  
+  if ((yyyy % 4 == 0 && yyyy % 100 != 0) || (yyyy % 400 == 0)) 
+    joursMax[1] = 29;
+  
+  return jj >= 1 && jj <= joursMax[mm - 1];
+}
+
+/**
+ * @brief Démarre la saisie de date non-bloquante avec timeout
+ * @param initialDate Date initiale au format "JJ/MM/AAAA"
+ * @return void
+ */
+void startDateInput(const char* initialDate)
+{
+  if (dateInputCtx.state != DATE_INPUT_IDLE)
+  {
+    return; // Saisie déjà en cours
+  }
+  
+  // Initialisation du contexte
+  dateInputCtx.state = DATE_INPUT_ACTIVE;
+  dateInputCtx.position = 0;
+  dateInputCtx.lastPosition = 0xFF;
+  strncpy(dateInputCtx.workingDate, initialDate, 10);
+  dateInputCtx.workingDate[10] = '\0';
+  strcpy(dateInputCtx.lastDisplayedDate, "");
+  dateInputCtx.displayRefresh = true;
+  dateInputCtx.lastUpdate = millis();
+  dateInputCtx.cursorBlink = true;
+  dateInputCtx.lastCursorBlink = false;
+  dateInputCtx.lastBlink = millis();
+  dateInputCtx.lastActivity = millis();
+  dateInputCtx.timeoutDuration = 30000; // 30 secondes
+  dateInputCtx.lastValidity = false;
+  dateInputCtx.firstDisplay = true;
+  
+  debugSerial.println("Saisie de date demarree");
+  OLEDDisplayMessageL8("Modifiez la date", false, false);
+}
+
+/**
+ * @brief Traite la saisie de date (à appeler dans loop)
+ * @param void
+ * @return État actuel de la saisie
+ */
+dateInputState_t processDateInput(void)
+{
+  if (dateInputCtx.state != DATE_INPUT_ACTIVE)
+  {
+    return dateInputCtx.state;
+  }
+  
+  // Gestion du clignotement du curseur
+  updateDateInputCursorBlink();
+  
+  // Vérification du timeout
+  if (dateInputCtx.timeoutDuration > 0 && (millis() - dateInputCtx.lastActivity > dateInputCtx.timeoutDuration))
+  {
+    dateInputCtx.state = DATE_INPUT_CANCELLED;
+    debugSerial.println("Saisie date annulee par timeout");
+    OLEDDisplayMessageL8("Timeout", false, false);
+    return dateInputCtx.state;
+  }
+  
+  // Traitement des touches
+  if (touche != KEY_NONE)
+  {
+    // Réinitialiser le timer d'activité à chaque action utilisateur
+    dateInputCtx.lastActivity = millis();
+    
+    switch (touche)
+    {
+      case LEFT:
+        {
+          uint8_t newPos = getNextValidDatePosition(dateInputCtx.position, false);
+          if (newPos != dateInputCtx.position)
+          {
+            dateInputCtx.position = newPos;
+            dateInputCtx.displayRefresh = true;
+            debugSerial.print("Position curseur date: ");
+            debugSerial.println(dateInputCtx.position);
+          }
+        }
+        break;
+        
+      case RIGHT:
+        {
+          uint8_t newPos = getNextValidDatePosition(dateInputCtx.position, true);
+          if (newPos != dateInputCtx.position)
+          {
+            dateInputCtx.position = newPos;
+            dateInputCtx.displayRefresh = true;
+            debugSerial.print("Position curseur date: ");
+            debugSerial.println(dateInputCtx.position);
+          }
+        }
+        break;
+        
+      case PLUS:
+        modifyDateDigit(dateInputCtx.workingDate, dateInputCtx.position, +1);
+        dateInputCtx.displayRefresh = true;
+        break;
+        
+      case MOINS:
+        modifyDateDigit(dateInputCtx.workingDate, dateInputCtx.position, -1);
+        dateInputCtx.displayRefresh = true;
+        break;
+        
+      case VALIDE:
+        if (isDateValid(dateInputCtx.workingDate))
+        {
+          dateInputCtx.state = DATE_INPUT_COMPLETED;
+          debugSerial.println("Date validee");
+          OLEDDisplayMessageL8("Date OK", false, false);
+        }
+        else
+        {
+          debugSerial.println("Date invalide, validation refusee");
+          OLEDDisplayMessageL8("Date invalide !", false, false);
+        }
+        break;
+        
+      default:
+        break;
+    }
+    
+    // Reset de la touche après traitement
+    touche = KEY_NONE;
+  }
+  
+  // Rafraîchissement de l'affichage si nécessaire
+  if (dateInputCtx.displayRefresh || (millis() - dateInputCtx.lastUpdate > 100))
+  {
+    refreshDateDisplay();
+    dateInputCtx.displayRefresh = false;
+    dateInputCtx.lastUpdate = millis();
+  }
+  
+  return dateInputCtx.state;
+}
+
+/**
+ * @brief Finalise la saisie et récupère la date
+ * @param outputDate Buffer pour stocker la date finale
+ * @return void
+ */
+void finalizeDateInput(char* outputDate)
+{
+  if (dateInputCtx.state == DATE_INPUT_COMPLETED)
+  {
+    strncpy(outputDate, dateInputCtx.workingDate, 10);
+    outputDate[10] = '\0';
+    
+    // Reset du contexte
+    dateInputCtx.state = DATE_INPUT_IDLE;
+    dateInputCtx.position = 0;
+    
+    debugSerial.print("Date finale: ");
+    debugSerial.println(outputDate);
+  }
+}
+
+/**
+ * @brief Annule la saisie de date
+ * @param void
+ * @return void
+ */
+void cancelDateInput(void)
+{
+  dateInputCtx.state = DATE_INPUT_CANCELLED;
+  debugSerial.println("Saisie de date annulee");
+  OLEDDisplayMessageL8("Saisie annulee", false, false);
+  
+  // Reset du contexte
+  dateInputCtx.state = DATE_INPUT_IDLE;
+}
+
+/**
+ * @brief Vérifie si une saisie de date est en cours
+ * @param void
+ * @return true si saisie active
+ */
+bool isDateInputActive(void)
+{
+  return (dateInputCtx.state == DATE_INPUT_ACTIVE);
+}
+
+/**
+ * @brief Rafraîchit l'affichage de la date avec curseur (optimisé)
+ * @param void
+ * @return void
+ */
+void refreshDateDisplay(void)
+{
+  bool dateChanged = (strcmp(dateInputCtx.workingDate, dateInputCtx.lastDisplayedDate) != 0);
+  bool positionChanged = (dateInputCtx.position != dateInputCtx.lastPosition);
+  bool cursorBlinkChanged = (dateInputCtx.cursorBlink != dateInputCtx.lastCursorBlink);
+  bool currentValidity = isDateValid(dateInputCtx.workingDate);
+  bool validityChanged = (currentValidity != dateInputCtx.lastValidity);
+  
+  // Afficher le titre seulement au premier affichage
+  if (dateInputCtx.firstDisplay)
+  {
+    OLEDDrawText(1, 0, 0, "DATE:");
+    OLEDDrawText(1, 7, 0, "+/- Modif  VALIDE OK");
+    dateInputCtx.firstDisplay = false;
+  }
+  
+  // Afficher la date seulement si elle a changé
+  if (dateChanged || dateInputCtx.firstDisplay)
+  {
+    char displayBuffer[12];
+    strncpy(displayBuffer, dateInputCtx.workingDate, 11);
+    OLEDDrawText(1, 2, 5, displayBuffer);
+    strcpy(dateInputCtx.lastDisplayedDate, dateInputCtx.workingDate);
+  }
+  
+  // Afficher l'indicateur de curseur seulement si position ou clignotement a changé
+  if (positionChanged || cursorBlinkChanged || dateInputCtx.firstDisplay)
+  {
+    // Effacer l'ancienne position si elle a changé
+    if (positionChanged && dateInputCtx.lastPosition != 0xFF)
+    {
+      char clearUnderline[11] = "          ";
+      OLEDDrawText(1, 3, 5, clearUnderline);
+    }
+    
+    // Afficher le nouveau curseur si visible
+    if (dateInputCtx.cursorBlink)
+    {
+      char underline[11] = "          ";
+      underline[dateInputCtx.position] = '^';
+      underline[10] = '\0';
+      OLEDDrawText(1, 3, 5, underline);
+    }
+    else if (!positionChanged) // Seulement si la position n'a pas changé
+    {
+      char clearUnderline[11] = "          ";
+      OLEDDrawText(1, 3, 5, clearUnderline);
+    }
+    
+    dateInputCtx.lastPosition = dateInputCtx.position;
+  }
+  
+  // Afficher le statut de validité seulement s'il a changé
+  if (validityChanged || dateInputCtx.firstDisplay)
+  {
+    if (currentValidity)
+    {
+      OLEDDrawText(1, 5, 0, "Date valide         ");
+    }
+    else
+    {
+      OLEDDrawText(1, 5, 0, "Date invalide       ");
+    }
+    dateInputCtx.lastValidity = currentValidity;
+  }
+  
+  // Afficher le countdown ou instructions (ligne 7)
+  // Rafraîchir seulement si clignotement change ou timeout proche
+  if (cursorBlinkChanged || dateInputCtx.firstDisplay)
+  {
+    if (dateInputCtx.timeoutDuration > 0)
+    {
+      unsigned long remainingTime = (dateInputCtx.timeoutDuration - (millis() - dateInputCtx.lastActivity)) / 1000;
+      if (remainingTime <= 5)
+      {
+        char timeoutMsg[21];
+        snprintf(timeoutMsg, 21, "Timeout: %lds       ", remainingTime);
+        OLEDDrawText(1, 7, 0, timeoutMsg);
+      }
+      else if (dateInputCtx.cursorBlink)
+      {
+        OLEDDrawText(1, 7, 0, "+/- Modif  VALIDE OK");
+      }
+      else
+      {
+        OLEDDrawText(1, 7, 0, "                    ");
+      }
+    }
+    else
+    {
+      if (dateInputCtx.cursorBlink)
+      {
+        OLEDDrawText(1, 7, 0, "+/- Modif  VALIDE OK");
+      }
+      else
+      {
+        OLEDDrawText(1, 7, 0, "                    ");
+      }
+    }
+  }
+  
+  // Sauvegarder les états pour la prochaine comparaison
+  dateInputCtx.lastCursorBlink = dateInputCtx.cursorBlink;
+}
+
+/**
+ * @brief Gère le clignotement du curseur pour la date
+ * @param void
+ * @return void
+ */
+void updateDateInputCursorBlink(void)
+{
+  if (millis() - dateInputCtx.lastBlink > 500) // Clignotement toutes les 500ms
+  {
+    dateInputCtx.cursorBlink = !dateInputCtx.cursorBlink;
+    dateInputCtx.lastBlink = millis();
+    dateInputCtx.displayRefresh = true;
+  }
+}
+
+/**
+ * @brief Calcule la prochaine position valide du curseur pour la date
+ * @param currentPos Position actuelle
+ * @param forward true pour avancer, false pour reculer
+ * @return Nouvelle position valide
+ */
+uint8_t getNextValidDatePosition(uint8_t currentPos, bool forward)
+{
+  uint8_t validPositions[] = {0, 1, 3, 4, 6, 7, 8, 9}; // Positions des chiffres (pas les '/')
+  uint8_t numPositions = sizeof(validPositions) / sizeof(validPositions[0]);
+  
+  // Trouver l'index de la position actuelle
+  uint8_t currentIndex = 0;
+  for (uint8_t i = 0; i < numPositions; i++)
+  {
+    if (validPositions[i] == currentPos)
+    {
+      currentIndex = i;
+      break;
+    }
+  }
+  
+  // Calculer la nouvelle position
+  if (forward)
+  {
+    if (currentIndex < numPositions - 1)
+    {
+      return validPositions[currentIndex + 1];
+    }
+    else
+    {
+      return validPositions[0]; // Boucler au début
+    }
+  }
+  else
+  {
+    if (currentIndex > 0)
+    {
+      return validPositions[currentIndex - 1];
+    }
+    else
+    {
+      return validPositions[numPositions - 1]; // Boucler à la fin
+    }
+  }
+}
+
+/**
+ * @brief Modifie un chiffre d'une date avec gestion des limites
+ * @param d Chaîne de caractères de la date
+ * @param pos Position du chiffre à modifier
+ * @param delta Valeur à ajouter (+1 ou -1)
+ * @return void
+ */
+void modifyDateDigit(char *d, uint8_t pos, int delta) 
+{
+  if (pos >= 10 || d[pos] < '0' || d[pos] > '9') 
+  {
+    return;
+  }
+  
+  int currentVal = d[pos] - '0';
+  int newVal = currentVal + delta;
+  
+  // Gestion des limites selon la position
+  switch (pos)
+  {
+    case 0: // Premier chiffre du jour (0-3)
+      if (newVal < 0) newVal = 3;
+      if (newVal > 3) newVal = 0;
+      break;
+      
+    case 1: // Deuxième chiffre du jour (0-9, mais limité selon le premier)
+      {
+        int firstDigit = d[0] - '0';
+        int maxVal = (firstDigit == 3) ? 1 : 9; // Si premier chiffre = 3, max = 1 (31)
+        if (newVal < 0) newVal = maxVal;
+        if (newVal > maxVal) newVal = 0;
+      }
+      break;
+      
+    case 3: // Premier chiffre du mois (0-1)
+      if (newVal < 0) newVal = 1;
+      if (newVal > 1) newVal = 0;
+      break;
+      
+    case 4: // Deuxième chiffre du mois (0-9, mais limité selon le premier)
+      {
+        int firstDigit = d[3] - '0';
+        int maxVal = (firstDigit == 1) ? 2 : 9; // Si premier chiffre = 1, max = 2 (12)
+        if (newVal < 0) newVal = maxVal;
+        if (newVal > maxVal) newVal = 0;
+      }
+      break;
+      
+    case 6: // Premier chiffre de l'année (1-2 pour 1900-2099)
+      if (newVal < 1) newVal = 2;
+      if (newVal > 2) newVal = 1;
+      break;
+      
+    default: // Autres chiffres (0-9)
+      if (newVal < 0) newVal = 9;
+      if (newVal > 9) newVal = 0;
+      break;
+  }
+  
+  d[pos] = newVal + '0';
+  
+  debugSerial.print("Position date ");
+  debugSerial.print(pos);
+  debugSerial.print(" modifiee: ");
+  debugSerial.println(d[pos]);
+}
 
 
 // -------------------------------------------------------------------------------------

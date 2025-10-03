@@ -136,8 +136,9 @@ debugSerial.println(selectedIndex);
     // ----------------------------------   
       case 1: // "INFOS"
         debugSerial.println("Appel d'un ecran");
-        debugSerial.println("CONFIG. SYSTEME - Ecran INFOS demandé");     
-        OLEDdisplayInfoScreen();
+        debugSerial.println("CONFIG. SYSTEME - Ecran INFOS demandé");   
+        infoScreenRefreshTime = true;  
+        OLEDdisplayInfoScreen();     // part dans KKKKKKKKK
         // popMenu(); // Retour au menu principal
         break;
     // ----------------------------------
@@ -156,72 +157,43 @@ debugSerial.println(selectedIndex);
   // APPEL D'UN SOUS MENU    
     // ----------------------------------
     case 4: // "CALIB. TENSIONS"
+            {
         debugSerial.println("Appel d'un sous menu");    
         pushMenu("CALIB. TENSIONS:", menu040CalibTensions, 5, 0);
         break;
-        
+            }
       case 5: // "CALIB. BALANCES"
+           {      
         debugSerial.println("Appel d'une Fonction");
         debugSerial.println("Appel weightCalibration(1)");
         // weightCalibration(1); // Fonction existante
         break;
+           }
     // ----------------------------------
   // APPEL D'UNE SAISIE, ici DATE
     // ----------------------------------        
      case 6: // "SAISIE DATE"
-    {
-      debugSerial.println("Appel d'une saisie date");      
-      debugSerial.println("Lancement saisie date a importer");
-      static char currentDate[11] = /*__DATE__; //*/"01/01/2024"; // Format DD/MM/YYYY
-
-debugSerial.print(__DATE__);
-debugSerial.println(" => CONFIG. SYSTEME - Demande saisie DATE");
-
-// importer 
-//      startDateInput(currentDate);
-
-      // Mise à la date DS32331
-    }
-    break;
+             {
+               menu000_F6_GetDate();
+               break;
+             }
     // ----------------------------------
   // APPEL D'UNE SAISIE, ici HEURE
     // ----------------------------------        
      case 7: // "SAISIE HEURE"
-    {
-      debugSerial.println("Lancement saisie heure a importer");
-      static char currentTime[11] = __TIME__; //  "08:12:50"; // Format HH:MM:SS
-debugSerial.println("CONFIG. SYSTEME - Demande saisie TIME");
-
-// importer 
-            //startTimeInput(currentTime);
-            startTimeInputWithTimeout(const char* title, const char* initialNumber, unsigned long timeoutMs);
-
-  DateTime systemTime = getSystemTime();
-  sprintf(OLEDbuf, "%02d:%02d:%02d    %02d/%02d/%02d", 
-          systemTime.hour(), systemTime.minute(), systemTime.second(),
-          systemTime.day(), systemTime.month(), systemTime.year()-2000);
-debugSerial.println(OLEDBuf);              
- 
-      // Mise à l'heure DS32331
-
-// Activer la liste au démarrage si pas encore fait
- //   if (!startupListActivated)
-    {
-// afficher structure gestion menu avant 1er menu
-debugSerial.println("Relance Menu principal");
-      initStartupList();
-    }
-
-      
-    }
-    break;
-        
+             {
+               menu000_F7_GetTime();
+               break;
+             }
       case 8: // "LISTE_MENU9"
-        debugSerial.println("LISTE_MENU9 - Fonction a implementer");
-        break;
-        
+             {
+debugSerial.println("LISTE_MENU9 - Fonction a implementer");
+               break;      
+             }
       default:
-        break;
+              {
+                break;
+              }  
     }
   }
 // ---------------------------------------------------------------------------------

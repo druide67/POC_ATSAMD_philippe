@@ -45,6 +45,39 @@ typedef enum
 } stringInputState_t;
 
 /**
+ * États possibles de la saisie hexadécimale
+ */
+typedef enum 
+{
+  HEX_INPUT_IDLE,         // Pas de saisie en cours
+  HEX_INPUT_ACTIVE,       // Saisie en cours
+  HEX_INPUT_COMPLETED,    // Saisie terminée avec succès
+  HEX_INPUT_CANCELLED     // Saisie annulée
+} hexInputState_t;
+
+/**
+ * États possibles de la saisie d'heure
+ */
+typedef enum 
+{
+  TIME_INPUT_IDLE,        // Pas de saisie en cours
+  TIME_INPUT_ACTIVE,      // Saisie en cours
+  TIME_INPUT_COMPLETED,   // Saisie terminée avec succès
+  TIME_INPUT_CANCELLED    // Saisie annulée
+} timeInputState_t;
+
+/**
+ * États possibles de la saisie de date
+ */
+typedef enum 
+{
+  DATE_INPUT_IDLE,        // Pas de saisie en cours
+  DATE_INPUT_ACTIVE,      // Saisie en cours
+  DATE_INPUT_COMPLETED,   // Saisie terminée avec succès
+  DATE_INPUT_CANCELLED    // Saisie annulée
+} dateInputState_t;
+ 
+/**
  * États possibles de l'affichage d'écran d'info
  */
  typedef enum 
@@ -135,6 +168,72 @@ typedef struct
     char title[21];             // Titre de la saisie
 } stringInputContext_t;
 
+/**
+ * Contexte de saisie hexadécimale
+ */
+typedef struct 
+{
+  hexInputState_t state;      // État actuel
+  uint8_t position;           // Position du curseur (0-39)
+  uint8_t lastPosition;       // Dernière position affichée
+  char workingHex[41];        // Chaîne hexa de travail (40 chars + '\0')
+  char lastDisplayedHex[17];  // Dernière portion affichée (16 chars + '\0')
+  bool displayRefresh;        // Flag pour rafraîchir l'affichage
+  unsigned long lastUpdate;   // Dernier rafraîchissement affichage
+  bool cursorBlink;           // État du clignotement curseur
+  bool lastCursorBlink;       // Dernier état du clignotement
+  unsigned long lastBlink;    // Dernier clignotement
+  uint8_t displayOffset;      // Décalage pour affichage (scroll horizontal)
+  uint8_t lastDisplayOffset;  // Dernier décalage affiché
+  uint8_t displayWidth;       // Largeur d'affichage (nb de caractères visibles)
+  unsigned long lastActivity;    // Dernière activité utilisateur
+  unsigned long timeoutDuration; // Durée du timeout en ms
+  bool lastValidity;          // Dernière validité affichée
+  bool firstDisplay;          // Premier affichage
+  unsigned long lastDisplayedTimeout; // Dernier timeout affiché
+} hexInputContext_t;
+
+/**
+ * Contexte de saisie d'heure
+ */
+typedef struct 
+{
+  timeInputState_t state;     // État actuel
+  uint8_t position;           // Position du curseur (0-7)
+  uint8_t lastPosition;       // Dernière position affichée
+  char workingTime[9];        // Heure de travail "HH:MM:SS"
+  char lastDisplayedTime[9];  // Dernière heure affichée
+  bool displayRefresh;        // Flag pour rafraîchir l'affichage
+  unsigned long lastUpdate;   // Dernier rafraîchissement affichage
+  bool cursorBlink;           // État du clignotement curseur
+  bool lastCursorBlink;       // Dernier état du clignotement
+  unsigned long lastBlink;    // Dernier clignotement
+  unsigned long lastActivity; // Dernière activité utilisateur
+  unsigned long timeoutDuration; // Durée du timeout en ms
+  bool lastValidity;          // Dernière validité affichée
+  bool firstDisplay;          // Premier affichage
+} timeInputContext_t;
+
+/**
+ * Contexte de saisie de date
+ */
+typedef struct 
+{
+  dateInputState_t state;     // État actuel
+  uint8_t position;           // Position du curseur (0-9)
+  uint8_t lastPosition;       // Dernière position affichée
+  char workingDate[11];       // Date de travail "JJ/MM/AAAA"
+  char lastDisplayedDate[11]; // Dernière date affichée
+  bool displayRefresh;        // Flag pour rafraîchir l'affichage
+  unsigned long lastUpdate;   // Dernier rafraîchissement affichage
+  bool cursorBlink;           // État du clignotement curseur
+  bool lastCursorBlink;       // Dernier état du clignotement
+  unsigned long lastBlink;    // Dernier clignotement
+  unsigned long lastActivity; // Dernière activité utilisateur
+  unsigned long timeoutDuration; // Durée du timeout en ms
+  bool lastValidity;          // Dernière validité affichée
+  bool firstDisplay;          // Premier affichage
+} dateInputContext_t;
 
 // ===== STRUCTURES DE CONFIGURATION =====
 typedef struct 

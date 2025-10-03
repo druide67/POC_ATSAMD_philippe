@@ -27,6 +27,36 @@ debugSerial.print("E");   // EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 }
 
 
+void saisieEnCours()
+{ volatile char flag=0;
+
+
+if (isListInputActive())
+    flag =  1 <<7;
+else if (isInfoScreenActive())
+    flag =  1 <<6;    
+else if (isNumberInputActive())
+    flag =  1 <<5;
+else if (isStringInputActive())
+    flag =  1 <<4;    
+else if (isTimeInputActive())
+    flag =  1 <<3;    
+else if (isHexInputActive())
+    flag =  1 <<2;    
+
+
+    
+
+  sprintf(serialbuf, "Flag : %d WDT : %d",flag, loopWDT);
+  debugSerial.println(serialbuf);
+
+// 
+  
+  sprintf(serialbuf, "List %d / Infos %d / Number %d / String %d / Time %d / Date, Mail, IP,...",
+  isListInputActive(), isInfoScreenActive(), isNumberInputActive(), isStringInputActive(), isTimeInputActive()); 
+  debugSerial.println(serialbuf);
+}
+
 
 // ---------------------------------------------------------------------------
 // MODE PROGRAMMATION
@@ -54,15 +84,31 @@ debugSerial.println("Lancement Menu principal");
       initStartupList();
     }
   }
-
+/*  
 // Traite l'écran d'informations (à appeler dans loop)
 infoScreenState_t processInfoScreen();
-
-
+*/
    
 #ifdef __SerialDebugPoc    
 //debugSerial.print("P");   // PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
 #endif
+
+/*
+isListInputActive
+isInfoScreenActive
+isNumberInputActive
+isStringInputActive
+isTimeInputActive
+//isDateInputActive
+//isHEXAInputActive
+*/
+/*
+sprintf(serialbuf, "List %d / Infos %d / Number %d / String %d / Time %d / Date, Mail, IP,...",
+isListInputActive(), isInfoScreenActive(), isNumberInputActive(), isStringInputActive(), isTimeInputActive()); 
+debugSerial.println(serialbuf);
+*/
+// Gestion normale des menus quand pas de saisie
+
 
 // ------------------------------------------------
 // Vérifier si une sélection de liste est en cours 
@@ -70,6 +116,8 @@ infoScreenState_t processInfoScreen();
   if (isListInputActive())
   {
     static uint8_t selectedModeIndex = 0; // Index du mode sélectionné
+
+saisieEnCours();
         
 #ifdef __SerialDebugPoc    
 //debugSerial.print("L");   // LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
@@ -140,8 +188,11 @@ debugSerial.println(menu000Demarrage[selectedModeIndex]);
 // ------------------------------------------------    
   else if (isInfoScreenActive())
   {
-    infoScreenState_t state = processInfoScreen();
+
+saisieEnCours();
     
+    infoScreenState_t state = processInfoScreen();
+//debugSerial.print("I");   // IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII    
     switch (state)
     {
       case INFO_SCREEN_CLOSED:
@@ -149,6 +200,8 @@ debugSerial.println(menu000Demarrage[selectedModeIndex]);
         infoScreenState = INFO_SCREEN_IDLE; // Reset
 
 listInputCtx.state = LIST_INPUT_ACTIVE;
+
+infoScreenRefreshTime = false;
 
         
         break;
@@ -164,6 +217,8 @@ listInputCtx.state = LIST_INPUT_ACTIVE;
   else if (isNumberInputActive())   // numberInputCtx.state == NUMBER_INPUT_ACTIVE
   {
     static char numberBuffer[11] = ""; // Buffer pour le nombre
+
+saisieEnCours();
       
 #ifdef __SerialDebugPoc    
   debugSerial.print("N");   // NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
@@ -207,6 +262,8 @@ debugSerial.print("N");   // NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
   else if (isStringInputActive())
   {
     static char stringBuffer[21] = ""; // Buffer pour la chaîne
+
+saisieEnCours();
         
 #ifdef __SerialDebugPoc    
 debugSerial.print("A");   // AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -248,10 +305,123 @@ debugSerial.print("Chaine validée : "); debugSerial.print(stringSaisie);debugSe
 */
   }
 // ------------------------------------------------
+// Vérifier si une saisie HEXA est en cours
+// ------------------------------------------------
+  else if (isHexInputActive())
+  {
+    static char hexBuffer[41] = "0123456789ABCDEF0123456789ABCDEF01234567"; // Buffer pour l'hexa
+
+
+saisieEnCours();
+        
+#ifdef __SerialDebugPoc    
+debugSerial.print("H");   // HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+#endif    
+    
+    hexInputState_t state = processHexInput();
+    
+    switch (state)
+    {
+      case HEX_INPUT_COMPLETED:
+        finalizeHexInput(hexBuffer); // Récupérer la chaîne finale
+        debugSerial.print("Nouvelle cle hexadecimale: ");
+        debugSerial.println(hexBuffer);
+        // Ici vous pouvez sauvegarder la clé ou autre
+        break;
+        
+      case HEX_INPUT_CANCELLED:
+        debugSerial.println("Saisie hexadecimale annulee par timeout");
+        cancelHexInput();
+        // Revenir au menu si nécessaire
+        break;
+        
+      default:
+        // Saisie toujours en cours, ne rien faire d'autre
+        return;
+    }
+  }
+// ------------------------------------------------
+// Vérifier si une saisie d'heure est en cours
+// ------------------------------------------------
+  else if (isTimeInputActive())
+  {
+//    static char timeBuffer[9] = ""; // Buffer pour l'heure
+
+saisieEnCours();
+    
+    timeInputState_t state = processTimeInput();
+    switch (state)
+    {
+      case TIME_INPUT_COMPLETED:
+           {
+             menu000_F7_GetTimeDone();
+             break;   
+           }    
+      case TIME_INPUT_CANCELLED:
+           {
+debugSerial.println("Saisie heure annulee par timeout");
+              cancelTimeInput();
+              if (currentMenuDepth > 0)           // Revenir au menu
+              {
+                menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
+                startListInputWithTimeout(currentMenu->title, currentMenu->menuList, currentMenu->menuSize, currentMenu->selectedIndex, 0);
+              }
+              break;        
+           }   
+      default:
+        // Saisie toujours en cours, ne rien faire d'autre
+              return;
+    }
+  }
+// ------------------------------------------------
+// Vérifier si une saisie de date est en cours
+// ------------------------------------------------
+  else if (isDateInputActive())
+  {
+    static char dateBuffer[11] = ""; // Buffer pour la date
+
+saisieEnCours();
+    
+    dateInputState_t state = processDateInput();
+    
+    switch (state)
+    {
+      case DATE_INPUT_COMPLETED:
+        finalizeDateInput(dateBuffer); // Récupérer la date finale
+        debugSerial.print("Nouvelle date: ");
+        debugSerial.println(dateBuffer);
+        // Ici vous pouvez traiter la date et revenir au menu
+        if (currentMenuDepth > 0)
+        {
+          menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
+          startListInputWithTimeout(currentMenu->title, currentMenu->menuList, currentMenu->menuSize, currentMenu->selectedIndex, 0);
+        }
+        break;
+        
+      case DATE_INPUT_CANCELLED:
+        debugSerial.println("Saisie date annulee par timeout");
+        cancelDateInput();
+        // Revenir au menu
+        if (currentMenuDepth > 0)
+        {
+          menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
+          startListInputWithTimeout(currentMenu->title, currentMenu->menuList, currentMenu->menuSize, currentMenu->selectedIndex, 0);
+        }
+        break;
+        
+      default:
+        // Saisie toujours en cours, ne rien faire d'autre
+        return;
+    }
+  }
+// ------------------------------------------------
 // Gestion normale des menus quand pas de saisie
 // ------------------------------------------------    
   else
   {
+
+saisieEnCours();
+    
 #ifdef __SerialDebugPoc    
 debugSerial.print("K");   // KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
 #endif    
@@ -342,7 +512,6 @@ infoScreenState_t processInfoScreen(void)
       debugSerial.println("ERREUR: currentMenuDepth = 0 dans processInfoScreen");
     }
   }
-  
   return infoScreenState;
 }
 

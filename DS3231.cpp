@@ -47,16 +47,6 @@ OLEDDebugDisplay("RTC introuvable");
   }
 }
 
-/**
- * @brief Retourne l'heure système actuelle
- * @param Aucun
- * @return DateTime Heure actuelle
- */
-DateTime getSystemTime(void) 
-{
-    return rtc.now();
-}
-
  /**
  * @brief Configure alarme du RTC
  * Alarme 1 : Toutes les secondes (mode programmation)
@@ -242,7 +232,7 @@ void copyDS3231TimeToMicro(bool forcer)
     DateTime heureDS3231 = rtc.now();
     
     // Obtenir l'heure système actuelle pour comparaison
-    DateTime heureSysteme = getSystemTime();
+    DateTime heureSysteme = rtc.now();
     
     // Calculer la différence
     long difference = heureDS3231.unixtime() - heureSysteme.unixtime();

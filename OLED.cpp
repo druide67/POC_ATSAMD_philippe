@@ -117,7 +117,7 @@ void OLEDDrawScreenNextPayload(uint8_t ligne, uint8_t colonne, DateTime nextPayl
 void OLEDDrawScreenTime(uint8_t ligne, uint8_t colonne)
 { static DateTime oldSystemTime(1692712245);  //1692712245);  // timestamp Unix
 
-  DateTime systemTime = getSystemTime();
+  DateTime systemTime = rtc.now();
   sprintf(OLEDbuf, "%02d:%02d:%02d    %02d/%02d/%02d", 
           systemTime.hour(), systemTime.minute(), systemTime.second(),
           systemTime.day(), systemTime.month(), systemTime.year()-2000);
@@ -137,7 +137,7 @@ void OLEDDrawScreenTime(uint8_t ligne, uint8_t colonne)
  */
 void OLEDDrawScreenRefreshTime(uint8_t ligne, uint8_t colonne)
 { static DateTime oldSystemTime(1692712245);  //1692712245);  // timestamp Unix
-  DateTime systemTime = getSystemTime();
+  DateTime systemTime = rtc.now();
   int val;
   
   if (oldSystemTime.hour() != systemTime.hour())
@@ -456,14 +456,9 @@ void OLEDDrawText(int8_t Txt_Size, uint8_t ligne, uint8_t colonne, const char *t
  */
 void OLEDDisplayDate(char *d, uint8_t pos) 
 {
-
-
   sprintf(serialbuf,"OLEDDisplayDate:%s",d);
   debugSerial.println(serialbuf); 
 
-
-
-  
   if (millis() - lastBlink >= 500) 
   {
     lastBlink = millis();
@@ -590,21 +585,24 @@ void OLEDDisplayHivesDatas(void)
  * @param Aucun
  * @return void
  */
-void OLEDDisplaySystemInfo(void)
+ /*
+void nonOLEDDisplaySystemInfo(void)
 {
   OLEDClear();
   OLEDDrawText(1,0, 0, "=== INFOS SYSTEME ==");
-  OLEDDrawText(1,1, 0, "     POC ATSAMD     ");
-  OLEDDrawText(1,2, 0, "Version: " VERSION);
+  // Affichage date/heure rafraichie le L1
+  OLEDDrawScreenTime(1, 0); // Affiche Time/Date au complet
+  OLEDDrawText(1,2, 0, "     POC ATSAMD     ");
+  OLEDDrawText(1,3, 0, "Version: " VERSION);
         
   sprintf(OLEDbuf, "Mode: %s", modeExploitation ? "EXPLOIT" : "PROGRAM");
-  OLEDDrawText(1,3, 0, OLEDbuf);
+  OLEDDrawText(1,4, 0, OLEDbuf);
         
  // sprintf(OLEDbuf, "Config v: %d.%02d", config.materiel.version/100, config.materiel.version%100);  // verifier longueur
- // OLEDDrawText(1,4, 0, OLEDbuf);
+ // OLEDDrawText(1,5, 0, OLEDbuf);
         
   OLEDDrawText(1,6, 0, "Appuyer => continuer");
-  
+*/  
 /*
      // Attendre une touche pour continuer
   while (readKey() == KEY_NONE)
@@ -612,8 +610,9 @@ void OLEDDisplaySystemInfo(void)
     delay(100);
   }
 */    
-  OLEDDisplayMessageL8("Retour menu princ.", false, false);
-}
+//  OLEDDisplayMessageL8("Retour menu princ.", false, false);
+//}
+
 
 
 /*
@@ -621,8 +620,6 @@ void OLEDDisplaySystemInfo(void)
       menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
       startListInput(currentMenu->title, currentMenu->menuList, currentMenu->menuSize, currentMenu->selectedIndex);
  */
-
- 
 /**
  * @brief Affiche l'écran d'informations (non-bloquant)
  * @param void
@@ -632,21 +629,22 @@ void OLEDdisplayInfoScreen(void)
 {
   debugSerial.print("displayInfoScreen - currentMenuDepth: ");
   debugSerial.println(currentMenuDepth);
-  
+
   OLEDClear();
   OLEDDrawText(1, 0, 0, "=== INFOS SYSTEME ==");
-  OLEDDrawText(1, 1, 0, "     POC ATSAMD     ");
-  OLEDDrawText(1, 2, 0, "Version: " VERSION);
-  OLEDDrawText(1, 3, 0, "Build: 20250924");
+  OLEDDrawScreenTime(1, 0); // Affiche Time/Date au complet
+  OLEDDrawText(1, 2, 0, "     POC ATSAMD     ");
+  OLEDDrawText(1, 3, 0, "Version: " VERSION);
+  OLEDDrawText(1, 4, 0, "Build: 20250924");
 
   sprintf(OLEDbuf, "Mode: %s", modeExploitation ? "EXPLOIT" : "PROGRAM");
-  OLEDDrawText(1, 4, 0, OLEDbuf);
+  OLEDDrawText(1, 5, 0, OLEDbuf);
 //  sprintf(OLEDbuf, "Config v: %d.%02d", config.materiel.version/100, config.materiel.version%100);  // verifier longueur
-//  OLEDDrawText(1, 5, 0, OLEDbuf);
+//  OLEDDrawText(1, 6, 0, OLEDbuf);
         
   OLEDDrawText(1, 7, 0, "VALIDE pour retour");
   
-  infoScreenState = INFO_SCREEN_ACTIVE;
+  infoScreenState = INFO_SCREEN_ACTIVE;   // pour eviter KKKKKKKK
   debugSerial.println("Ecran infos affiche");
 }
 

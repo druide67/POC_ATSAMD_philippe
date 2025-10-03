@@ -9,7 +9,21 @@
 void onRTCAlarm(void) // $ ou £
 {
 debugSerial.println("\n€");  // €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-  
+
+
+// ISR1 doit être activé, sinon vu toutes les n minutes de ISR2
+  if (millis() - loopWDT >  100000) // 100s sans passage par loop() => RESET
+  {
+
+debugSerial.println(loopWDT);
+   loopWDT  = millis();
+debugSerial.println(loopWDT);
+
+
+
+    
+    softReset();
+  }
 // ALARME 1 : Toutes les secondes (mode programmation)
   if (rtc.alarmFired(1)) 
   {
