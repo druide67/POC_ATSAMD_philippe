@@ -61,3 +61,25 @@ debugSerial.println("Reprogramme IRQ2");
     startListInputWithTimeout(currentMenu->title, currentMenu->menuList, currentMenu->menuSize, currentMenu->selectedIndex, 0);
   }
 }
+
+
+void menu000_F8_GetHex()
+{ static char hexBuffer[41] = "0123456789ABCDEF0123456789ABCDEF01234567"; // Buffer pour l'hexa
+
+debugSerial.println("Lancement saisie HEXA");
+debugSerial.println("CONFIG. SYSTEME - Demande saisie HEXA");
+  startHexInput(hexBuffer); 
+}           
+
+void menu000_F8_GetHexDone()    
+{ static char hexBuffer[41] = "0123456789ABCDEF0123456789ABCDEF01234567"; // Buffer pour l'hexa
+
+  finalizeHexInput(hexBuffer); // Récupérer chaine HEXA
+debugSerial.print("Nouvelle chaine: ");
+debugSerial.println(hexBuffer);        // Ici vous pouvez traiter l'heure et revenir au menu
+  if (currentMenuDepth > 0)
+  {
+    menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
+    startListInputWithTimeout(currentMenu->title, currentMenu->menuList, currentMenu->menuSize, currentMenu->selectedIndex, 0);
+  }
+}

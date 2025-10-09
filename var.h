@@ -40,20 +40,25 @@ uint8_t currentMenuDepth = 0;
 // Contexte de Listes et menus
 bool startupListActivated = false;    // Flag pour activer la liste au démarrage
 char stringSaisie[OLEDBUFLEN]="azerty";   // 128/retour de toutes les fonctions de saisie non bloquantes
+
 //listInputContext_t listInputCtx = {LIST_INPUT_IDLE, 0, 0, 10, false, 0, false, 0, 0, 0, "", NULL};
 bool displayListDebug = false;
-
 listInputContext_t listInputCtx = {LIST_INPUT_IDLE, 0, 0, 10, 0, 0, false, false, 0, false, 0, 0, 0, "", NULL};
+
 // Contexte de saisie Numérique
 numberInputContext_t numberInputCtx = {NUMBER_INPUT_IDLE, 0, "", 10, false, 0, false, 0, "", false};
 bool displayNumberDebug = false;
+
 // Contexte de saisie Alphanumérique
 stringInputContext_t stringInputCtx = {STRING_INPUT_IDLE, 0, "", 20, false, 0, false, 0, ""};
 bool displayStringDebug = false;
+
 // Contexte de saisie HEXA
-hexInputContext_t hexInputCtx = {HEX_INPUT_IDLE, 0, 0xFF, "", "", false, 0, false, false, 0, 0, 0xFF, 16, 0, 30000, false, true,0xFFFFFFFF};
+hexInputContext_t hexInputCtx = {HEX_INPUT_IDLE, 0, 0xFF, "", "", false, 0, false, false, 0, 0, 0xFF, 0xFF, 16, 0, 30000, false, true, 0xFF};
+
 // Contexte de saisie d'heure
 timeInputContext_t timeInputCtx = {TIME_INPUT_IDLE, 0, 0xFF, "", "", false, 0, false, false, 0, 0, 30000, false, true};
+
 // Contexte de saisie de date
 dateInputContext_t dateInputCtx = {DATE_INPUT_IDLE, 0, 0xFF, "", "", false, 0, false, false, 0, 0, 30000, false, true};
 

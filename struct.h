@@ -185,12 +185,13 @@ typedef struct
   unsigned long lastBlink;    // Dernier clignotement
   uint8_t displayOffset;      // Décalage pour affichage (scroll horizontal)
   uint8_t lastDisplayOffset;  // Dernier décalage affiché
+  uint8_t lastCursorOffset;   // Dernier offset quand le curseur a été affiché
   uint8_t displayWidth;       // Largeur d'affichage (nb de caractères visibles)
   unsigned long lastActivity;    // Dernière activité utilisateur
   unsigned long timeoutDuration; // Durée du timeout en ms
   bool lastValidity;          // Dernière validité affichée
   bool firstDisplay;          // Premier affichage
-  unsigned long lastDisplayedTimeout; // Dernier timeout affiché
+  uint8_t lastTimeoutValue;   // Dernière valeur de timeout affichée
 } hexInputContext_t;
 
 /**
@@ -297,51 +298,51 @@ typedef struct
   float   ProcessorTemp;    // temp µC, conservé en backup DHT22 
 } LoRa_Var;
 
-typedef struct  
-{
-  uint8_t SpreadingFactor;   // 7, 9 et 12 echec freudeneck
-  uint8_t SendingPeriod;     // 15 minutes = 500 sans IT
-} LoRa_configuration;
-
-// Config LoRa
-typedef struct 
-{
-  char AppEUI[11];    // Format "jj/mm/aaaa"
-  char heure[9];    // Format "hh:mm:ss"
-  char sendPayloadInterval;
-  char spreadFactor;
-} LoRaState;
-
-
+// Config  Générale
 typedef struct     // regroupe tous les paramètres de EEPROM
 {
   uint8_t Balance_ID;           // ID Rucher           xx  uint8_t
-  char    RucherName [20];      // Localisation Rucher (saisir direct ou liste
-  char    HWEUI_List [20];      // RN2483 HWEUI
+  char    RucherName [20];      // Localisation Rucher (saisir direct ou liste + "autre")
+} ConfigBalanceSW;
+
+// Config LoRa
+typedef struct  
+{
+  uint8_t HWEUI [20];       // ID RN2483: "0004A30B00EEEE01"
+  uint8_t AppEUI [10];      // AppEUI: {0x41, 0x42, 0x45, 0x49, 0x4C, 0x4C, 0x45, 0x31, 0x00}
+  uint8_t AppKey [18];      // AppKEY: // 5048494C495050454C4F564542454553 - PHILIPPELOVEBEES
+// {0x50, 0x48, 0x49, 0x4C, 0x49, 0x50, 0x50, 0x45, 0x4C, 0x4F, 0x56, 0x45, 0x42, 0x45, 0x45, 0x53, 0x00} 
+  uint8_t SpreadingFactor;  // 7, 9 et 12 echec freudeneck
+  uint8_t SendingPeriod;    // 15 minutes = 500 sans IT
+} LoRa_configuration;
+
+// Config Hardware
+typedef struct     // regroupe tous les paramètres de EEPROM
+{
   uint8_t HX711Clk_0;           // HX711#0 parameters
   uint8_t HX711Dta_0;
   float   HX711ZeroValue_0;
   float   HX711Scaling_0;
-//  float   HX711Cor_Temp_0;
+  float   HX711Cor_Temp_0;
   uint8_t HX711Clk_1;           // HX711#1 parameters
   uint8_t HX711Dta_1;
   float   HX711ZeroValue_1;
   float   HX711Scaling_1;
-//  float   HX711Cor_Temp_1;
+  float   HX711Cor_Temp_1;
   uint8_t HX711Clk_2;           // HX711#2 parameters
   uint8_t HX711Dta_2;
   float   HX711ZeroValue_2;
   float   HX711Scaling_2;
-//  float   HX711Cor_Temp_2;
+  float   HX711Cor_Temp_2;
   uint8_t HX711Clk_3;           // HX711#3 parameters
   uint8_t HX711Dta_3;
   float   HX711ZeroValue_3;
   float   HX711Scaling_3;
-//  float   HX711Cor_Temp_3;
+  float   HX711Cor_Temp_3;
   float   LDRBrightnessScale;   // 
   float   VSolScale;            //  
   float   VBatScale;
-} ConfigBaladnce;
+} ConfigBalanceHW;
 
 
 

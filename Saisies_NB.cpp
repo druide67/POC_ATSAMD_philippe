@@ -1274,11 +1274,8 @@ void startHexInput(const char* initialHex)
   hexInputCtx.lastPosition = 0xFF;
   hexInputCtx.displayOffset = 0;
   hexInputCtx.lastDisplayOffset = 0xFF;
+  hexInputCtx.lastCursorOffset = 0xFF;
   hexInputCtx.displayWidth = 16; // 16 caractères visibles sur l'écran
-  hexInputCtx.firstDisplay = true;
-  hexInputCtx.lastValidity = false;
-  hexInputCtx.lastCursorBlink = false;
-  hexInputCtx.lastDisplayedTimeout = 0xFFFFFFFF;
   
   // Copier la chaîne initiale ou créer une chaîne par défaut
   if (initialHex && strlen(initialHex) == 40)
@@ -1294,22 +1291,20 @@ void startHexInput(const char* initialHex)
     }
   }
   hexInputCtx.workingHex[40] = '\0';
-  
-  // Initialiser lastDisplayedHex
-  memset(hexInputCtx.lastDisplayedHex, 0, 17);
+  strcpy(hexInputCtx.lastDisplayedHex, "");
   
   hexInputCtx.displayRefresh = true;
   hexInputCtx.lastUpdate = millis();
   hexInputCtx.cursorBlink = true;
+  hexInputCtx.lastCursorBlink = false;
   hexInputCtx.lastBlink = millis();
   hexInputCtx.lastActivity = millis();      // Initialiser le timer d'activité
   hexInputCtx.timeoutDuration = 30000;      // 30 secondes de timeout
+  hexInputCtx.lastValidity = false;
+  hexInputCtx.firstDisplay = true;
   
   debugSerial.println("Saisie hexadecimale demarree");
-  OLEDClear(); // Effacer l'écran une seule fois au début
   OLEDDisplayMessageL8("Modifiez la cle hexa", false, false);
-  delay(1000); // Laisser le message visible
-  OLEDClear();
 }
 
 /**
@@ -1480,124 +1475,134 @@ bool isHexInputActive(void)
   return (hexInputCtx.state == HEX_INPUT_ACTIVE);
 }
 
+
 /**
- * @brief Rafraîchit l'affichage de la chaîne hexadécimale avec curseur
- *        VERSION OPTIMISÉE : ne redessine QUE ce qui a changé
+ * @brief Rafraîchit l'affichage de la chaîne hexadécimale avec curseur (optimisé)
  * @param void
  * @return void
  */
 void refreshHexDisplay(void)
 {
-  // 1. Afficher le titre UNIQUEMENT au premier affichage
-  if (hexInputCtx.firstDisplay)
-  {
-    OLEDDrawText(0, 0, 0, "CLE HEXADECIMALE:");
-    hexInputCtx.firstDisplay = false;
-  }
-  
-  // 2. Préparer la portion visible de la chaîne
-  char displayBuffer[17];
+  // Préparer la chaîne d'affichage (portion visible)
+  char displayBuffer[17]; // 16 chars + '\0'
   strncpy(displayBuffer, &hexInputCtx.workingHex[hexInputCtx.displayOffset], 16);
   displayBuffer[16] = '\0';
   
-  // Afficher UNIQUEMENT si la portion visible a changé OU si le décalage a changé
-  if (strcmp(displayBuffer, hexInputCtx.lastDisplayedHex) != 0 || 
-      hexInputCtx.displayOffset != hexInputCtx.lastDisplayOffset)
+  bool hexChanged = (strcmp(displayBuffer, hexInputCtx.lastDisplayedHex) != 0);
+  bool offsetChanged = (hexInputCtx.displayOffset != hexInputCtx.lastDisplayOffset);
+  bool positionChanged = (hexInputCtx.position != hexInputCtx.lastPosition);
+  bool cursorBlinkChanged = (hexInputCtx.cursorBlink != hexInputCtx.lastCursorBlink);
+  bool currentValidity = isHexStringValid(hexInputCtx.workingHex);
+  bool validityChanged = (currentValidity != hexInputCtx.lastValidity);
+  
+  // Afficher le titre seulement au premier affichage (ligne 0)
+  if (hexInputCtx.firstDisplay)
   {
-    OLEDDrawText(1, 0, 0, displayBuffer);
-    strncpy(hexInputCtx.lastDisplayedHex, displayBuffer, 17);
-    hexInputCtx.lastDisplayOffset = hexInputCtx.displayOffset;
+    OLEDDrawText(1, 0, 0, "CLE HEXADECIMALE:");
+    OLEDDrawText(1, 7, 0, "+/- Modif VALIDE OK"); // Instructions fixes
+    hexInputCtx.firstDisplay = false;
   }
   
-  // 3. Gérer le curseur et les infos UNIQUEMENT si l'état a changé
-  if (hexInputCtx.cursorBlink != hexInputCtx.lastCursorBlink ||
-      hexInputCtx.position != hexInputCtx.lastPosition ||
-      hexInputCtx.displayOffset != hexInputCtx.lastDisplayOffset)
+  // Afficher la portion visible seulement si elle a changé (ligne 2)
+  if (hexChanged || offsetChanged)
   {
-    int relativePos = hexInputCtx.position - hexInputCtx.displayOffset;
-    
-    if (hexInputCtx.cursorBlink && relativePos >= 0 && relativePos < 16)
+    OLEDDrawText(1, 2, 0, displayBuffer);
+    strcpy(hexInputCtx.lastDisplayedHex, displayBuffer);
+  }
+  
+  // Gestion du curseur (ligne 3)
+  if (positionChanged || cursorBlinkChanged || offsetChanged)
+  {
+    // Si l'offset a changé, effacer toute la ligne 3 pour supprimer tous les curseurs fantômes
+    if (offsetChanged)
     {
-      // Afficher le curseur
-      char underline[17] = "                ";
-      underline[relativePos] = '^';
-      underline[16] = '\0';
-      OLEDDrawText(2, 0, 0, underline);
-      
-      // Afficher la position absolue
-      char posInfo[20];
-      sprintf(posInfo, "Pos: %02d/40", hexInputCtx.position + 1);
-      OLEDDrawText(3, 0, 0, posInfo);
-      
-      // Afficher les informations de scroll si nécessaire
-      if (hexInputCtx.displayOffset > 0 || hexInputCtx.displayOffset < (40 - 16))
-      {
-        char scrollInfo[20];
-        sprintf(scrollInfo, "<%02d-%02d>", 
-                hexInputCtx.displayOffset + 1, 
-                hexInputCtx.displayOffset + 16);
-        OLEDDrawText(3, 80, 0, scrollInfo);
-      }
-      else
-      {
-        OLEDDrawText(3, 80, 0, "        "); // Effacer l'info de scroll
-      }
+      OLEDDrawText(1, 3, 0, "                "); // 16 espaces
+      hexInputCtx.lastCursorOffset = 0xFF; // Invalider l'ancien offset
     }
     else
     {
-      // Effacer le curseur
-      OLEDDrawText(2, 0, 0, "                ");
-      
-      // Afficher le statut de validité UNIQUEMENT si changé
-      bool isValid = isHexStringValid(hexInputCtx.workingHex);
-      if (isValid != hexInputCtx.lastValidity || hexInputCtx.cursorBlink != hexInputCtx.lastCursorBlink)
+      // Sinon, effacer uniquement l'ancienne position du curseur
+      if (hexInputCtx.lastPosition != 0xFF && hexInputCtx.lastCursorOffset != 0xFF)
       {
-        if (isValid)
+        int lastRelativePos = hexInputCtx.lastPosition - hexInputCtx.lastCursorOffset;
+        if (lastRelativePos >= 0 && lastRelativePos < 16)
         {
-          OLEDDrawText(3, 0, 0, "Cle valide      ");
+          OLEDDrawText(1, 3, lastRelativePos, " ");
         }
-        else
-        {
-          OLEDDrawText(3, 0, 0, "Cle invalide    ");
-        }
-        hexInputCtx.lastValidity = isValid;
       }
     }
     
-    hexInputCtx.lastCursorBlink = hexInputCtx.cursorBlink;
+    // Calculer la position relative du curseur dans l'affichage actuel
+    int relativePos = hexInputCtx.position - hexInputCtx.displayOffset;
+    
+    // Afficher le curseur ^ si visible et dans la zone d'affichage
+    if (hexInputCtx.cursorBlink && relativePos >= 0 && relativePos < 16)
+    {
+      OLEDDrawText(1, 3, relativePos, "^");
+    }
+    
+    // TOUJOURS mémoriser l'offset actuel (même si curseur invisible)
+    hexInputCtx.lastCursorOffset = hexInputCtx.displayOffset;
     hexInputCtx.lastPosition = hexInputCtx.position;
   }
   
-  // 4. Gérer le timeout UNIQUEMENT si nécessaire
+  // Afficher la position et scroll info seulement si changé (ligne 4)
+  if (positionChanged || offsetChanged)
+  {
+    char posInfo[21];
+    sprintf(posInfo, "Pos: %02d/40", hexInputCtx.position + 1);
+    
+    // Afficher les informations de scroll si nécessaire
+    if (hexInputCtx.displayOffset > 0 || hexInputCtx.displayOffset < (40 - 16))
+    {
+      char scrollInfo[9];
+      sprintf(scrollInfo, " <%02d-%02d>", 
+              hexInputCtx.displayOffset + 1, 
+              hexInputCtx.displayOffset + 16);
+      strcat(posInfo, scrollInfo);
+    }
+    OLEDDrawText(1, 4, 0, posInfo);
+    
+    hexInputCtx.lastDisplayOffset = hexInputCtx.displayOffset;
+  }
+  
+  // Afficher le statut de validité seulement s'il a changé (ligne 5)
+  if (validityChanged)
+  {
+    if (currentValidity)
+    {
+      OLEDDrawText(1, 5, 0, "Cle valide          ");
+    }
+    else
+    {
+      OLEDDrawText(1, 5, 0, "Cle invalide        ");
+    }
+    hexInputCtx.lastValidity = currentValidity;
+  }
+  
+  // Afficher le countdown du timeout seulement si < 5s (ligne 7)
   if (hexInputCtx.timeoutDuration > 0)
   {
     unsigned long remainingTime = (hexInputCtx.timeoutDuration - (millis() - hexInputCtx.lastActivity)) / 1000;
     
-    if (remainingTime <= 5) 
+    // N'afficher le timeout que dans les 5 dernières secondes
+    if (remainingTime <= 5 && remainingTime != hexInputCtx.lastTimeoutValue)
     {
-      // Afficher les 5 dernières secondes UNIQUEMENT si changé
-      if (remainingTime != hexInputCtx.lastDisplayedTimeout)
-      {
-        char timeoutMsg[21];
-        snprintf(timeoutMsg, 21, "Timeout: %lds       ", remainingTime);
-        OLEDDrawText(4, 0, 0, timeoutMsg);
-        hexInputCtx.lastDisplayedTimeout = remainingTime;
-      }
+      char timeoutMsg[21];
+      snprintf(timeoutMsg, 21, "Timeout: %lds       ", remainingTime);
+      OLEDDrawText(1, 7, 0, timeoutMsg);
+      hexInputCtx.lastTimeoutValue = remainingTime;
     }
-    else if (hexInputCtx.lastDisplayedTimeout <= 5)
+    else if (remainingTime > 5 && hexInputCtx.lastTimeoutValue <= 5)
     {
-      // Revenir à l'affichage normal
-      if (hexInputCtx.cursorBlink)
-      {
-        OLEDDrawText(4, 0, 0, "+/- Modif VALIDE OK ");
-      }
-      else
-      {
-        OLEDDrawText(4, 0, 0, "                    ");
-      }
-      hexInputCtx.lastDisplayedTimeout = 0xFFFFFFFF;
+      // Restaurer les instructions si on sort du mode timeout
+      OLEDDrawText(1, 7, 0, "+/- Modif VALIDE OK");
+      hexInputCtx.lastTimeoutValue = 255;
     }
   }
+  
+  // Sauvegarder les états pour la prochaine comparaison
+  hexInputCtx.lastCursorBlink = hexInputCtx.cursorBlink;
 }
 
 /**
@@ -2536,13 +2541,6 @@ void modifyDateDigit(char *d, uint8_t pos, int delta)
   debugSerial.print(" modifiee: ");
   debugSerial.println(d[pos]);
 }
-
-
-// -------------------------------------------------------------------------------------
-// ===== FONCTIONS DE SAISIE HEXA =====
-// -------------------------------------------------------------------------------------
-
-
 
 
 // -------------------------------------------------------------------------------------

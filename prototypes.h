@@ -40,6 +40,12 @@ void menu000_F6_GetDate(void);
 void menu000_F7_GetTime(void);
 void menu000_F7_GetTimeDone(void);
 
+void menu000_F8_GetHex(void);
+void menu000_F8_GetHexDone(void);
+
+
+
+
 
 // Fonctions de gestion des ecrans infos
 void displayInfoScreen(void);
@@ -131,9 +137,6 @@ uint8_t getNextValidDatePosition(uint8_t currentPos, bool forward);
 bool isDateValid(const char *d);
 void modifyDateDigit(char *d, uint8_t pos, int delta);
 
-
-// Fonctions de saisie HEX
-// HEXA
 
 // Fonctions de saisie Email
 // Email

@@ -13,7 +13,7 @@ const char* menu000Demarrage[] = {
   "CALIB. BALANCES(F)",    // 5 : Bal1, Bal2, Bal3, Bal4    puis sous menu ou fonction Tare, Echelle, Comp T° par Bal
   "SAISIE DATE    (S)",    // 6 : test rapide date
   "SAISIE HEURE   (S)",    // 7 : Test rapide Time
-  "LISTE_MENU8    (F)"     // 8 : Libre
+  "SAISIE HEXA    (S)"     // 8 : Libre
 };
 
 const char* menu040CalibTensions[] = {

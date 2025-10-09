@@ -44,14 +44,9 @@ else if (isTimeInputActive())
 else if (isHexInputActive())
     flag =  1 <<2;    
 
-
-    
-
   sprintf(serialbuf, "Flag : %d WDT : %d",flag, loopWDT);
   debugSerial.println(serialbuf);
-
-// 
-  
+//  
   sprintf(serialbuf, "List %d / Infos %d / Number %d / String %d / Time %d / Date, Mail, IP,...",
   isListInputActive(), isInfoScreenActive(), isNumberInputActive(), isStringInputActive(), isTimeInputActive()); 
   debugSerial.println(serialbuf);
@@ -313,7 +308,6 @@ debugSerial.print("Chaine validée : "); debugSerial.print(stringSaisie);debugSe
 
 
 saisieEnCours();
-        
 #ifdef __SerialDebugPoc    
 debugSerial.print("H");   // HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 #endif    
@@ -323,15 +317,28 @@ debugSerial.print("H");   // HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
     switch (state)
     {
       case HEX_INPUT_COMPLETED:
-        finalizeHexInput(hexBuffer); // Récupérer la chaîne finale
-        debugSerial.print("Nouvelle cle hexadecimale: ");
-        debugSerial.println(hexBuffer);
+ 
+        menu000_F8_GetHexDone();
+        
+    //    finalizeHexInput(hexBuffer); // Récupérer la chaîne finale
+      //  debugSerial.print("Nouvelle cle hexadecimale: ");
+        //debugSerial.println(hexBuffer);
+
+        
         // Ici vous pouvez sauvegarder la clé ou autre
         break;
         
       case HEX_INPUT_CANCELLED:
-        debugSerial.println("Saisie hexadecimale annulee par timeout");
-        cancelHexInput();
+           {
+debugSerial.println("Saisie hexadecimale annulee par timeout");
+              cancelHexInput();
+              if (currentMenuDepth > 0)           // Revenir au menu
+              {
+                menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
+                startListInputWithTimeout(currentMenu->title, currentMenu->menuList, currentMenu->menuSize, currentMenu->selectedIndex, 0);
+              }
+              break;        
+           }         
         // Revenir au menu si nécessaire
         break;
         

@@ -185,10 +185,10 @@ debugSerial.println(selectedIndex);
                menu000_F7_GetTime();
                break;
              }
-      case 8: // "LISTE_MENU9"
+      case 8: // "SAISIE HEXA "
              {
-debugSerial.println("LISTE_MENU9 - Fonction a implementer");
-               break;      
+               menu000_F8_GetHex();
+               break;
              }
       default:
               {
