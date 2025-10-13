@@ -1,7 +1,7 @@
 #include ".\Menu.h"
-
-
 #ifdef __MAIN__
+
+// pas de const dans les globales => erreur ce compile !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 // Cas typiques nécessitant volatile
 
@@ -15,7 +15,7 @@ bool DEBUG_WAKEUP_PAYLOAD = true;    // Activer/désactiver réveil payload
 //bool DEBUG_WAKEUP_PAYLOAD = false;    // Activer/désactiver réveil payload
 
 bool DEBUG_INTERVAL_1SEC = true;     // Activer/désactiver réveil 1 seconde
-//bool DEBUG_INTERVAL_1SEC = false;     // Activer/désactiver réveil 1 seconde
+// bool DEBUG_INTERVAL_1SEC = false;     // Activer/désactiver réveil 1 seconde
 
 //bool DEBUG_LOW_POWER = true;         // Activer/désactiver basse consommation
 bool DEBUG_LOW_POWER = false;         // Activer/désactiver basse consommation
@@ -30,6 +30,9 @@ DateTime nextPayload;
 // variables clavier
 clavier_context_t clavierContext = {KEY_NONE, KEY_NONE, 0, 0, false};
 key_code_t touche; 
+
+
+
 
 // ===== VARIABLES GLOBALES MACHINE A ETAT MENUS=====
 menuLevel_t menuStack[MAX_MENU_DEPTH];
@@ -62,12 +65,18 @@ timeInputContext_t timeInputCtx = {TIME_INPUT_IDLE, 0, 0xFF, "", "", false, 0, f
 // Contexte de saisie de date
 dateInputContext_t dateInputCtx = {DATE_INPUT_IDLE, 0, 0xFF, "", "", false, 0, false, false, 0, 0, 30000, false, true};
 
+// Contexte de saisie de l'Email
+char emailCharSet[] = "abcdefghijklmnopqrstuvwxyz0123456789@.-_"; // Jeu de caractères pour email
+uint8_t emailCharSetSize = 40; // 26 lettres + 10 chiffres + 4 symboles
+emailInputContext_t emailInputCtx = {EMAIL_INPUT_IDLE, 0, 0xFF, 0, 0xFF, "", "", false, 0, false, false, 0, 0, 0xFF, 16, 0, 30000, false, 0xFF, true, 0};
 
-
+// Contexte de saisie de l'IP
+ipInputContext_t ipInputCtx = {IP_INPUT_IDLE, 0, 0xFF, "192.168.001.001", "", false, 0, false, false, 0, 0, 30000, false, true};
 
 // État de l'écran d'information
 infoScreenState_t infoScreenState = INFO_SCREEN_IDLE;
 bool infoScreenRefreshTime = false;
+
 
 // Exemple de liste 
 /*
@@ -187,7 +196,7 @@ char HWEUI_List [6][20] = {
   "0004A30B0020300A", // Orange: Carte Explorer HS, puis proto PCB#1, récupérer Chip LoRa pour PCB#2
   "0004A30B0024BF45", // pas connecté chez Orange??? noeud non identifié
   "0004A30B00EEEE01", // Orange: carte Explorer, PCB#1 puis PCB#2 Support Loess
-  "0004A30B00EEA5D5", // noeud non identifié
+  "0004A30B00EEA5D5", // Orange: Proto PCB#2 Support Loess
   "0004A30B00F547CF" // Orange: Proto CAVE PCB#2
  };
 
@@ -267,7 +276,7 @@ int Peson [10][4] = {
       {0,0,0,17},    // 0004A30B0020300A carte 1 HS; sur Carte PROTO2 en service le 05/03/2021
       {13,8,9,0}, //15},    // 0004A30B0024BF45 carte 2; en service le 10/05/2020
       {19,18,0,0},    // 0004A30B00EEEE01 Carte PROTO1 mis en service Loess le 08/03/2021
-      {0,5,0,0},    // complter
+      {0,0,0,0},    // 0004A30B00EEA5D5
       {19,21,17,14},
       {6,0,0,0},
       {7,0,0,0},
@@ -398,7 +407,14 @@ extern stringInputContext_t stringInputCtx;
 extern bool displayStringDebug;
 extern hexInputContext_t hexInputCtx;
 extern timeInputContext_t timeInputCtx;
-extern dateInputContext_t dateInputCtx;     // Contexte de saisie de date
+// Contexte de saisie de date
+extern dateInputContext_t dateInputCtx;     
+// Contexte de saisie de l'Email
+extern const char *emailCharSet; //[];  // /*const*/
+extern const uint8_t emailCharSetSize; // 26 lettres + 10 chiffres + 4 symboles  /*const*/
+extern emailInputContext_t emailInputCtx;
+// Contexte de saisie de l'IP
+extern ipInputContext_t ipInputCtx;
 
 // État de l'écran d'information
 extern infoScreenState_t infoScreenState;
@@ -412,7 +428,7 @@ extern bool infoScreenRefreshTime;
 
 extern clavier_context_t clavierContext;
 
-extern char OLEDbuf[];
+extern char *OLEDbuf; //[];
 extern char serialbuf[];
 extern char Module_ID[];
 

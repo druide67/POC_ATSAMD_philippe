@@ -76,7 +76,30 @@ typedef enum
   DATE_INPUT_COMPLETED,   // Saisie terminée avec succès
   DATE_INPUT_CANCELLED    // Saisie annulée
 } dateInputState_t;
- 
+
+/**
+ * États possibles de la saisie email
+ */
+typedef enum 
+{
+  EMAIL_INPUT_IDLE,         // Pas de saisie en cours
+  EMAIL_INPUT_ACTIVE,       // Saisie en cours
+  EMAIL_INPUT_COMPLETED,    // Saisie terminée avec succès
+  EMAIL_INPUT_CANCELLED     // Saisie annulée
+} emailInputState_t;
+
+/**
+ * États possibles de la saisie IP
+ */
+typedef enum 
+{
+  IP_INPUT_IDLE,         // Pas de saisie en cours
+  IP_INPUT_ACTIVE,       // Saisie en cours
+  IP_INPUT_COMPLETED,    // Saisie terminée avec succès
+  IP_INPUT_CANCELLED     // Saisie annulée
+} ipInputState_t;
+
+
 /**
  * États possibles de l'affichage d'écran d'info
  */
@@ -235,6 +258,62 @@ typedef struct
   bool lastValidity;          // Dernière validité affichée
   bool firstDisplay;          // Premier affichage
 } dateInputContext_t;
+
+/**
+ * Contexte de saisie email
+ */
+typedef struct 
+{
+  emailInputState_t state;    // État actuel
+  uint8_t position;           // Position du curseur (0-39)
+  uint8_t lastPosition;       // Dernière position affichée
+  uint8_t length;             // Longueur actuelle de l'email
+  uint8_t lastLength;         // Dernière longueur affichée
+  char workingEmail[41];      // Email de travail (40 chars max + '\0')
+  char lastDisplayedEmail[17];// Dernière portion affichée (16 chars + '\0')
+  bool displayRefresh;        // Flag pour rafraîchir l'affichage
+  unsigned long lastUpdate;   // Dernier rafraîchissement affichage
+  bool cursorBlink;           // État du clignotement curseur
+  bool lastCursorBlink;       // Dernier état du clignotement
+  unsigned long lastBlink;    // Dernier clignotement
+  uint8_t displayOffset;      // Décalage pour affichage (scroll horizontal)
+  uint8_t lastDisplayOffset;  // Dernier décalage affiché
+  uint8_t lastCursorOffset;   // Dernier offset quand le curseur a été affiché
+  uint8_t displayWidth;       // Largeur d'affichage (nb de caractères visibles)
+  unsigned long lastActivity;    // Dernière activité utilisateur
+  unsigned long timeoutDuration; // Durée du timeout en ms
+  bool lastValidity;          // Dernière validité affichée
+  uint8_t lastValidityState;  // 0=vide, 1=valide, 2=invalide
+  bool firstDisplay;          // Premier affichage
+  uint8_t charSetIndex;       // Index dans le jeu de caractères
+  uint8_t lastTimeoutValue;   // Dernière valeur de timeout affichée
+} emailInputContext_t;
+
+/**
+ * Contexte de saisie IP
+ */
+typedef struct 
+{
+  ipInputState_t state;       // État actuel
+  uint8_t position;           // Position du curseur (0-14)
+  uint8_t lastPosition;       // Dernière position affichée
+  char workingIP[16];         // IP de travail "XXX.XXX.XXX.XXX" + '\0'
+  char lastDisplayedIP[16];   // Dernière IP affichée
+  bool displayRefresh;        // Flag pour rafraîchir l'affichage
+  unsigned long lastUpdate;   // Dernier rafraîchissement affichage
+  bool cursorBlink;           // État du clignotement curseur
+  bool lastCursorBlink;       // Dernier état du clignotement
+  unsigned long lastBlink;    // Dernier clignotement
+  unsigned long lastActivity; // Dernière activité utilisateur
+  unsigned long timeoutDuration; // Durée du timeout en ms
+  bool lastValidity;          // Dernière validité affichée
+  bool firstDisplay;          // Premier affichage
+} ipInputContext_t;
+
+
+
+
+
 
 // ===== STRUCTURES DE CONFIGURATION =====
 typedef struct 

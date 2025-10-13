@@ -1,6 +1,12 @@
 #define __INIT_DONE
 #include "define.h"
 
+/*
+ * Navigation entre le 5 niveaux de menus : pushMenu() et popMenu()
+ */
+
+
+
 // PROGRAMMATION MODE
 // *************************************************************************************
 //  MENUS
@@ -14,11 +20,7 @@
  * @param initialIndex Index initial sélectionné
  * @return void
  */
-
-
-//         pushMenu("Menu Niv 3:", menu043Reserve040, 5, 0);
-
- 
+// exemple appel: pushMenu("Menu Niv 3:", menu043Reserve040, 5, 0);
 void pushMenu(const char* title, const char** menuList, uint8_t menuSize, uint8_t initialIndex)
 {
 sprintf(serialbuf, "pushMenu() %s",title); 
@@ -69,18 +71,10 @@ debugSerial.println(serialbuf);
     debugSerial.print(" Profondeur: ");
     debugSerial.println(currentMenuDepth);
   }
-
 // Apres 
   debugSerial.print(" menu apres popMenu(): ");
   debugSerialPrintMenuStruct(&menuStack[currentMenuDepth - 1]);  
 }
-
-
-
-
-
-
-
 
 
 // isListInputActive()FALSE
@@ -123,17 +117,16 @@ debugSerial.print("processMenuSelection ");
 debugSerial.println(selectedIndex);  
   // Traitement selon le menu actuel
 // ---------------------------------------------------------------------------------
-// menu000Demarrage (MENU de démarrage)
+// ------------------------------------------ menu000Demarrage[] (MENU de démarrage)
 // ---------------------------------------------------------------------------------
-
   if (currentMenu->menuList == menu000Demarrage)
   {
     // Menu principal
     switch (selectedIndex)
     {
-    // ----------------------------------
-  // APPEL D'UN AFFICHAGE D'ECRAN  
-    // ----------------------------------   
+// ----------------------------------
+// APPEL D'UN AFFICHAGE D'ECRAN  
+// ----------------------------------   
       case 1: // "INFOS"
         debugSerial.println("Appel d'un ecran");
         debugSerial.println("CONFIG. SYSTEME - Ecran INFOS demandé");   
@@ -141,9 +134,9 @@ debugSerial.println(selectedIndex);
         OLEDdisplayInfoScreen();     // part dans KKKKKKKKK
         // popMenu(); // Retour au menu principal
         break;
-    // ----------------------------------
-  // APPEL D'UNE FONCTION
-    // ----------------------------------        
+// ----------------------------------
+// APPEL D'UNE FONCTION
+// ----------------------------------        
       case 2: // "CONFIG. SYSTEME"
         debugSerial.println("Appel d'une Fonction");
         debugSerial.println("CONFIG. SYSTEME - Fonction a implementer");
@@ -153,9 +146,9 @@ debugSerial.println(selectedIndex);
         debugSerial.println("Appel d'une Fonction");      
         debugSerial.println("CONNEX. RESEAU - Fonction a implementer");
         break;
-    // ----------------------------------
-  // APPEL D'UN SOUS MENU    
-    // ----------------------------------
+// ----------------------------------
+// APPEL D'UN SOUS MENU    
+// ----------------------------------
     case 4: // "CALIB. TENSIONS"
             {
         debugSerial.println("Appel d'un sous menu");    
@@ -169,17 +162,17 @@ debugSerial.println(selectedIndex);
         // weightCalibration(1); // Fonction existante
         break;
            }
-    // ----------------------------------
-  // APPEL D'UNE SAISIE, ici DATE
-    // ----------------------------------        
+// ----------------------------------
+// APPEL D'UNE SAISIE, ici DATE
+// ----------------------------------        
      case 6: // "SAISIE DATE"
              {
                menu000_F6_GetDate();
                break;
              }
-    // ----------------------------------
-  // APPEL D'UNE SAISIE, ici HEURE
-    // ----------------------------------        
+// ----------------------------------
+// APPEL D'UNE SAISIE, ici HEURE
+// ----------------------------------        
      case 7: // "SAISIE HEURE"
              {
                menu000_F7_GetTime();
@@ -197,7 +190,7 @@ debugSerial.println(selectedIndex);
     }
   }
 // ---------------------------------------------------------------------------------
-// menu040CaliTensions
+// ----------------------------------------------------------- menu040CaliTensions[]
 // ---------------------------------------------------------------------------------
   else if (currentMenu->menuList == menu040CalibTensions)
   {
@@ -234,7 +227,7 @@ debugSerial.println(selectedIndex);
     }
   }  
 // ---------------------------------------------------------------------------------
-// menu043Reserve040[]
+// ------------------------------------------------------------- menu043Reserve040[]
 // ---------------------------------------------------------------------------------
   else if (currentMenu->menuList == menu043Reserve040)
   {

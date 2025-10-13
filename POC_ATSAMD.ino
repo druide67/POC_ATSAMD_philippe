@@ -1,4 +1,10 @@
 
+//blocage sur erreur RTC => FIN
+
+
+
+
+
 //Virer 3 x colonne?0:0 valider sur 0.96"
 // https://claude.ai/chat/75e1ba53-8b90-4f09-97a5-cfc366e36a8e
 // 16:40:59.416 -> Alarme 2 (payload) programmée pour: 16:39:16  afficher a chaque reprogrammation
@@ -28,7 +34,7 @@
 // =====  PROGRAMME =====
 // ===== SETUP =====
 void setup() 
-{
+{  int z=0;
 
 // INITIALISE LA STRUCTURE A ENVOYER
 Data_LoRa.rucher_ID = 67;   // compris entre 0 et 99
@@ -74,9 +80,22 @@ Data_LoRa.ProcessorTemp = 21.18;   // temp µC, ne sera pas conservé
 
 // config balance connue 10 lecture + moyenne
 // poids peson doit être de 0 à 3 et GetPoids de 1..4 confirmé 06/06/2025
-  Poids_Peson(0) = GetPoids(1,10);
-  OLEDDebugDisplay("getWeight 1 Done");
 
+  if (Peson[Ruche.Num_Carte][z])
+  {
+    Poids_Peson(z) = GetPoids(z+1,10);
+    sprintf(OLEDbuf,"getWeight %d Done",z);
+    OLEDDebugDisplay(OLEDbuf);
+  }
+  else 
+  {
+    sprintf(OLEDbuf,"Peson %d: NONE ",z);
+   OLEDDebugDisplay(OLEDbuf);
+  }
+
+
+    
+ 
   float temp = ((analogRead(TEMP_SENSOR) * 3300.0 / 1023.0) - 500.0) / 10.0; // Lecture temp µC  
             // put the ADC in sleep mode
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -109,21 +128,36 @@ float pesee;                                               //
 
 
 // poids peson doit être de 0 à 3 et GetPoids de 1..4 confirmé 06/06/2025
-Poids_Peson(1) = GetPoids(2,10);
-  OLEDDebugDisplay("getWeight 2 Done");
-Poids_Peson(2) = GetPoids(3,10);
-  OLEDDebugDisplay("getWeight 3 Done"); 
-Poids_Peson(3) = GetPoids(4,10);
-  OLEDDebugDisplay("getWeight 4 Done");
 
+
+  for ( z=1;z<4;z++)
+  {
+    if (Peson[Ruche.Num_Carte][z])
+    {
+      Poids_Peson(z) = GetPoids(z+1,10);
+      sprintf(OLEDbuf,"getWeight %d Done",z);
+      OLEDDebugDisplay(OLEDbuf);
+    }
+    else 
+    {
+      sprintf(OLEDbuf,"Peson %d: NONE ",z);
+     OLEDDebugDisplay(OLEDbuf);
+    }
+  }
   initLoRa();
 
 // void DS3231CompleteReset() si DS3231 out!
 
-
-
 // Initialisation RTC
   initRTC();
+  
+// Désactiver TOUTES les interruptions temporairement
+    noInterrupts();
+  
+// Configuration DS3231 AVANT interruption
+  rtc.clearAlarm(1);
+  rtc.clearAlarm(2);
+
 // Configuration des alarmes RTC 1 et 2
 if (DEBUG_INTERVAL_1SEC)
 {
@@ -141,22 +175,7 @@ if (DEBUG_WAKEUP_PAYLOAD)
 // AJOUTÉ: Debug configuration
 debugSerial.print("Configuration interruption sur pin ");
 debugSerial.println(RTC_INTERRUPT_PIN);
-
-/*
- * 
- * //bool DEBUG_WAKEUP_PAYLOAD = true;    // Activer/désactiver réveil payload
-bool DEBUG_WAKEUP_PAYLOAD = false;    // Activer/désactiver réveil payload
-
-//bool DEBUG_INTERVAL_1SEC = true;     // Activer/désactiver réveil 1 seconde
-bool DEBUG_INTERVAL_1SEC = false;     // Activer/désactiver réveil 1 seconde
-
-*/
-// Configuration DS3231 AVANT interruption
-//  rtc.writeSqwPinMode(DS3231_OFF);
-
   
-  rtc.clearAlarm(1);
-  rtc.clearAlarm(2);
   LowPower.attachInterruptWakeup(RTC_INTERRUPT_PIN, onRTCAlarm, FALLING);
 debugSerial.println("Initialisation terminee");
 
@@ -165,21 +184,38 @@ debugSerial.println("Mise à l'heure");
 
  
   dht.begin();
-  read_DHT(dht);
+  if  (!read_DHT(dht))  // 
+  {
 //  sprintf(serialbuf,"Humidité : %.2f %%\nTemperature : %.2f °C",Data_LoRa.DHT_Hum,Data_LoRa.DHT_Temp);
 //  debugSerial.println(serialbuf); 
-  OLEDDebugDisplay("DHT Done");
+    OLEDDebugDisplay("DHT Done");
+    debugSerial.println("DHT Done");
+  }
+  else
+  {
+    OLEDDebugDisplay("DHT: Error");
+    debugSerial.println("DHT: Error"); 
+  } 
 
-getVBatMoy();   // calcul moyenne de 10 lectures
-getVSolMoy();   // calcul moyenne de 10 lectures
-
- OLEDDebugDisplayReset();
-
- debugSerial.println("Start loop(); =====================================");
+  for ( z=0;z<10;z++)
+  {
+    Data_LoRa.Bat_Voltage=getVBatMoy();   // calcul moyenne de 10 lectures
+    Data_LoRa.Solar_Voltage=getVSolMoy();   // calcul moyenne de 10 lectures
+  }
+  
+  OLEDDebugDisplayReset();
+debugSerial.println("Start loop(); =====================================");
 
 buildLoraPayload();
 sendLoRaPayload((uint8_t*)payload,sizeof(payload)); //19);   // hex
 setupDone = true;
+
+// Activer les interruptions
+  rtc.writeSqwPinMode(DS3231_OFF); 
+  
+// Réactiver les interruptions
+    interrupts();
+
 }
 
 
@@ -190,6 +226,7 @@ void loop()
 {  static int index=0; 
    static int counter1s=0,counter15m=0;   
 
+      loopWDT  = millis();
 //debugSerial.println("M");  // MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 
 // Utilisable dans les 2 Modes
@@ -240,7 +277,6 @@ debugSerial.print("3");   // 333333333333333333333333333
     handleProgrammingMode();  // faire gestion Clavier et actions associées
   }
 
-      loopWDT  = millis();
 #ifdef __SerialDebugPoc  
 debugSerial.print("4");   // 444444444444444444444444444444
 #endif
@@ -261,7 +297,7 @@ static unsigned long noIRQSecLast=0;
   {    
     loopWDT  = millis();
 //#ifdef __SerialDebugPoc     
-debugSerial.print("I1$ ");   //   I1$ I1$ I1$ I1$ I1$ I1$ I1$ I1$
+debugSerial.print("I1$ WDT:");   //   I1$ I1$ I1$ I1$ I1$ I1$ I1$ I1$
 debugSerial.println(loopWDT);
 //#endif
     wakeup1Sec = false;   
@@ -277,34 +313,49 @@ debugSerial.println(loopWDT);
     {
       case 0 :    // Rafraichir OLED
   //             OLEDDisplayHivesDatas();  // ne pas executer quans saisies en cours....
+debugSerial.println("Case0");
                break;
       case 1 :   //  read_DHT(dht);  // Reading temperature or humidity takes about 250 milliseconds!
+debugSerial.println("Case1");
                read_DHT(dht); // initialise : Data_LoRa.DHT_Temp et Data_LoRa.DHT_Hum
                break;
      case 2 :
+debugSerial.println("Case2");
+
+               
                Data_LoRa.Brightness = getLuminance();
 //  Data_LoRa.Lux = ???();
 //  Data_LoRa.ProcessorTemp = getTemperature(); // lecture Temp en String
-               Data_LoRa.Bat_Voltage=getVBatMoy();
-              Data_LoRa.Solar_Voltage=getVSolMoy();
+/*               Data_LoRa.Bat_Voltage=getVBatMoy();
+*/              Data_LoRa.Solar_Voltage=getVSolMoy();
+
                break;
      case 3 :
-               Poids_Peson(0) =  GetPoids(1,1); // à ranger dans Structure 
-               break;
+debugSerial.println("Case3");
+              if (Peson[Ruche.Num_Carte][0])
+                Poids_Peson(0) = GetPoids(1,1);
+              break;
      case 4 :
-               Poids_Peson(1) = GetPoids(2,1); // à ranger dans Structure 
-               break;
+debugSerial.println("Case4");
+              if (Peson[Ruche.Num_Carte][1])
+                Poids_Peson(1) = GetPoids(2,1);
+              break;
      case 5 :
-               Poids_Peson(2) = GetPoids(3,1); // à ranger dans Structure 
-               break;
+debugSerial.println("Case5");
+              if (Peson[Ruche.Num_Carte][2])
+                Poids_Peson(2) = GetPoids(3,1);
+              break;
      case 6 :
-               Poids_Peson(3) = GetPoids(4,1); // à ranger dans Structure 
+debugSerial.println("Case6");
+              if (Peson[Ruche.Num_Carte][0])
+                Poids_Peson(3) = GetPoids(4,1);
               break;
      case 7 :
+debugSerial.println("Case7");
               readingT=getTemperature();
                break;
       case 8 :
-
+debugSerial.println("Case8");
               break;
       case 9 :      // Alive: '.' sur OLED
               debugSerial.print(".");

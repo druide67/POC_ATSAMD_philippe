@@ -16,6 +16,9 @@
 #define __INIT_DONE
 #include "define.h"
 
+
+// DHT bloquant en erreur.
+
 // ILS avec anti rebond : 47k en Pull Up et 100nf // ILS
 
 /*
@@ -49,7 +52,21 @@
 // ---------------------------------------------------------------------------*
 void take_All_Measure()  // durée de la proc?
 {
+
+/*       
+  if  (!read_DHT(dht))  // 
+  {
+//  sprintf(serialbuf,"Humidité : %.2f %%\nTemperature : %.2f °C",Data_LoRa.DHT_Hum,Data_LoRa.DHT_Temp);
+//  debugSerial.println(serialbuf); 
+    OLEDDebugDisplay("DHT Done");
+  }
+  else
+    OLEDDebugDisplay("DHT: Error");
+ */ 
+  
   read_DHT(dht); // initialise : Data_LoRa.DHT_Temp et Data_LoRa.DHT_Hum
+  
+  
   readingT=getTemperature();
   Data_LoRa.Brightness = getLuminance();
 //  Data_LoRa.Lux = ???();
@@ -182,7 +199,7 @@ float GetPoids(int num,int sample)    // N° de jauges des balances 1 à 4
   if (!Peson[Ruche.Num_Carte][num])             // pas de balance connectée
   {
 #ifdef debugSerialGetPoids    
-  //debugSerial.println(" Peson : N/A");
+  debugSerial.println(" Peson : N/A");
 #endif
     return (0); // pas de jauge déclarée        // sortie code retour 0
   }
@@ -329,41 +346,29 @@ void fonctiondemerdetoggle(int port)  // ???????????????????????????????????????
 //                               
 // ---------------------------------------------------------------------------*
 float getVBatMoy(void)
-{ char i;
-  static char v = 0;
-
- // CS_File1("VBat.start" , "" , "" , "");
-
-  // pilote FET@RD_VBAT à 1
+{ static char v = 0;  
+  char i;
+  
   digitalWrite(RD_VBAT, HIGH);       // Blocage FET
-
-  VBat[v] = analogRead(VBAT_MEASURE);   // on fait une mesure
-  sprintf(OLEDbuf, "%d ", VBat[v]);
-  //  debug
-  //  loraSerial.print(" ANA : ");loraSerial.println(VBat[v]); //OLEDbuf);
-
-  VBat[v] = VBat[v] * 43 / 33; //43k/10k+33k aux tolerances des R près... et VGS
-  VBat[v++] *= VBatScale_List[Ruche.Num_Carte];  // on applique la résolution
-
-  // Pilote FET@RD_VBAT à 0
+  VBat[v] = (float)analogRead(VBAT_MEASURE);   // on fait une mesure
   digitalWrite(RD_VBAT, LOW);       // Blocage FET
+  VBat[v] *= 43 / 33; //43k/10k+33k aux tolerances des R près... et VGS
+  VBat[v] *= VBatScale_List[Ruche.Num_Carte];  // on applique la résolution
+ 
 
+  VBat[10]=0;
   for (i = 0; i < 10; i++)    // on recalcule la moyenne des 10 mesures
-  {
     VBat[10] += VBat[i];
-  }
-  VBat[10] /= 11;
+  VBat[10] /= 10;
+  if (++v > 9) 
+    v = 0;
 //          Affichage de controle
-/*
   sprintf(serialbuf, " VBat : %4.3f V", VBat[v - 1]);
   debugSerial.print(serialbuf);
   sprintf(serialbuf, " VBatMoy : %4.3f V", VBat[10]);
   debugSerial.println(serialbuf);
-*/
-  if (v > 9) v = 0;
-//  CS_File1("VBat.end" , "" , "" , "");
-  return (VBat[10]);
 
+ return (VBat[10]);
 }
 
 // ---------------------------------------------------------------------------*
@@ -374,20 +379,20 @@ float getVSolMoy(void)
   static char v = 0;
 
   VSol[v] = analogRead(VSOL_MEASURE) * VSolScale_List[Ruche.Num_Carte]; // on fait une mesure
+
   VSol[10] = 0;
   for (i = 0; i < 10; i++)    // on recalcule la moyenne des 10 mesures
     VSol[10] += VSol[i]; 
   VSol[10] /= 10;
+  if (++v > 9) 
+    v = 0;
 
  //          Affichage de controle
-/*  
   sprintf(serialbuf, " VSol : %4.2f V %d", VSol[v], v); // valeur lue
   debugSerial.print(serialbuf);
   sprintf(serialbuf, " VSolMoy : %4.2f V", VSol[10]); // moyenne courante
   debugSerial.println(serialbuf);
-*/
-  if (++v > 9) 
-    v = 0;
+
   return (VSol[10]);   // moyenne courante
 }
 

@@ -18,12 +18,13 @@ debugSerial.println("\n€");  // €€€€€€€€€€€€€€€�
 debugSerial.println(loopWDT);
    loopWDT  = millis();
 debugSerial.println(loopWDT);
-
-
-
     
     softReset();
   }
+  else
+    debugSerial.println(loopWDT);
+  
+  
 // ALARME 1 : Toutes les secondes (mode programmation)
   if (rtc.alarmFired(1)) 
   {

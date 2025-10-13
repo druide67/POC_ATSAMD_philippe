@@ -1,6 +1,22 @@
 #define __INIT_DONE
 #include "define.h"
 
+/* 
+ *  Fonctions handleOperationMode() et handleProgrammingMode()
+ *  executées dans loop()
+ *  
+ *  selon mode, 
+ *  
+ *  Traite en mode non bloquant
+ *  
+ *  La navigation dans les menus:
+ *    Ouvre autre menu
+ *    Lance une saisie
+ *    Execute une fonction
+ *    Affiche un écran
+ *  
+ *  Les saisie de Listes, numériques, Alphanumériques, chaines HEXA, date, time, email et IP
+ */
 
 #define __SerialDebugPoc      // decommenter pour afficher messages debug
 
@@ -26,30 +42,32 @@ debugSerial.print("E");   // EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 #endif
 }
 
-
-void saisieEnCours()
-{ volatile char flag=0;
-
-
-if (isListInputActive())
-    flag =  1 <<7;
-else if (isInfoScreenActive())
-    flag =  1 <<6;    
-else if (isNumberInputActive())
-    flag =  1 <<5;
-else if (isStringInputActive())
-    flag =  1 <<4;    
-else if (isTimeInputActive())
-    flag =  1 <<3;    
-else if (isHexInputActive())
-    flag =  1 <<2;    
-
-  sprintf(serialbuf, "Flag : %d WDT : %d",flag, loopWDT);
+/**
+ * @brief affiche le type de traitement en cours de gestion par le handler
+ * @param Aucun
+ * @return void
+ */
+void GestionEnCours()
+{ 
+  return;
+  
+  if (isListInputActive())  
+    sprintf(serialbuf, "Menu/list WDT : %d",loopWDT);
+  else if (isInfoScreenActive()) 
+     sprintf(serialbuf, "Info WDT : %d",loopWDT);
+  else if (isNumberInputActive())
+    sprintf(serialbuf, "Number WDT : %d",loopWDT);
+  else if (isStringInputActive())
+    sprintf(serialbuf, "String WDT : %d",loopWDT);
+  else if (isTimeInputActive())
+    sprintf(serialbuf, "Time WDT : %d",loopWDT);
+  else if (isHexInputActive())
+  sprintf(serialbuf, "Hex WDT : %d",loopWDT);
   debugSerial.println(serialbuf);
 //  
-  sprintf(serialbuf, "List %d / Infos %d / Number %d / String %d / Time %d / Date, Mail, IP,...",
-  isListInputActive(), isInfoScreenActive(), isNumberInputActive(), isStringInputActive(), isTimeInputActive()); 
-  debugSerial.println(serialbuf);
+//  sprintf(serialbuf, "List %d / Infos %d / Number %d / String %d / Time %d / Date, Mail, IP,...",
+//  isListInputActive(), isInfoScreenActive(), isNumberInputActive(), isStringInputActive(), isTimeInputActive()); 
+//  debugSerial.println(serialbuf);
 }
 
 
@@ -68,7 +86,6 @@ void handleProgrammingMode(void)
   {  
     switchToOperationMode = true;
     OLEDClear();
- //   OLEDDrawScreenTime(0,0);
 //    OLEDDrawText(1, 7, 0, "MODE PROGRAMMATION");
     switchToProgrammingMode = false;
 // Activer la liste au démarrage si pas encore fait
@@ -112,7 +129,7 @@ debugSerial.println(serialbuf);
   {
     static uint8_t selectedModeIndex = 0; // Index du mode sélectionné
 
-saisieEnCours();
+GestionEnCours(); // affiche le type de traitement en cours de gestion par le handler
         
 #ifdef __SerialDebugPoc    
 //debugSerial.print("L");   // LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
@@ -183,24 +200,20 @@ debugSerial.println(menu000Demarrage[selectedModeIndex]);
 // ------------------------------------------------    
   else if (isInfoScreenActive())
   {
-
-saisieEnCours();
-    
+GestionEnCours(); // affiche le type de traitement en cours de gestion par le handler
     infoScreenState_t state = processInfoScreen();
 //debugSerial.print("I");   // IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII    
     switch (state)
     {
       case INFO_SCREEN_CLOSED:
+      {
         debugSerial.println("Ecran info ferme");
         infoScreenState = INFO_SCREEN_IDLE; // Reset
 
 listInputCtx.state = LIST_INPUT_ACTIVE;
-
 infoScreenRefreshTime = false;
-
-        
         break;
-        
+      }  
       default:
         // Écran toujours actif, ne rien faire d'autre
         return;
@@ -213,7 +226,7 @@ infoScreenRefreshTime = false;
   {
     static char numberBuffer[11] = ""; // Buffer pour le nombre
 
-saisieEnCours();
+GestionEnCours();   // affiche le type de traitement en cours de gestion par le handler
       
 #ifdef __SerialDebugPoc    
   debugSerial.print("N");   // NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
@@ -258,7 +271,7 @@ debugSerial.print("N");   // NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
   {
     static char stringBuffer[21] = ""; // Buffer pour la chaîne
 
-saisieEnCours();
+GestionEnCours();   // affiche le type de traitement en cours de gestion par le handler
         
 #ifdef __SerialDebugPoc    
 debugSerial.print("A");   // AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -307,7 +320,7 @@ debugSerial.print("Chaine validée : "); debugSerial.print(stringSaisie);debugSe
     static char hexBuffer[41] = "0123456789ABCDEF0123456789ABCDEF01234567"; // Buffer pour l'hexa
 
 
-saisieEnCours();
+GestionEnCours();   // affiche le type de traitement en cours de gestion par le handler
 #ifdef __SerialDebugPoc    
 debugSerial.print("H");   // HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 #endif    
@@ -354,7 +367,7 @@ debugSerial.println("Saisie hexadecimale annulee par timeout");
   {
 //    static char timeBuffer[9] = ""; // Buffer pour l'heure
 
-saisieEnCours();
+GestionEnCours();   // affiche le type de traitement en cours de gestion par le handler
     
     timeInputState_t state = processTimeInput();
     switch (state)
@@ -387,7 +400,7 @@ debugSerial.println("Saisie heure annulee par timeout");
   {
     static char dateBuffer[11] = ""; // Buffer pour la date
 
-saisieEnCours();
+GestionEnCours();   // affiche le type de traitement en cours de gestion par le handler
     
     dateInputState_t state = processDateInput();
     
@@ -422,12 +435,65 @@ saisieEnCours();
     }
   }
 // ------------------------------------------------
-// Gestion normale des menus quand pas de saisie
+// Vérifier si une saisie Email est en cours
+// ------------------------------------------------
+  else if (isEmailInputActive())
+  {
+    static char emailBuffer[41] = "user@example.com";
+    
+    emailInputState_t state = processEmailInput();
+    
+    switch (state)
+    {
+      case EMAIL_INPUT_COMPLETED:
+        finalizeEmailInput(emailBuffer);
+        debugSerial.print("Nouvel email: ");
+        debugSerial.println(emailBuffer);
+        // Ici vous pouvez sauvegarder l'email
+        break;
+        
+      case EMAIL_INPUT_CANCELLED:
+        debugSerial.println("Saisie email annulee par timeout");
+        cancelEmailInput();
+        break;
+        
+      default:
+        return;
+    }
+  }
+// ------------------------------------------------
+// Vérifier si une saisie IP est en cours
+// ------------------------------------------------
+  else if (isIPInputActive())
+  {
+    static char ipBuffer[16] = "192.168.001.001";
+    
+    ipInputState_t state = processIPInput();
+    
+    switch (state)
+    {
+      case IP_INPUT_COMPLETED:
+        finalizeIPInput(ipBuffer);
+        debugSerial.print("Nouvelle IP: ");
+        debugSerial.println(ipBuffer);
+        // Ici vous pouvez sauvegarder l'IP
+        break;
+        
+      case IP_INPUT_CANCELLED:
+        debugSerial.println("Saisie IP annulee par timeout");
+        cancelIPInput();
+        break;
+        
+      default:
+        return;
+    }
+  }
+// ------------------------------------------------
+// Gestion normale des menus quand pas de saisie, dans quels cas????, pas prévu hors saisies par fonctions
 // ------------------------------------------------    
   else
   {
-
-saisieEnCours();
+GestionEnCours();     // affiche le type de traitement en cours de gestion par le handler
     
 #ifdef __SerialDebugPoc    
 debugSerial.print("K");   // KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
@@ -486,6 +552,11 @@ debugSerial.print("K");   // KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
     }
   }
 }
+
+
+
+
+
 
 // repositionner ?????
 

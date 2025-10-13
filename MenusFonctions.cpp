@@ -1,6 +1,63 @@
 #define __INIT_DONE
 #include "define.h"
 
+// info afficher NextPayload
+// info afficher MODE PE
+
+
+/*
+ * Fonctions lancées par les menus
+ * 
+ * lancement : menuNNN_FN_WhatToDo()     // ex: menu000_F7_GetTime()
+ * Traitement: menuNNN_FN_WhatToDoDone() // ex: menu000_F7_GetTimeDone()    
+ * 
+ * 
+ * 
+ * menu000_F6_GetDate()
+ * menu000_F7_GetTime() + Done
+ * menu000_F8_GetHex()  + Done
+ * 
+ * prévoir inits param Lora :
+//  uint8_t HWEUI [20];       // ID RN2483: "0004A30B00EEEE01"
+//  uint8_t AppEUI [10];      // AppEUI: {0x41, 0x42, 0x45, 0x49, 0x4C, 0x4C, 0x45, 0x31, 0x00} menuxxx_xx_GetHex()
+//  uint8_t AppKey [18];      // AppKEY: // 5048494C495050454C4F564542454553 - PHILIPPELOVEBEES
+//// {0x50, 0x48, 0x49, 0x4C, 0x49, 0x50, 0x50, 0x45, 0x4C, 0x4F, 0x56, 0x45, 0x42, 0x45, 0x45, 0x53, 0x00} 
+//  uint8_t SpreadingFactor;  // 7, 9 et 12 echec freudeneck
+//  uint8_t SendingPeriod;    // 15 minutes = 500 sans IT
+ * 
+ * Prévoir inits generaux + Bal
+//  Date:  menuxxx_xx_GetDate()
+//  Heure: menuxxx_xx_GetTime()
+//  uint8_t Balance_ID;           // ID Rucher           xx  uint8_t
+//  char    RucherName [20];      // Localisation Rucher (saisir direct ou liste + "autre")
+//  version, mail (pour le fun), 
+ * 
+ * Prévoir Config Hardware
+//  uint8_t HX711Clk_0;           // HX711#0 parameters
+//  uint8_t HX711Dta_0;
+//  float   HX711ZeroValue_0;
+//  float   HX711Scaling_0;
+//  float   HX711Cor_Temp_0;
+//  uint8_t HX711Clk_1;           // HX711#1 parameters
+//  uint8_t HX711Dta_1;
+//  float   HX711ZeroValue_1;
+//  float   HX711Scaling_1;
+//  float   HX711Cor_Temp_1;
+//  uint8_t HX711Clk_2;           // HX711#2 parameters
+//  uint8_t HX711Dta_2;
+//  float   HX711ZeroValue_2;
+//  float   HX711Scaling_2;
+//  float   HX711Cor_Temp_2;
+//  uint8_t HX711Clk_3;           // HX711#3 parameters
+//  uint8_t HX711Dta_3;
+//  float   HX711ZeroValue_3;
+//  float   HX711Scaling_3;
+//  float   HX711Cor_Temp_3;
+//  float   LDRBrightnessScale;   // 
+//  float   VSolScale;            //  
+//  float   VBatScale;
+ * 
+ */
 
 
 void menu000_F6_GetDate()

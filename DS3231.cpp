@@ -268,6 +268,7 @@ void copyDS3231TimeToMicro(bool forcer)
         sprintf(OLEDbuf, "Sync: %02d:%02d:%02d", 
                 heureDS3231.hour(), heureDS3231.minute(), heureDS3231.second());
         OLEDDisplayMessageL8(OLEDbuf, false, false);
+        debugSerial.println(OLEDbuf);        
         derniereCopie = millis();
     }
     else

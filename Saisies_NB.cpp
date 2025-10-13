@@ -1,6 +1,25 @@
 #define __INIT_DONE
 #include "define.h"
 
+/*
+ * initStartupList() : Menu de démarrage
+ * 
+ * startListInputWithTimeout()
+ * startNumberInput()
+ * startStringInput()
+ * startHexInput()
+ * startTimeInput()
+ * startDateInput()
+ * startIPInput()
+ * startEmailInput()
+ * 
+ */
+
+
+
+
+
+
 // toutes les machines à état de saisie retournent le résultat de la saisie dans 
 // char stringSaisie[OLEDBUFLEN]="azerty";   // 128/retour de toutes les saisies
 // initialisé quand XXXXXX_INPUT_COMPLETED = true
@@ -40,6 +59,11 @@ void initStartupList(void)
   debugSerial.println(currentMenuDepth);
 }
 
+
+
+// -------------------------------------------------------------------------------------
+// ===== FONCTIONS DE SAISIE DANS LISTE =====
+// -------------------------------------------------------------------------------------
 /**
  * @brief Démarre la sélection dans une liste de valeurs avec timeout personnalisé
  * @param title Titre de la sélection à afficher
@@ -216,17 +240,13 @@ debugSerial.println("Down de processListInput");
     touche = KEY_NONE;
   }
 
-
-// 2 x //; voir si affichage non deterioré
-  
-  // Rafraîchissement de l'affichage si nécessaire
+  // Rafraîchissement de l'affichage si nécessaire (clignotement, scrolling liste, ///)
   if (listInputCtx.displayRefresh || (millis() - listInputCtx.lastUpdate > 100))
   {
     refreshListDisplay();
     listInputCtx.displayRefresh = false;
     listInputCtx.lastUpdate = millis();
-  }
-   
+  }   
   return listInputCtx.state;
 }
 
@@ -776,10 +796,10 @@ void refreshNumberDisplay(void)
 {
   // Afficher le titre (ligne 0)
   OLEDDrawText(1, 0, 0, numberInputCtx.title);
-  
+
   // Afficher le nombre en cours (ligne 1, tronqué à 20 caractères)
 //  char displayText[21];
-  strncpy(OLEDbuf/*displayText*/, numberInputCtx.workingNumber, 20);
+  strncpy(/*displayText*/OLEDbuf, numberInputCtx.workingNumber, 20);
   OLEDbuf/*displayText*/[20] = '\0';
   OLEDDrawText(1, 1, 0, OLEDbuf/*displayText*/);
   
@@ -2091,13 +2111,9 @@ void modifyTimeDigit(char *t, uint8_t pos, int delta)
   debugSerial.println(t[pos]);
 }
 
-
-
 // -------------------------------------------------------------------------------------
 // ===== FONCTIONS DE SAISIE DATE =====
 // -------------------------------------------------------------------------------------
-// ===== FONCTIONS DE SAISIE DE DATE =====
-
 /**
  * @brief Vérifie si une date est valide
  * @param d Chaîne de caractères représentant la date (format JJ/MM/AAAA)
@@ -2542,13 +2558,1024 @@ void modifyDateDigit(char *d, uint8_t pos, int delta)
   debugSerial.println(d[pos]);
 }
 
-
 // -------------------------------------------------------------------------------------
 // ===== FONCTIONS DE SAISIE IP =====
 // -------------------------------------------------------------------------------------
+/**
+ * @brief Vérifie si une adresse IP est valide
+ * @param ip Chaîne de caractères IP (format XXX.XXX.XXX.XXX)
+ * @return bool True si l'IP est valide
+ */
+bool isIPValid(const char *ip) 
+{
+  if (strlen(ip) != 15) return false;
+  
+  // Vérifier le format XXX.XXX.XXX.XXX
+  if (ip[3] != '.' || ip[7] != '.' || ip[11] != '.') return false;
+  
+  // Vérifier chaque octet
+  for (int octet = 0; octet < 4; octet++)
+  {
+    int offset = octet * 4;
+    
+    // Vérifier que ce sont bien des chiffres
+    for (int i = 0; i < 3; i++)
+    {
+      if (ip[offset + i] < '0' || ip[offset + i] > '9')
+        return false;
+    }
+    
+    // Calculer la valeur de l'octet
+    int value = (ip[offset] - '0') * 100 + (ip[offset + 1] - '0') * 10 + (ip[offset + 2] - '0');
+    
+    // Vérifier que la valeur est entre 0 et 255
+    if (value > 255) return false;
+  }
+  
+  return true;
+}
 
+/**
+ * @brief Calcule la prochaine position valide du curseur pour l'IP
+ * @param currentPos Position actuelle
+ * @param forward true pour avancer, false pour reculer
+ * @return Nouvelle position valide
+ */
+uint8_t getNextValidIPPosition(uint8_t currentPos, bool forward)
+{
+  // Positions valides : 0,1,2, 4,5,6, 8,9,10, 12,13,14 (pas les points)
+  uint8_t validPositions[] = {0, 1, 2, 4, 5, 6, 8, 9, 10, 12, 13, 14};
+  uint8_t numPositions = 12;
+  
+  // Trouver l'index de la position actuelle
+  uint8_t currentIndex = 0;
+  for (uint8_t i = 0; i < numPositions; i++)
+  {
+    if (validPositions[i] == currentPos)
+    {
+      currentIndex = i;
+      break;
+    }
+  }
+  
+  // Calculer la nouvelle position avec bouclage
+  if (forward)
+  {
+    if (currentIndex < numPositions - 1)
+    {
+      return validPositions[currentIndex + 1];
+    }
+    else
+    {
+      return validPositions[0]; // Boucler au début
+    }
+  }
+  else
+  {
+    if (currentIndex > 0)
+    {
+      return validPositions[currentIndex - 1];
+    }
+    else
+    {
+      return validPositions[numPositions - 1]; // Boucler à la fin
+    }
+  }
+}
 
+/**
+ * @brief Modifie un chiffre d'une adresse IP avec gestion des limites
+ * @param ip Chaîne de caractères de l'IP
+ * @param pos Position du chiffre à modifier
+ * @param delta Valeur à ajouter (+1 ou -1)
+ * @return void
+ */
+void modifyIPDigit(char *ip, uint8_t pos, int delta) 
+{
+  if (pos >= 15 || ip[pos] < '0' || ip[pos] > '9') 
+  {
+    return;
+  }
+  
+  // Déterminer quel octet on modifie (0-3)
+  uint8_t octet = pos / 4;
+  uint8_t digitInOctet = pos % 4; // 0, 1, 2 (pas 3 qui est le point)
+  
+  int currentVal = ip[pos] - '0';
+  int newVal = currentVal + delta;
+  
+  // Calculer l'offset de début de l'octet
+  int offset = octet * 4;
+  
+  // Récupérer la valeur complète de l'octet
+  int octetValue = (ip[offset] - '0') * 100 + (ip[offset + 1] - '0') * 10 + (ip[offset + 2] - '0');
+  
+  // Selon la position du chiffre, calculer la nouvelle valeur de l'octet
+  if (digitInOctet == 0) // Centaines
+  {
+    int hundreds = (newVal < 0) ? 2 : ((newVal > 2) ? 0 : newVal);
+    octetValue = hundreds * 100 + (ip[offset + 1] - '0') * 10 + (ip[offset + 2] - '0');
+    
+    // Si centaines = 2, limiter le reste
+    if (hundreds == 2 && octetValue > 255)
+    {
+      octetValue = 255;
+    }
+  }
+  else if (digitInOctet == 1) // Dizaines
+  {
+    int hundreds = ip[offset] - '0';
+    int tens = newVal;
+    int units = ip[offset + 2] - '0';
+    
+    if (hundreds == 2)
+    {
+      // Si centaines = 2, dizaines max = 5
+      if (tens < 0) tens = 5;
+      if (tens > 5) tens = 0;
+    }
+    else
+    {
+      if (tens < 0) tens = 9;
+      if (tens > 9) tens = 0;
+    }
+    
+    octetValue = hundreds * 100 + tens * 10 + units;
+    
+    if (octetValue > 255) octetValue = 255;
+  }
+  else // Unités (digitInOctet == 2)
+  {
+    int hundreds = ip[offset] - '0';
+    int tens = ip[offset + 1] - '0';
+    int units = newVal;
+    
+    if (hundreds == 2 && tens == 5)
+    {
+      // Si 25X, unités max = 5
+      if (units < 0) units = 5;
+      if (units > 5) units = 0;
+    }
+    else
+    {
+      if (units < 0) units = 9;
+      if (units > 9) units = 0;
+    }
+    
+    octetValue = hundreds * 100 + tens * 10 + units;
+    
+    if (octetValue > 255) octetValue = 255;
+  }
+  
+  // Réécrire l'octet complet avec padding zéros
+  ip[offset] = '0' + (octetValue / 100);
+  ip[offset + 1] = '0' + ((octetValue / 10) % 10);
+  ip[offset + 2] = '0' + (octetValue % 10);
+  
+  debugSerial.print("Position IP ");
+  debugSerial.print(pos);
+  debugSerial.print(" modifiee, octet: ");
+  debugSerial.println(octetValue);
+}
+
+/**
+ * @brief Démarre la saisie IP non-bloquante
+ * @param initialIP Adresse IP initiale (format XXX.XXX.XXX.XXX)
+ * @return void
+ */
+void startIPInput(const char* initialIP)
+{
+  if (ipInputCtx.state != IP_INPUT_IDLE)
+  {
+    return; // Saisie déjà en cours
+  }
+  
+  // Initialisation du contexte
+  ipInputCtx.state = IP_INPUT_ACTIVE;
+  ipInputCtx.position = 0;
+  ipInputCtx.lastPosition = 0xFF;
+  
+  // Copier l'IP initiale ou utiliser valeur par défaut
+  if (initialIP && strlen(initialIP) == 15)
+  {
+    strncpy(ipInputCtx.workingIP, initialIP, 15);
+  }
+  else
+  {
+    strcpy(ipInputCtx.workingIP, "192.168.001.001");
+  }
+  ipInputCtx.workingIP[15] = '\0';
+  strcpy(ipInputCtx.lastDisplayedIP, "");
+  
+  ipInputCtx.displayRefresh = true;
+  ipInputCtx.lastUpdate = millis();
+  ipInputCtx.cursorBlink = true;
+  ipInputCtx.lastCursorBlink = false;
+  ipInputCtx.lastBlink = millis();
+  ipInputCtx.lastActivity = millis();
+  ipInputCtx.timeoutDuration = 30000; // 30 secondes
+  ipInputCtx.lastValidity = false;
+  ipInputCtx.firstDisplay = true;
+  
+  debugSerial.println("Saisie IP demarree");
+  OLEDDisplayMessageL8("Modifiez l'IP", false, false);
+}
+
+/**
+ * @brief Traite la saisie IP (à appeler dans loop)
+ * @param void
+ * @return État actuel de la saisie
+ */
+ipInputState_t processIPInput(void)
+{
+  if (ipInputCtx.state != IP_INPUT_ACTIVE)
+  {
+    return ipInputCtx.state;
+  }
+  
+  // Gestion du clignotement du curseur
+  updateIPInputCursorBlink();
+  
+  // Vérification du timeout
+  if (ipInputCtx.timeoutDuration > 0 && (millis() - ipInputCtx.lastActivity > ipInputCtx.timeoutDuration))
+  {
+    ipInputCtx.state = IP_INPUT_CANCELLED;
+    debugSerial.println("Saisie IP annulee par timeout");
+    OLEDDisplayMessageL8("Timeout", false, false);
+    return ipInputCtx.state;
+  }
+  
+  // Traitement des touches
+  if (touche != KEY_NONE)
+  {
+    // Réinitialiser le timer d'activité
+    ipInputCtx.lastActivity = millis();
+    
+    switch (touche)
+    {
+      case LEFT:
+        {
+          uint8_t newPos = getNextValidIPPosition(ipInputCtx.position, false);
+          if (newPos != ipInputCtx.position)
+          {
+            ipInputCtx.position = newPos;
+            ipInputCtx.displayRefresh = true;
+            debugSerial.print("Position curseur IP: ");
+            debugSerial.println(ipInputCtx.position);
+          }
+        }
+        break;
+        
+      case RIGHT:
+        {
+          uint8_t newPos = getNextValidIPPosition(ipInputCtx.position, true);
+          if (newPos != ipInputCtx.position)
+          {
+            ipInputCtx.position = newPos;
+            ipInputCtx.displayRefresh = true;
+            debugSerial.print("Position curseur IP: ");
+            debugSerial.println(ipInputCtx.position);
+          }
+        }
+        break;
+        
+      case PLUS:
+        modifyIPDigit(ipInputCtx.workingIP, ipInputCtx.position, +1);
+        ipInputCtx.displayRefresh = true;
+        break;
+        
+      case MOINS:
+        modifyIPDigit(ipInputCtx.workingIP, ipInputCtx.position, -1);
+        ipInputCtx.displayRefresh = true;
+        break;
+        
+      case VALIDE:
+        if (isIPValid(ipInputCtx.workingIP))
+        {
+          ipInputCtx.state = IP_INPUT_COMPLETED;
+          debugSerial.println("IP validee");
+          OLEDDisplayMessageL8("IP acceptee", false, false);
+        }
+        else
+        {
+          debugSerial.println("IP invalide");
+          OLEDDisplayMessageL8("IP invalide !", false, false);
+        }
+        break;
+        
+      default:
+        break;
+    }
+    
+    // Reset de la touche après traitement
+    touche = KEY_NONE;
+  }
+  
+  // Rafraîchissement de l'affichage si nécessaire
+  if (ipInputCtx.displayRefresh || (millis() - ipInputCtx.lastUpdate > 100))
+  {
+    refreshIPDisplay();
+    ipInputCtx.displayRefresh = false;
+    ipInputCtx.lastUpdate = millis();
+  }
+  
+  return ipInputCtx.state;
+}
+
+/**
+ * @brief Finalise la saisie et récupère l'adresse IP
+ * @param outputIP Buffer pour stocker l'IP finale (16 chars minimum)
+ * @return void
+ */
+void finalizeIPInput(char* outputIP)
+{
+  if (ipInputCtx.state == IP_INPUT_COMPLETED)
+  {
+    strncpy(outputIP, ipInputCtx.workingIP, 15);
+    outputIP[15] = '\0';
+    
+    // Reset du contexte
+    ipInputCtx.state = IP_INPUT_IDLE;
+    ipInputCtx.position = 0;
+    
+    debugSerial.print("IP finale: ");
+    debugSerial.println(outputIP);
+  }
+}
+
+/**
+ * @brief Annule la saisie IP
+ * @param void
+ * @return void
+ */
+void cancelIPInput(void)
+{
+  ipInputCtx.state = IP_INPUT_CANCELLED;
+  debugSerial.println("Saisie IP annulee");
+  OLEDDisplayMessageL8("Saisie annulee", false, false);
+  
+  // Reset du contexte
+  ipInputCtx.state = IP_INPUT_IDLE;
+}
+
+/**
+ * @brief Vérifie si une saisie IP est en cours
+ * @param void
+ * @return true si saisie active
+ */
+bool isIPInputActive(void)
+{
+  return (ipInputCtx.state == IP_INPUT_ACTIVE);
+}
+
+/**
+ * @brief Rafraîchit l'affichage de l'IP avec curseur (optimisé)
+ * @param void
+ * @return void
+ */
+void refreshIPDisplay(void)
+{
+  bool ipChanged = (strcmp(ipInputCtx.workingIP, ipInputCtx.lastDisplayedIP) != 0);
+  bool positionChanged = (ipInputCtx.position != ipInputCtx.lastPosition);
+  bool cursorBlinkChanged = (ipInputCtx.cursorBlink != ipInputCtx.lastCursorBlink);
+  bool currentValidity = isIPValid(ipInputCtx.workingIP);
+  bool validityChanged = (currentValidity != ipInputCtx.lastValidity);
+  
+  // Afficher le titre seulement au premier affichage
+  if (ipInputCtx.firstDisplay)
+  {
+    OLEDDrawText(1, 0, 0, "ADRESSE IP:");
+    ipInputCtx.firstDisplay = false;
+  }
+  
+  // Afficher l'IP seulement si elle a changé
+  if (ipChanged)
+  {
+    OLEDDrawText(1, 2, 0, ipInputCtx.workingIP);
+    strcpy(ipInputCtx.lastDisplayedIP, ipInputCtx.workingIP);
+  }
+  
+  // Afficher l'indicateur de curseur seulement si position ou clignotement a changé
+  if (positionChanged || cursorBlinkChanged)
+  {
+    // Effacer l'ancienne position si elle a changé
+    if (positionChanged && ipInputCtx.lastPosition != 0xFF)
+    {
+      char clearUnderline[16] = "               ";
+      OLEDDrawText(1, 3, 0, clearUnderline);
+    }
+    
+    // Afficher le nouveau curseur si visible
+    if (ipInputCtx.cursorBlink)
+    {
+      char underline[16] = "               ";
+      underline[ipInputCtx.position] = '^';
+      underline[15] = '\0';
+      OLEDDrawText(1, 3, 0, underline);
+    }
+    else if (!positionChanged)
+    {
+      char clearUnderline[16] = "               ";
+      OLEDDrawText(1, 3, 0, clearUnderline);
+    }
+    
+    ipInputCtx.lastPosition = ipInputCtx.position;
+  }
+  
+  // Afficher le statut de validité seulement s'il a changé
+  if (validityChanged)
+  {
+    if (currentValidity)
+    {
+      OLEDDrawText(1, 5, 0, "IP valide           ");
+    }
+    else
+    {
+      OLEDDrawText(1, 5, 0, "IP invalide         ");
+    }
+    ipInputCtx.lastValidity = currentValidity;
+  }
+  
+  // Afficher les instructions et timeout seulement si clignotement change
+  if (cursorBlinkChanged)
+  {
+    if (ipInputCtx.timeoutDuration > 0)
+    {
+      unsigned long remainingTime = (ipInputCtx.timeoutDuration - (millis() - ipInputCtx.lastActivity)) / 1000;
+      if (remainingTime <= 5)
+      {
+        char timeoutMsg[21];
+        snprintf(timeoutMsg, 21, "Timeout: %lds       ", remainingTime);
+        OLEDDrawText(1, 7, 0, timeoutMsg);
+      }
+      else if (ipInputCtx.cursorBlink)
+      {
+        OLEDDrawText(1, 7, 0, "+/- Modif  VALIDE OK");
+      }
+      else
+      {
+        OLEDDrawText(1, 7, 0, "                    ");
+      }
+    }
+    else
+    {
+      if (ipInputCtx.cursorBlink)
+      {
+        OLEDDrawText(1, 7, 0, "+/- Modif  VALIDE OK");
+      }
+      else
+      {
+        OLEDDrawText(1, 7, 0, "                    ");
+      }
+    }
+  }
+  
+  // Sauvegarder l'état du clignotement
+  ipInputCtx.lastCursorBlink = ipInputCtx.cursorBlink;
+}
+
+/**
+ * @brief Gère le clignotement du curseur pour l'IP
+ * @param void
+ * @return void
+ */
+void updateIPInputCursorBlink(void)
+{
+  if (millis() - ipInputCtx.lastBlink > 500)
+  {
+    ipInputCtx.cursorBlink = !ipInputCtx.cursorBlink;
+    ipInputCtx.lastBlink = millis();
+    ipInputCtx.displayRefresh = true;
+  }
+}
 
 // -------------------------------------------------------------------------------------
 // ===== FONCTIONS DE SAISIE MAIL =====
 // -------------------------------------------------------------------------------------
+/**
+ * @brief Vérifie si une adresse email est valide (basique)
+ * @param email Chaîne de caractères email
+ * @return bool True si l'email semble valide
+ */
+bool isEmailValid(const char *email) 
+{
+  uint8_t len = strlen(email);
+  if (len < 3 || len > 40) return false;
+  
+  // Doit contenir un @
+  char* atPos = strchr(email, '@');
+  if (atPos == NULL) return false;
+  
+  // @ ne doit pas être au début ou à la fin
+  if (atPos == email || atPos == email + len - 1) return false;
+  
+  // Doit contenir un . après le @
+  char* dotPos = strchr(atPos, '.');
+  if (dotPos == NULL) return false;
+  
+  // Le . ne doit pas être juste après @ ni à la fin
+  if (dotPos == atPos + 1 || dotPos == email + len - 1) return false;
+  
+  return true;
+}
+
+/**
+ * @brief Obtient le caractère email suivant/précédent dans le jeu de caractères
+ * @param current Caractère actuel
+ * @param delta Direction (+1 ou -1)
+ * @return Nouveau caractère
+ */
+char getNextEmailChar(char current, int delta)
+{
+// Trouver l'index du caractère actuel
+  int currentIndex = -1;
+  
+  for (int i = 0; i < emailCharSetSize; i++)
+  {
+    if (emailCharSet[i] == current)
+    {
+      currentIndex = i;
+      break;
+    }
+  }
+  
+  if (currentIndex == -1) currentIndex = 0; // Si non trouvé, commencer à 'a'
+  
+  // Calculer le nouvel index avec bouclage
+  int newIndex = currentIndex + delta;
+  if (newIndex < 0) newIndex = emailCharSetSize - 1;
+  if (newIndex >= emailCharSetSize) newIndex = 0;
+  
+  return emailCharSet[newIndex];
+}
+
+/**
+ * @brief Insère un caractère à la position donnée
+ * @param email Chaîne email
+ * @param length Pointeur vers la longueur actuelle
+ * @param pos Position d'insertion
+ * @param c Caractère à insérer
+ * @return void
+ */
+void insertCharAtPosition(char *email, uint8_t *length, uint8_t pos, char c)
+{
+  if (*length >= 40 || pos > *length) return;
+  
+  // Décaler les caractères vers la droite
+  for (int i = *length; i > pos; i--)
+  {
+    email[i] = email[i-1];
+  }
+  
+  email[pos] = c;
+  (*length)++;
+  email[*length] = '\0';
+}
+
+/**
+ * @brief Supprime un caractère à la position donnée
+ * @param email Chaîne email
+ * @param length Pointeur vers la longueur actuelle
+ * @param pos Position de suppression
+ * @return void
+ */
+void deleteCharAtPosition(char *email, uint8_t *length, uint8_t pos)
+{
+  if (*length == 0 || pos >= *length) return;
+  
+  // Décaler les caractères vers la gauche
+  for (int i = pos; i < *length - 1; i++)
+  {
+    email[i] = email[i+1];
+  }
+  
+  (*length)--;
+  email[*length] = '\0';
+}
+
+/**
+ * @brief Démarre la saisie email non-bloquante
+ * @param initialEmail Adresse email initiale
+ * @return void
+ */
+void startEmailInput(const char* initialEmail)
+{
+  if (emailInputCtx.state != EMAIL_INPUT_IDLE)
+  {
+    return; // Saisie déjà en cours
+  }
+  
+  // Initialisation du contexte
+  emailInputCtx.state = EMAIL_INPUT_ACTIVE;
+  emailInputCtx.position = 0;
+  emailInputCtx.lastPosition = 0xFF;
+  emailInputCtx.displayOffset = 0;
+  emailInputCtx.lastDisplayOffset = 0xFF;
+  emailInputCtx.displayWidth = 16; // 16 caractères visibles sur l'écran
+  emailInputCtx.charSetIndex = 0;
+  
+  // Copier l'email initial ou créer une chaîne vide
+  if (initialEmail && strlen(initialEmail) > 0 && strlen(initialEmail) <= 40)
+  {
+    strncpy(emailInputCtx.workingEmail, initialEmail, 40);
+    emailInputCtx.length = strlen(initialEmail);
+  }
+  else
+  {
+    emailInputCtx.workingEmail[0] = '\0';
+    emailInputCtx.length = 0;
+  }
+  emailInputCtx.workingEmail[40] = '\0';
+  emailInputCtx.lastLength = 0xFF;
+  strcpy(emailInputCtx.lastDisplayedEmail, "");
+  
+  emailInputCtx.displayRefresh = true;
+  emailInputCtx.lastUpdate = millis();
+  emailInputCtx.cursorBlink = true;
+  emailInputCtx.lastCursorBlink = false;
+  emailInputCtx.lastBlink = millis();
+  emailInputCtx.lastActivity = millis();
+  emailInputCtx.timeoutDuration = 30000; // 30 secondes
+  emailInputCtx.lastValidity = false;
+  emailInputCtx.lastValidityState = 0xFF;
+  emailInputCtx.firstDisplay = true;
+  
+  debugSerial.println("Saisie email demarree");
+  OLEDDisplayMessageL8("Saisissez email", false, false);
+}
+
+/**
+ * @brief Met à jour le décalage d'affichage selon la position du curseur
+ * @param void
+ * @return void
+ */
+void updateEmailDisplayOffset(void)
+{
+  // Centrer l'affichage sur la position du curseur
+  int idealOffset = emailInputCtx.position - (emailInputCtx.displayWidth / 2);
+  
+  // Limiter les bornes
+  if (idealOffset < 0) idealOffset = 0;
+  
+  int maxOffset = emailInputCtx.length - emailInputCtx.displayWidth;
+  if (maxOffset < 0) maxOffset = 0;
+  if (idealOffset > maxOffset) idealOffset = maxOffset;
+  
+  if (emailInputCtx.displayOffset != idealOffset)
+  {
+    emailInputCtx.displayOffset = idealOffset;
+    emailInputCtx.displayRefresh = true;
+  }
+}
+
+/**
+ * @brief Traite la saisie email (à appeler dans loop)
+ * @param void
+ * @return État actuel de la saisie
+ */
+emailInputState_t processEmailInput(void)
+{
+  if (emailInputCtx.state != EMAIL_INPUT_ACTIVE)
+  {
+    return emailInputCtx.state;
+  }
+  
+  // Gestion du clignotement du curseur
+  updateEmailInputCursorBlink();
+  
+  // Vérification du timeout
+  if (emailInputCtx.timeoutDuration > 0 && (millis() - emailInputCtx.lastActivity > emailInputCtx.timeoutDuration))
+  {
+    emailInputCtx.state = EMAIL_INPUT_CANCELLED;
+    debugSerial.println("Saisie email annulee par timeout");
+    OLEDDisplayMessageL8("Timeout", false, false);
+    return emailInputCtx.state;
+  }
+  
+  // Traitement des touches
+  if (touche != KEY_NONE)
+  {
+    // Réinitialiser le timer d'activité
+    emailInputCtx.lastActivity = millis();
+    
+    switch (touche)
+    {
+      case LEFT:
+        // Déplacer curseur vers la gauche
+        if (emailInputCtx.position > 0)
+        {
+          emailInputCtx.position--;
+          updateEmailDisplayOffset();
+          emailInputCtx.displayRefresh = true;
+          debugSerial.print("Position curseur email: ");
+          debugSerial.println(emailInputCtx.position);
+        }
+        break;
+        
+      case RIGHT:
+        // Déplacer curseur vers la droite
+        if (emailInputCtx.position < emailInputCtx.length)
+        {
+          emailInputCtx.position++;
+          updateEmailDisplayOffset();
+          emailInputCtx.displayRefresh = true;
+          debugSerial.print("Position curseur email: ");
+          debugSerial.println(emailInputCtx.position);
+        }
+        break;
+        
+      case PLUS:
+        // Modifier le caractère sous le curseur ou insérer
+        if (emailInputCtx.position < emailInputCtx.length)
+        {
+          // Modifier le caractère existant
+          emailInputCtx.workingEmail[emailInputCtx.position] = 
+            getNextEmailChar(emailInputCtx.workingEmail[emailInputCtx.position], +1);
+        }
+        else if (emailInputCtx.length < 40)
+        {
+          // Insérer un nouveau caractère
+          // insertCharAtPosition(char *email, uint8_t *length, uint8_t pos, char c);
+          insertCharAtPosition(emailInputCtx.workingEmail, &emailInputCtx.length, 
+                              emailInputCtx.position, emailCharSet[0]);
+        }
+        emailInputCtx.displayRefresh = true;
+        break;
+        
+      case MOINS:
+        // Modifier le caractère sous le curseur ou supprimer
+        if (emailInputCtx.position < emailInputCtx.length)
+        {
+          // Modifier le caractère existant
+          emailInputCtx.workingEmail[emailInputCtx.position] = 
+            getNextEmailChar(emailInputCtx.workingEmail[emailInputCtx.position], -1);
+          emailInputCtx.displayRefresh = true;
+        }
+        break;
+/*        
+      case KEY_DELETE: // Si vous avez une touche DELETE
+        // Supprimer le caractère sous le curseur
+        if (emailInputCtx.position < emailInputCtx.length)
+        {
+          deleteCharAtPosition(emailInputCtx.workingEmail, &emailInputCtx.length, 
+                              emailInputCtx.position);
+          updateEmailDisplayOffset();
+          emailInputCtx.displayRefresh = true;
+        }
+        break;
+*/        
+      case VALIDE:
+        if (isEmailValid(emailInputCtx.workingEmail))
+        {
+          emailInputCtx.state = EMAIL_INPUT_COMPLETED;
+          debugSerial.println("Email valide");
+          OLEDDisplayMessageL8("Email accepte", false, false);
+        }
+        else
+        {
+          debugSerial.println("Email invalide");
+          OLEDDisplayMessageL8("Email invalide !", false, false);
+        }
+        break;
+        
+      default:
+        break;
+    }
+    
+    // Reset de la touche après traitement
+    touche = KEY_NONE;
+  }
+  
+  // Rafraîchissement de l'affichage si nécessaire
+  if (emailInputCtx.displayRefresh || (millis() - emailInputCtx.lastUpdate > 100))
+  {
+    refreshEmailDisplay();
+    emailInputCtx.displayRefresh = false;
+    emailInputCtx.lastUpdate = millis();
+  }
+  
+  return emailInputCtx.state;
+}
+
+/**
+ * @brief Finalise la saisie et récupère l'adresse email
+ * @param outputEmail Buffer pour stocker l'email final (41 chars minimum)
+ * @return void
+ */
+void finalizeEmailInput(char* outputEmail)
+{
+  if (emailInputCtx.state == EMAIL_INPUT_COMPLETED)
+  {
+    strncpy(outputEmail, emailInputCtx.workingEmail, 40);
+    outputEmail[40] = '\0';
+    
+    // Reset du contexte
+    emailInputCtx.state = EMAIL_INPUT_IDLE;
+    emailInputCtx.position = 0;
+    emailInputCtx.length = 0;
+    emailInputCtx.displayOffset = 0;
+    
+    debugSerial.print("Email final: ");
+    debugSerial.println(outputEmail);
+  }
+}
+
+/**
+ * @brief Annule la saisie email
+ * @param void
+ * @return void
+ */
+void cancelEmailInput(void)
+{
+  emailInputCtx.state = EMAIL_INPUT_CANCELLED;
+  debugSerial.println("Saisie email annulee");
+  OLEDDisplayMessageL8("Saisie annulee", false, false);
+  
+  // Reset du contexte
+  emailInputCtx.state = EMAIL_INPUT_IDLE;
+}
+
+/**
+ * @brief Vérifie si une saisie email est en cours
+ * @param void
+ * @return true si saisie active
+ */
+bool isEmailInputActive(void)
+{
+  return (emailInputCtx.state == EMAIL_INPUT_ACTIVE);
+}
+
+/**
+ * @brief Rafraîchit l'affichage de l'email avec curseur (optimisé)
+ * @param void
+ * @return void
+ */
+void refreshEmailDisplay(void)
+{
+  // Préparer la chaîne d'affichage (portion visible)
+  char displayBuffer[17]; // 16 chars + '\0'
+  uint8_t displayLen = (emailInputCtx.length < 16) ? emailInputCtx.length : 16;
+  
+  if (emailInputCtx.length > 0)
+  {
+    strncpy(displayBuffer, &emailInputCtx.workingEmail[emailInputCtx.displayOffset], displayLen);
+    displayBuffer[displayLen] = '\0';
+  }
+  else
+  {
+    strcpy(displayBuffer, "_"); // Afficher underscore si vide
+  }
+  
+  bool emailChanged = (strcmp(displayBuffer, emailInputCtx.lastDisplayedEmail) != 0);
+  bool offsetChanged = (emailInputCtx.displayOffset != emailInputCtx.lastDisplayOffset);
+  bool positionChanged = (emailInputCtx.position != emailInputCtx.lastPosition);
+  bool lengthChanged = (emailInputCtx.length != emailInputCtx.lastLength);
+  bool cursorBlinkChanged = (emailInputCtx.cursorBlink != emailInputCtx.lastCursorBlink);
+  bool currentValidity = isEmailValid(emailInputCtx.workingEmail);
+  bool validityChanged = (currentValidity != emailInputCtx.lastValidity);
+  
+  // Déterminer l'état de validité actuel : 0=vide, 1=valide, 2=invalide
+  uint8_t currentValidityState;
+  if (emailInputCtx.length == 0)
+    currentValidityState = 0;
+  else if (currentValidity)
+    currentValidityState = 1;
+  else
+    currentValidityState = 2;
+  
+  bool validityStateChanged = (currentValidityState != emailInputCtx.lastValidityState);
+  
+  // Afficher le titre seulement au premier affichage
+  if (emailInputCtx.firstDisplay)
+  {
+    OLEDDrawText(1, 0, 0, "ADRESSE EMAIL:");
+    emailInputCtx.firstDisplay = false;
+  }
+  
+  // Afficher la portion visible seulement si elle a changé
+  if (emailChanged || offsetChanged)
+  {
+    char padded[21];
+    snprintf(padded, 21, "%-16s", displayBuffer); // Padding pour effacer anciens chars
+    OLEDDrawText(1, 1, 0, padded);
+    strcpy(emailInputCtx.lastDisplayedEmail, displayBuffer);
+  }
+  
+  // Afficher l'indicateur de curseur seulement si position ou clignotement a changé
+  if (positionChanged || cursorBlinkChanged || offsetChanged)
+  {
+    // Effacer l'ancienne position si nécessaire
+    if ((positionChanged || offsetChanged) && emailInputCtx.lastPosition != 0xFF)
+    {
+      char clearUnderline[17] = "                ";
+      OLEDDrawText(1, 2, 0, clearUnderline);
+    }
+    
+    // Calculer la position relative du curseur dans l'affichage
+    int relativePos = emailInputCtx.position - emailInputCtx.displayOffset;
+    
+    // Afficher le nouveau curseur si visible
+    if (emailInputCtx.cursorBlink && relativePos >= 0 && relativePos <= displayLen)
+    {
+      char underline[17] = "                ";
+      underline[relativePos] = '^';
+      underline[16] = '\0';
+      OLEDDrawText(1, 2, 0, underline);
+    }
+    else if (!cursorBlinkChanged) // Seulement si pas juste un clignotement
+    {
+      char clearUnderline[17] = "                ";
+      OLEDDrawText(1, 2, 0, clearUnderline);
+    }
+    
+    emailInputCtx.lastPosition = emailInputCtx.position;
+  }
+  
+  // Afficher la position et longueur seulement si changées
+  if (positionChanged || lengthChanged || offsetChanged)
+  {
+    char posInfo[21];
+    sprintf(posInfo, "Pos:%02d Len:%02d/40   ", 
+            emailInputCtx.position + 1, 
+            emailInputCtx.length);
+    OLEDDrawText(1, 3, 0, posInfo);
+    
+    emailInputCtx.lastDisplayOffset = emailInputCtx.displayOffset;
+    emailInputCtx.lastLength = emailInputCtx.length;
+  }
+  
+  // Afficher le statut de validité seulement s'il a changé
+  if (validityStateChanged)
+  {
+    switch (currentValidityState)
+    {
+      case 0: // Vide
+        OLEDDrawText(1, 4, 0, "Saisie en cours     ");
+        break;
+      case 1: // Valide
+        OLEDDrawText(1, 4, 0, "Email valide        ");
+        break;
+      case 2: // Invalide
+        OLEDDrawText(1, 4, 0, "Email invalide      ");
+        break;
+    }
+    emailInputCtx.lastValidity = currentValidity;
+    emailInputCtx.lastValidityState = currentValidityState;
+  }
+  
+  // Afficher les instructions et timeout seulement si clignotement change
+  if (cursorBlinkChanged)
+  {
+    if (emailInputCtx.timeoutDuration > 0)
+    {
+      unsigned long remainingTime = (emailInputCtx.timeoutDuration - (millis() - emailInputCtx.lastActivity)) / 1000;
+      if (remainingTime <= 5)
+      {
+        char timeoutMsg[21];
+        snprintf(timeoutMsg, 21, "Timeout: %lds       ", remainingTime);
+        OLEDDrawText(1, 5, 0, timeoutMsg);
+      }
+      else if (emailInputCtx.cursorBlink)
+      {
+        OLEDDrawText(1, 5, 0, "+/- Char VALIDE: OK ");
+      }
+      else
+      {
+        OLEDDrawText(1, 5, 0, "                    ");
+      }
+    }
+    else
+    {
+      if (emailInputCtx.cursorBlink)
+      {
+        OLEDDrawText(1, 5, 0, "+/- Char VALIDE: OK ");
+      }
+      else
+      {
+        OLEDDrawText(1, 5, 0, "                    ");
+      }
+    }
+  }
+  
+  // Sauvegarder l'état du clignotement
+  emailInputCtx.lastCursorBlink = emailInputCtx.cursorBlink;
+}
+
+/**
+ * @brief Gère le clignotement du curseur pour l'email
+ * @param void
+ * @return void
+ */
+void updateEmailInputCursorBlink(void)
+{
+  if (millis() - emailInputCtx.lastBlink > 500)
+  {
+    emailInputCtx.cursorBlink = !emailInputCtx.cursorBlink;
+    emailInputCtx.lastBlink = millis();
+    emailInputCtx.displayRefresh = true;
+  }
+}
+
+
+// DNS ????
+// Password solide

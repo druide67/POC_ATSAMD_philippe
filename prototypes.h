@@ -106,9 +106,6 @@ bool isHexStringValid(const char *hex);
 void modifyHexDigit(char *hex, uint8_t pos, int delta);
 char getNextHexChar(char current, int delta);
 
-
-
-
 // Fonctions de saisie Time
 void startTimeInput(const char* initialTime);
 timeInputState_t processTimeInput(void);
@@ -138,11 +135,31 @@ bool isDateValid(const char *d);
 void modifyDateDigit(char *d, uint8_t pos, int delta);
 
 
-// Fonctions de saisie Email
-// Email
+// Fonctions de saisie email
+void startEmailInput(const char* initialEmail);
+emailInputState_t processEmailInput(void);
+void finalizeEmailInput(char* outputEmail);
+void cancelEmailInput(void);
+bool isEmailInputActive(void);
+void refreshEmailDisplay(void);
+void updateEmailInputCursorBlink(void);
+void updateEmailDisplayOffset(void);
+bool isEmailValid(const char *email);
+void insertCharAtPosition(char *email, uint8_t *length, uint8_t pos, char c);
+void deleteCharAtPosition(char *email, uint8_t *length, uint8_t pos);
+char getNextEmailChar(char current, int delta);
 
 // Fonctions de saisie IP
-// IP
+void startIPInput(const char* initialIP);
+ipInputState_t processIPInput(void);
+void finalizeIPInput(char* outputIP);
+void cancelIPInput(void);
+bool isIPInputActive(void);
+void refreshIPDisplay(void);
+void updateIPInputCursorBlink(void);
+uint8_t getNextValidIPPosition(uint8_t currentPos, bool forward);
+bool isIPValid(const char *ip);
+void modifyIPDigit(char *ip, uint8_t pos, int delta);
 
 // Fonctions de saisie à definir
 // 
@@ -231,6 +248,9 @@ void handleOperationMode(void);
 void executeOperationMode(void);
 void handleProgrammingMode(void);
 void executeProgrammingMode(void);
+// fonctions debug :
+void GestionEnCours(void);   // affiche le type de traitement en cours de gestion par le handler
+
 
 
 void onRTCAlarm(void);
@@ -267,7 +287,7 @@ void wake_LoRa(void);
 
 // DHT22
 // Read temp and Humidity with DHT22      
-void read_DHT(DHT dht);
+char read_DHT(DHT dht);
 
 
 // Gestion mesures
