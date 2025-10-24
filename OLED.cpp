@@ -3,7 +3,14 @@
 // IMPRESSION 79 COLONES EN TAILLE 12
 //
 // ---------------------------------------------------------------------------*
-
+//       ____  _      ______ _____                  
+//      / __ \| |    |  ____|  __ \                 
+//     | |  | | |    | |__  | |  | | ___ _ __  _ __ 
+//     | |  | | |    |  __| | |  | |/ __| '_ \| '_ \
+//     | |__| | |____| |____| |__| | (__| |_) | |_) |
+//      \____/|______|______|_____(_)___| .__/| .__/
+//                                      | |   | |   
+//                                      |_|   |_|    
 // ---------------------------------------------------------------------------*
 #define __INIT_DONE
 #include "define.h"
@@ -109,10 +116,11 @@ void OLEDEraseText(int16_t colonne, int16_t lig, int16_t Ncar)
 // @return void
 // ---------------------------------------------------------------------------*
 void OLEDDrawScreenNextPayload(uint8_t ligne, uint8_t colonne, DateTime nextPayload )
-{
-  sprintf(OLEDbuf, "PayLoad: %02d:%02d:%02d", 
+{ char localOLEDbuf[21] = "12345678901234567890"; 
+
+  sprintf(localOLEDbuf, "PayLoad: %02d:%02d:%02d", 
                 nextPayload.hour(), nextPayload.minute(), nextPayload.second());
-  OLEDDrawText(1, ligne, colonne, OLEDbuf);
+  OLEDDrawText(1, ligne, colonne, localOLEDbuf);
 }
 
 // ---------------------------------------------------------------------------*
@@ -123,17 +131,18 @@ void OLEDDrawScreenNextPayload(uint8_t ligne, uint8_t colonne, DateTime nextPayl
 // ---------------------------------------------------------------------------*
 void OLEDDrawScreenTime(uint8_t ligne, uint8_t colonne)
 { static DateTime oldSystemTime(1692712245);  //1692712245);  // timestamp Unix
+  char localOLEDbuf[21] = "12345678901234567890";  
 
   DateTime systemTime = rtc.now();
-  sprintf(OLEDbuf, "%02d:%02d:%02d    %02d/%02d/%02d", 
+  snprintf(localOLEDbuf, 21, "%02d:%02d:%02d    %02d/%02d/%02d", 
           systemTime.hour(), systemTime.minute(), systemTime.second(),
           systemTime.day(), systemTime.month(), systemTime.year()-2000);
 
-debugSerial.println(OLEDbuf);
+debugSerial.println(localOLEDbuf);
              
   if (systemTime != oldSystemTime)
   { 
-    OLEDDrawText(1, ligne, colonne, OLEDbuf);
+    OLEDDrawText(1, ligne, colonne, localOLEDbuf);
     oldSystemTime = systemTime;
   }
 }
@@ -274,29 +283,29 @@ void OLEDPrintChar(uint8_t ligne, uint8_t colonne, char c)
 // @return void
 // ---------------------------------------------------------------------------*
 void OLEDPrintVar(uint8_t ligne, uint8_t col, const void *valeur, char type) 
-{   
+{ char localOLEDbuf[21] = "12345678901234567890";  
   switch (type) 
   {
     case 'c':
-              sprintf(OLEDbuf, "%c", *((char *)valeur));
+              sprintf(localOLEDbuf, "%c", *((char *)valeur));
               break;
     case 's':
-              sprintf(OLEDbuf, "%s", (char *)valeur);
+              sprintf(localOLEDbuf, "%s", (char *)valeur);
               break;
     case 'i':
     case 'I':
-              sprintf(OLEDbuf, "%02d", *((int *)valeur));
+              sprintf(localOLEDbuf, "%02d", *((int *)valeur));
  // %02d arrangement temporaire           
               break;
     case 'f':
     case 'F':
-              sprintf(OLEDbuf, "%.2f", *((float *)valeur));
+              sprintf(localOLEDbuf, "%.2f", *((float *)valeur));
               break;
     default:
-              sprintf(OLEDbuf, "<inconnu>");
+              sprintf(localOLEDbuf, "<inconnu>");
               break;
   }
-  OLEDDrawText(1,ligne, col, OLEDbuf);
+  OLEDDrawText(1,ligne, col, localOLEDbuf);
 }
 
 // ---------------------------------------------------------------------------*
@@ -539,7 +548,7 @@ void OLEDDisplayTime(char *h, uint8_t pos)
  */
 // ---------------------------------------------------------------------------*
 void OLEDDisplayHivesDatas(void)
-{
+{ char localOLEDbuf[21] = "12345678901234567890";
   OLEDClear();
   OLEDDrawScreenTime(0, 0); // Affiche Time/Date au complet
 
@@ -547,14 +556,14 @@ void OLEDDisplayHivesDatas(void)
 
   OLEDDrawText(1,1, 0, "=== INFOS Ruches ===");
       
-  sprintf(OLEDbuf, "Tem: %4.1f - Hum: %4.1f", Data_LoRa.DHT_Temp , Data_LoRa.DHT_Hum);
-  OLEDDrawText(1,2, 0, OLEDbuf );
+  snprintf(localOLEDbuf, 21, "Tem: %4.1f - Hum: %4.1f", Data_LoRa.DHT_Temp , Data_LoRa.DHT_Hum);
+  OLEDDrawText(1,2, 0, localOLEDbuf );
         
-  sprintf(OLEDbuf, "LDR: %4.1f -  VB: %4.1f", Data_LoRa.Brightness, Data_LoRa.Bat_Voltage);
-  OLEDDrawText(1,3, 0, OLEDbuf);
+  snprintf(localOLEDbuf, 21, "LDR: %4.1f -  VB: %4.1f", Data_LoRa.Brightness, Data_LoRa.Bat_Voltage);
+  OLEDDrawText(1,3, 0, localOLEDbuf);
         
-  sprintf(OLEDbuf, "VSo: %4.1f -  mT: %4.1f", Data_LoRa.Solar_Voltage, readingT);
-  OLEDDrawText(1,4, 0, OLEDbuf);
+  snprintf(localOLEDbuf, 21,"VSo: %4.1f -  mT: %4.1f", Data_LoRa.Solar_Voltage, readingT);
+  OLEDDrawText(1,4, 0, localOLEDbuf);
 
 //#define Poids_Peson(num)      Data_LoRa.HX711Weight[num]   //  Data_LoRa de type LoRa_Var (ligne 38)
 
@@ -566,11 +575,11 @@ void OLEDDisplayHivesDatas(void)
        poids = poids/1000;
 //Data_LoRa.HX711Weight[0]=123456;
        
-  sprintf(OLEDbuf, "Ba1: %4.1f - Ba2: %4.1f", Data_LoRa.HX711Weight[0]/1000, 15.22); //Poids_Peson(1));
-  OLEDDrawText(1,5, 0, OLEDbuf);
+  snprintf(localOLEDbuf, 21,"Ba1: %4.1f - Ba2: %4.1f", Data_LoRa.HX711Weight[0]/1000, 15.22); //Poids_Peson(1));
+  OLEDDrawText(1,5, 0, localOLEDbuf);
 
-  sprintf(OLEDbuf, "Ba3: %4.1f - Ba4: %4.1f", Poids_Peson(2), Poids_Peson(3));
-  OLEDDrawText(1,6, 0, OLEDbuf);
+  snprintf(localOLEDbuf, 21, "Ba3: %4.1f - Ba4: %4.1f", Poids_Peson(2), Poids_Peson(3));
+  OLEDDrawText(1,6, 0, localOLEDbuf);
 
 // Eviter, Status Line
 //        sprintf(OLEDbuf, "Next PL:  %02d", , );
@@ -629,15 +638,15 @@ void nonOLEDDisplaySystemInfo(void)
       startListInput(currentMenu->title, currentMenu->menuList, currentMenu->menuSize, currentMenu->selectedIndex);
  */
 // ---------------------------------------------------------------------------*
-// @brief Affiche l'écran d'informations (non-bloquant)
+// @brief Affiche l'écran d'informations du  Projet (non-bloquant)
 // @param void
 // @return void
 // ---------------------------------------------------------------------------*
-void OLEDdisplayInfoScreen(void)
-{
+void OLEDdisplayInfoScreenSyst(void)
+{ char localOLEDbuf[21] = "12345678901234567890";
   infoScreenState = INFO_SCREEN_ACTIVE;   // pour eviter KKKKKKKK
   
-  debugSerial.print("displayInfoScreen - currentMenuDepth: ");
+  debugSerial.print("OLEDdisplayInfoScreenSyst - currentMenuDepth: ");
   debugSerial.println(currentMenuDepth);
 
   OLEDClear();
@@ -646,12 +655,18 @@ void OLEDdisplayInfoScreen(void)
   OLEDDrawText(1, 2, 0, "     POC ATSAMD     ");
   OLEDDrawText(1, 3, 0, "Version: " VERSION);
   OLEDDrawText(1, 4, 0, "Build: 20250924");
-
-
-////  sprintf(OLEDbuf, "Mode: %s", modeExploitation ? "EXPLOIT" : "PROGRAM");
-////  OLEDDrawText(1, 5, 0, OLEDbuf);
-//  sprintf(OLEDbuf, "Config v: %d.%02d", config.materiel.version/100, config.materiel.version%100);  // verifier longueur
-//  OLEDDrawText(1, 6, 0, OLEDbuf);
+  if  (!read_DHT(dht))  // temp et hum. DHT22
+  {
+    snprintf(localOLEDbuf, 21,"T: %.2f C H: %.f %%",Data_LoRa.DHT_Temp ,Data_LoRa.DHT_Hum);
+//debugSerial.println("OLEDdisplayInfoScreenSyst() DHT OK");
+  }
+  else    // /!\   Si pas DHT22, T:µC et H:N/A
+  {
+    float temp = ((analogRead(TEMP_SENSOR) * 3300.0 / 1023.0) - 500.0) / 10.0; // Lecture temp µC  
+    snprintf(localOLEDbuf, 21,"T: %.2f C H: N/A",temp);
+//debugSerial.println("OLEDdisplayInfoScreenSyst() DHT KO");
+  } 
+  OLEDDrawText(1, 5, 0, localOLEDbuf);
         
   OLEDDrawText(1, 7, 0, "VALIDE pour retour");
   
@@ -659,6 +674,108 @@ void OLEDdisplayInfoScreen(void)
   debugSerial.println("Ecran infos affiche");
 }
 
+
+// ---------------------------------------------------------------------------*
+// @brief Affiche l'écran d'informations du  Projet (non-bloquant)
+// @param void
+// @return void
+// ---------------------------------------------------------------------------*
+/*
+
+// Config LoRa
+typedef struct  
+{
+  uint8_t HWEUI [20];       // ID RN2483: "0004A30B00EEEE01"
+  uint8_t AppEUI [10];      // AppEUI: {0x41, 0x42, 0x45, 0x49, 0x4C, 0x4C, 0x45, 0x31, 0x00}
+  uint8_t AppKey [18];      // AppKEY: // 5048494C495050454C4F564542454553 - PHILIPPELOVEBEES
+// {0x50, 0x48, 0x49, 0x4C, 0x49, 0x50, 0x50, 0x45, 0x4C, 0x4F, 0x56, 0x45, 0x42, 0x45, 0x45, 0x53, 0x00} 
+  uint8_t SpreadingFactor;  // 7, 9 et 12 echec freudeneck
+  uint8_t SendingPeriod;    // 15 minutes = 500 sans IT
+} LoRa_configuration;  // LoRa_Config.  
+ 
+ */
+
+
+
+void OLEDdisplayInfoScreenLoRa(void)
+{ char localOLEDbuf[21] = "12345678901234567890";
+  infoScreenState = INFO_SCREEN_ACTIVE;   // pour eviter KKKKKKKK
+  
+  debugSerial.print("OLEDdisplayInfoScreenSyst - currentMenuDepth: ");
+  debugSerial.println(currentMenuDepth);
+
+  OLEDClear();
+  OLEDDrawText(1, 0, 0, "==== INFOS LoRa ====");
+
+  snprintf(localOLEDbuf, 21,"#%2d %15s",Ruche.Num_Carte,"Sapin Freudeneck7890");  // ConfigApplicatif_t =>   uint8_t Balance_ID + char    RucherName [20]; 
+  OLEDDrawText(1, 1, 0,localOLEDbuf);
+  snprintf(localOLEDbuf, 21,"SF: %d  Tx: %d min.",LoRa_Config.SpreadingFactor,LoRa_Config.SendingPeriod);  // SF + Tx Interval (min)  
+  OLEDDrawText(1, 2, 0,localOLEDbuf);
+  snprintf(localOLEDbuf, 21,"%s",Module_ID);  // DevEUI (N° RN 16 car) 
+  // ou HWEUI_List[Ruche.Num_Carte] à vérifier
+  OLEDDrawText(1, 3, 0, localOLEDbuf);
+// Appkey => 5048494C495050454C4F56454C414B4F (32 char vers 16 uint8_t
+  snprintf(localOLEDbuf, 21,"%20s","ApK: 012345678901234");  // AppKey 1/2   
+  OLEDDrawText(1, 4, 0,localOLEDbuf);
+  snprintf(localOLEDbuf, 21,"%20s","+5601234567890123456");  // AppKey 2/2   
+  OLEDDrawText(1, 5, 0,localOLEDbuf);
+// AppEUI => 414245494C4C4533  (16 char vers 8 uint8_t ) 
+ 
+  snprintf(localOLEDbuf, 21,"AE: %s","414245494C4C4533");  // AppEUI    
+  OLEDDrawText(1, 6, 0,localOLEDbuf);
+
+ 
+  OLEDDrawText(1, 7, 0, "VALIDE pour retour");
+// infoScreenState = INFO_SCREEN_ACTIVE;   // pour eviter KKKKKKKK
+  debugSerial.println("Ecran infos affiche");
+}
+
+
+// ---------------------------------------------------------------------------*
+// @brief Affiche l'écran d'informations des Balances (non-bloquant)
+// @param void
+// @return void
+// ---------------------------------------------------------------------------*
+void OLEDdisplayInfoBal(void)
+{ char localOLEDbuf[21] = "12345678901234567890";
+  infoScreenState = INFO_SCREEN_ACTIVE;   // pour eviter KKKKKKKK
+  
+  debugSerial.print("OLEDdisplayInfoBal - currentMenuDepth: ");
+  debugSerial.println(currentMenuDepth);
+
+  OLEDClear();
+
+snprintf(localOLEDbuf, 21,"= INFOS BALANCE %d =", bal);
+  OLEDDrawText(1, 0, 0, localOLEDbuf);
+/*
+// N° des jauge montée sur le dispositif de pesée A,B,C,D
+int Peson [10][4] = {
+      {0,0,0,0},    // Module LoRa pas Lu; pas de Peson
+      {0,0,0,17},    // 0004A30B0020300A carte 1 HS; sur Carte PROTO2 en service le 05/03/2021
+      {13,8,9,0}, //15},    // 0004A30B0024BF45 carte 2; en service le 10/05/2020
+ 
+float Jauge[21][4] = {                // Tare , Echelle , TareTemp , CompTemp
+      {0,0,0,0},     // J00 => pas de peson connecté
+      {178666,108.5,20,0},    // J01 20kg
+
+Tare : Jauge[Peson [Ruche.Num_Carte  ][Bal-1]][0] 
+
+*/
+int num = 1;
+  snprintf(localOLEDbuf, 21,"Poids   : %d ", BalPoids(num-1) );
+  OLEDDrawText(1, 2, 0, localOLEDbuf);
+  snprintf(localOLEDbuf, 21,"Tare    : %d ", Jauge[Peson[Ruche.Num_Carte][bal-1]][0]);
+  OLEDDrawText(1, 3, 0, localOLEDbuf);
+  snprintf(localOLEDbuf, 21,"Echelle : %d ", Jauge[Peson[Ruche.Num_Carte][bal-1]][1]);
+  OLEDDrawText(1, 4, 0, localOLEDbuf);
+  snprintf(localOLEDbuf, 21,"Temp    : %d ", Jauge[Peson[Ruche.Num_Carte][bal-1]][3]);
+  OLEDDrawText(1, 5, 0, localOLEDbuf);
+
+  snprintf(localOLEDbuf, 21, "#%1d - Num Pes:%2d", Ruche.Num_Carte,Peson[Ruche.Num_Carte][bal-1]);
+  OLEDDrawText(1, 6, 0, localOLEDbuf);
+
+  OLEDDrawText(1, 7, 0, "VALIDE pour retour");
+  }
 
 
 

@@ -3,7 +3,14 @@
 // IMPRESSION 79 COLONES EN TAILLE 12
 //
 // ---------------------------------------------------------------------------*
-
+//       _____           _       _ _____       _                                  
+//      / ____|         (_)     | |  __ \     | |                                 
+//     | (___   ___ _ __ _  __ _| | |  | | ___| |__  _   _  __ _   ___ _ __  _ __ 
+//      \___ \ / _ \ '__| |/ _` | | |  | |/ _ \ '_ \| | | |/ _` | / __| '_ \| '_ \
+//      ____) |  __/ |  | | (_| | | |__| |  __/ |_) | |_| | (_| || (__| |_) | |_) |
+//     |_____/ \___|_|  |_|\__,_|_|_____/ \___|_.__/ \__,_|\__, (_)___| .__/| .__/
+//                                                          __/ |     | |   | |   
+//                                                         |___/      |_|   |_|    
 // ---------------------------------------------------------------------------*
 #define __INIT_DONE
 #include "define.h"
@@ -24,8 +31,8 @@
 // ---------------------------------------------------------------------------*
 void debugSerialPrintMenuStruct(menuLevel_t* menu)
 {
-  sprintf(serialbuf,"currentMenuDepth %d / title  %s / menuSize %d /selectedIndex %d",    // /* menuList %s /16 */=>  /*menu->menuList[selectedModeIndex],
-                      currentMenuDepth, menu->title, menu->menuSize, menu->selectedIndex);
+  sprintf(serialbuf,"\ndebugSerialPrintMenuStruct(): currentMenuDepth %d / title  %s / menuSize %d /selectedIndex %d", currentMenuDepth, menu->title, menu->menuSize, menu->selectedIndex);
+                        // /* menuList %s /16 */=>  /*menu->menuList[selectedModeIndex],
   debugSerial.println(serialbuf); 
 }
 
@@ -57,7 +64,7 @@ typedef struct
 */
 void debugSerialListStruct(void)
 { // cas d'une saisie dans Liste:
-  sprintf(serialbuf,"state %d / selectedIndex %d / scrollOffset %d/ maxItems %d / lastScrollOffset %d /\
+  sprintf(serialbuf,"debugSerialListStruct(): state %d / selectedIndex %d / scrollOffset %d/ maxItems %d / lastScrollOffset %d /\
                      \nlastSelectedIndex %d / lastCursorBlink %d / displayRefresh %d / lastUpdate %d\
                      \ncursorBlink %d / lastActivity %d / timeoutDuration %d / lastBlink %d / title %s / itemList[2] %s ",
                     listInputCtx.state,

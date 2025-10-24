@@ -230,7 +230,7 @@ setupDone = true;
 // ---------------------------------------------------------------------------*
 void loop() 
 {  static int index=0; 
-   static int counter1s=0,counter15m=0;   
+   static int counter1s=0,counterPayload=0;   
 
       loopWDT  = millis();
 //debugSerial.println("M");  // MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
@@ -389,10 +389,13 @@ debugSerial.print("6");   // 666666666666666666666666666666666666666666666
 // ---------------------------------------------------------------------------*
   if (wakeupPayload)                          // Envoi LoRa, LED Activité LoRa
   {
+
+void GestionEnCours();
+    
     wakeupPayload = false;
-    counter15m++;
+    counterPayload++;  // compte le nombre d'envois Payload
 //#ifdef __SerialDebugPoc    
-sprintf(serialbuf, "I2£%d ", counter15m);   
+sprintf(serialbuf, "I2£%d ", counterPayload);   
 debugSerial.println(serialbuf);       // I2£n I2£n I2£n I2£n I2£n I2£n I2£n
 //#endif
     turnOnRedLED();     // PCB donne GREEN?
@@ -401,12 +404,62 @@ debugSerial.println(serialbuf);       // I2£n I2£n I2£n I2£n I2£n I2£n I2�
   sendLoRaPayload((uint8_t*)payload,19);   // hex
 #endif    
     turnOffRedLED();
-//    OLEDDrawScreenTime(0, 0); // Affiche Time/Date au complet
 debugSerial.println("Fin Payload, Reactive IRQ1");    
     alarm1_enabled = true;   // Réactiver alarme 1 
 #ifdef __SerialDebugPoc  
 debugSerial.print("7");   // 777777777777777777777777777777777777
 #endif
+
+// perte de l'info de la saisie en cours si existe dans Handle.cpp passe de 
+//   isInfoScreenActive() à inactive  commentaire ligne 215 handle !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+// get void GestionEnCours()
+
+15:49:43.076 -> Info WDT : 290679
+15:49:43.076 -> Info WDT : 290680
+15:49:43.076 -> Info WDT : 290680
+15:49:43.076 -> Info WDT : 290681
+15:49:43.076 -> Info WDT : 290681
+15:49:43.076 -> 
+15:49:43.076 -> €
+15:49:43.076 -> 290683
+15:49:43.076 -> === CONFIGURATION ALARMES RTC + INTERRUPTIONS ===
+15:49:43.076 -> 
+15:49:43.076 -> IRQ2 Reprogrammée à 01:48:00
+15:49:43.076 -> IRQ2 prévue pour: 01:53:00
+15:49:43.076 -> 
+15:49:43.076 -> £
+15:49:43.076 -> IRQ2 prévue pour: 01:53:00
+15:49:43.076 -> Info WDT : 290683
+15:49:43.076 -> Info WDT : 290683
+15:49:43.076 -> I2£1 
+15:49:43.076 -> buildLoraPayload, datas:
+15:49:43.076 -> Rucher: 67  [RucherName: LPCZ] temp: 2500, Hum.: 6900
+15:49:43.076 -> Lum:    91 Vbat: 318,  Vsol: 0
+15:49:43.076 -> Masse0: 1234 / Masse1: 2345 / Masse2: 3456 / Masse3: 4567 / 
+15:49:43.076 -> (fin buildLoraPayload) hexPayload: 43C409F41A5B003E010000D2042909800DD71
+15:49:43.076 -> hexPayload: 43C409F41A5B003E010000D2042909800DD71 len : 19
+15:49:43.076 -> appel LoRaBee.send
+15:49:44.483 -> 
+15:49:44.483 -> The device is not connected to the network in Send_LoRa_Mess(). The program will reset the RN module...
+15:49:52.600 -> === STATUS LoRa ===
+15:49:52.600 ->  => RN2483#04
+15:49:52.600 -> =====================
+15:49:52.600 -> setupLoRaOTAA(), Network connection failed!
+15:49:54.007 -> Fin Payload, Reactive IRQ1
+15:49:54.007 ->  => RN2483#04
+15:49:54.007 ->  => RN2483#04
+15:49:54.007 -> K => RN2483#04
+15:49:54.007 ->  => RN2483#04
+15:49:54.007 -> K => RN2483#04
+15:49:54.007 ->  => RN2483#04
+15:49:54.007 -> K => RN2483#04
+15
+
+// set void GestionEnCours()
+
+void GestionEnCours();
+
   }
 #ifdef __SerialDebugPoc    
 debugSerial.print("8");   // 888888888888888888888888888888888888

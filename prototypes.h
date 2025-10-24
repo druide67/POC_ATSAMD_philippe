@@ -3,7 +3,14 @@
 // IMPRESSION 79 COLONES EN TAILLE 12
 //
 // ---------------------------------------------------------------------------*
-
+//      _____           _        _                           _     
+//     |  __ \         | |      | |                         | |   
+//     | |__) | __ ___ | |_ ___ | |_ _   _ _ __   ___  ___  | |__ 
+//     |  ___/ '__/ _ \| __/ _ \| __| | | | '_ \ / _ \/ __| | '_ \
+//     | |   | | | (_) | || (_) | |_| |_| | |_) |  __/\__ \_| | | |
+//     |_|   |_|  \___/ \__\___/ \__|\__, | .__/ \___||___(_)_| |_|
+//                                    __/ | |                     
+//                                   |___/|_|          
 // ---------------------------------------------------------------------------*
 
 
@@ -16,6 +23,8 @@ void DHTInit(void);
 
 
 // ===== PROTOTYPES DE FONCTIONS DE POC_ATSAMD.INO=====
+
+// ---------------------------------------------------------------------------*
 // DS3231, gestion RTC et temps
 void initRTC(void);                       // Initialise le module RTC DS3231
 //DateTime getSystemTime(void);             // Retourne l'heure système actuelle
@@ -29,6 +38,7 @@ void copyDS3231TimeToMicro(bool forcer);  // Copie heure DS3231 vers µcontrôle
 void DS3231hardReset(void); 
 void DS3231CompleteReset(void);
 
+// ---------------------------------------------------------------------------*
 // encore dans POC...cpp, déplacer?
 // Gestion Config et EEPROM
 void setDefaultConfig(void);
@@ -39,65 +49,128 @@ void saveConfigToEEPROM(void);
 uint16_t calculateChecksum(ConfigGenerale_t* cfg);
 
 
+// ---------------------------------------------------------------------------*
 // Fonctions de gestion des menus
 void pushMenu(const char* title, const char** menuList, uint8_t menuSize, uint8_t initialIndex);
-void popMenu(void);
+void popMenu(void); // Retour menu précédent
 void processMenuSelection(uint8_t selectedIndex);
 
 
-// Appels du menu 0
-void m0_0E_PageInfos(void);
-void m0_1M_ConfigSysteme(void);
-void m0_2M_ConnexLoRa(void);
+// ---------------------------------------------------------------------------*
+// Appels du menu m0
+void m0_0E_PageInfosSyst(void);
+void m0_1M_ConfigSystem(void);
+void m0_2M_ConfigLoRa(void);
 void m0_3M_CalibTensions(void);
-void m0_4M_CalibBalances(void);
-void m0_5F_GetDate(void);
-void m0_6F_GetTime(void);
-void m0_6F_GetTimeDone(void);
-void m0_7F_GetHex(void);
-void m0_7F_GetHexDone(void);
+void m0_4M_CalibBal(void);
 
-// Appels du menu 01
-void m01_0F_CalibVBat(void);
-void m01_1F_CalibVSol(void);
-void m01_2F_CalibVLum(void); 
-void m01_3F_Reserve(void);  
-void m01_4M_PopMenu(void);
 
-// Appels du menu 02
-void m02_0F_CalibVBat(void);
-void m02_1F_CalibVSol(void);
-void m02_2F_CalibVLum(void); 
-void m02_3F_Reserve(void);  
-void m02_4M_PopMenu(void);
+// ---------------------------------------------------------------------------*
+// Appels du menu m01
 
-// Appels du menu 03
-void m03_0F_CalibVBat(void);
-void m03_1F_CalibVSol(void);
-void m03_2F_CalibVLum(void); 
+void m01_0F_GetDate(void);
+void m01_0F_GetDateDone(void);
+
+void m01_1F_GetTime(void);
+void m01_1F_GetTimeDone(void);
+
+void m01_2F_GetNumRucher(void);
+void m01_2F_GetNumRucherDone(void);
+
+void m01_3F_GetNameRucher(void);
+void m01_3F_GetNameRucherDone(void);
+
+void m01_5F_readConfig(void);
+void m01_5F_readConfigDone(void);
+
+void m01_6F_writeConfig(void);
+void m01_6F_writeConfigDone(void);
+
+void m01_6M_PopMenu(void);  // Retour menu précédent m0_Demarrage
+
+
+// ---------------------------------------------------------------------------*
+// Appels du menu m02
+void m02_0E_PageInfosLoRa(void);     // Page info
+
+void m02_1F_GetHex(void);       // DevEUI
+void m02_1F_GetHexDone(void);
+
+void m02_2F_GetHex(void);       // AppEUI
+void m02_2F_GetHexDone(void);
+
+void m02_3L_GetSF(void);        // SF d'après ListeSF
+void m02_3L_GetSFDone(void);
+
+void m02_4F_GetPayloadDelay(void);  // Periodicité Payload
+void m02_4F_GetPayloadDelayDone(void);
+
+void m02_5M_PopMenu(void);          // Retour menu précédent m0_Demarrage
+
+
+// ---------------------------------------------------------------------------*
+// Appels du menu m03
+void m03_0F_CalibVBat(void);      // appel écran de calibration
+void m03_0F_CalibVBatDone(void);
+void m03_1F_CalibVSol(void);      // appel écran de calibration
+void m03_1F_CalibVSolDone(void);
+void m03_2F_CalibVLum(void);      // appel écran de calibration
+void m03_2F_CalibVLumDone(void); 
 void m03_3F_Reserve(void);  
-void m03_4M_PopMenu(void);
+void m03_3F_ReserveDone(void); 
+void m03_4M_PopMenu(void);        // Retour menu précédent m0_Demarrage
 
+/*
 // Appels du menu 033
 void m033_0(void);
 void m033_1(void);
 void m033_2(void);
 void m033_3(void);
 void m033_4(void);
+*/
 
-// Appels du menu 04
-void m04_0F_CalibBal_1(void);
-void m04_1F_CalibBal_2(void);
-void m04_2F_CalibBal_3(void);
-void m04_3F_CalibBal_4(void);
-void m04_4M_PopMenu(void);
+// ---------------------------------------------------------------------------*
+// Appels du menu m04 => appel calibrations de bal sélectionnée
+
+void m04_nM_CalibBal_bal(void); // appel menu calib#bal des paramètre
+
+void m04_0F_CalibBal_1(void); // appel menu calib#1 des paramètre
+void m04_1F_CalibBal_2(void); // appel menu calib#2 des paramètre
+void m04_2F_CalibBal_3(void); // appel menu calib#3 des paramètre
+void m04_3F_CalibBal_4(void); // appel menu calib#4 des paramètre
+void m04_4M_PopMenu(void);    // Retour menu précédent m0_Demarrage
+
+// ---------------------------------------------------------------------------*
+// Appels du menu m04x => appel écrans de calibrations
+void m04x_0F_tareBal_1(void);    // appel écran de calibration
+void m04x_1F_echelleBal_2(void); // appel écran de calibration
+void m04x_2F_tempBal_3(void);    // appel écran de calibration
+void m04x_3M_PopMenu(void);   // Retour menu précédent m04_CalibBalances
+
+// ---------------------------------------------------------------------------*
+// Fonctions de gestion des calibrations
+// VBat
+
+// VLum
+
+// VSol
+
+// tare
+
+// echelle
+
+// temp
 
 
+
+
+// ---------------------------------------------------------------------------*
 // Fonctions de gestion des ecrans infos
 void displayInfoScreen(void);
 infoScreenState_t processInfoScreen(void);
 bool isInfoScreenActive(void);
 
+// ---------------------------------------------------------------------------*
 // Fonctions de sélection dans une liste
 void initStartupList(void);      // Fonction d'initialisation
 void startListInputWithTimeout(const char* title, const char** itemList, uint8_t numItems, uint8_t initialIndex, unsigned long timeoutMs);
@@ -109,6 +182,7 @@ void refreshListDisplay(void);
 void updateListInputCursorBlink(void);
 
 
+// ---------------------------------------------------------------------------*
 // Fonctions de saisie numérique
 void startNumberInput(const char* title, const char* initialNumber, uint8_t maxLength, bool allowNegative);
 
@@ -125,6 +199,7 @@ void modifyNumberChar(char* str, uint8_t pos, int delta);
 bool isValidNumber(const char* number);
 
 
+// ---------------------------------------------------------------------------*
 // Fonctions de saisie alphanumérique
 void startStringInput(const char* title, const char* initialString, uint8_t maxLength);
 // WithTimeout
@@ -139,6 +214,7 @@ void updateStringInputCursorBlink(void);
 char getNextAlphaNumChar(char current, int delta);
 void modifyStringChar(char* str, uint8_t pos, int delta);
 
+// ---------------------------------------------------------------------------*
 // Fonctions de saisie hexadécimale
 void startHexInput(const char* initialHex);
 hexInputState_t processHexInput(void);
@@ -152,6 +228,7 @@ bool isHexStringValid(const char *hex);
 void modifyHexDigit(char *hex, uint8_t pos, int delta);
 char getNextHexChar(char current, int delta);
 
+// ---------------------------------------------------------------------------*
 // Fonctions de saisie Time
 void startTimeInput(const char* initialTime);
 timeInputState_t processTimeInput(void);
@@ -165,9 +242,7 @@ bool isTimeValid(const char *t);
 void modifyTimeDigit(char *t, uint8_t pos, int delta);
 
 
-// Fonctions de saisie (à importer dans le projet)
-// Fonctions de saisie Date
-
+// ---------------------------------------------------------------------------*
 // Fonctions de saisie de date
 void startDateInput(const char* initialDate);
 dateInputState_t processDateInput(void);
@@ -181,6 +256,7 @@ bool isDateValid(const char *d);
 void modifyDateDigit(char *d, uint8_t pos, int delta);
 
 
+// ---------------------------------------------------------------------------*
 // Fonctions de saisie email
 void startEmailInput(const char* initialEmail);
 emailInputState_t processEmailInput(void);
@@ -195,6 +271,8 @@ void insertCharAtPosition(char *email, uint8_t *length, uint8_t pos, char c);
 void deleteCharAtPosition(char *email, uint8_t *length, uint8_t pos);
 char getNextEmailChar(char current, int delta);
 
+
+// ---------------------------------------------------------------------------*
 // Fonctions de saisie IP
 void startIPInput(const char* initialIP);
 ipInputState_t processIPInput(void);
@@ -207,10 +285,13 @@ uint8_t getNextValidIPPosition(uint8_t currentPos, bool forward);
 bool isIPValid(const char *ip);
 void modifyIPDigit(char *ip, uint8_t pos, int delta);
 
+
+// ---------------------------------------------------------------------------*
 // Fonctions de saisie à definir
 // 
 
 
+// ---------------------------------------------------------------------------*
 // Gestion LEDs
 void initLEDs(void);        // Initialise les LEDs RGB et builtin
 void turnOnRedLED(void);    // Allume la LED rouge                        (vert)
@@ -233,6 +314,7 @@ void demarrerLEDBuiltin(void);
 void gererLEDsNonBloquant(void);
 
 
+// ---------------------------------------------------------------------------*
 // Gestion clavier
 key_code_t readKeyOnce(void);   // Lecture instantanée d'une touche du clavier analogique
 key_code_t readKey(void);       // Lecture avec anti-rebond du clavier analogique
@@ -240,6 +322,7 @@ const char* keyToString(key_code_t key);    //Convertit un code de touche en cha
 key_code_t readKeyNonBlocking(void);    // Version non-bloquante de readKey() - Retourne immédiatement
 void processContinuousKeyboard(void);   // Traite le clavier en continu (à appeler dans loop)
 
+// ---------------------------------------------------------------------------*
 // Gestion OLED
 void OLEDInit(void);
 void OLEDInit096(void);
@@ -265,12 +348,15 @@ void OLEDSetDebug(bool actif);
 void OLEDDisplayHivesDatas(void);
 
 //void OLEDDisplaySystemInfo(void);  // voir si pas remplacée par suivante.
-void OLEDdisplayInfoScreen(void);
+void OLEDdisplayInfoScreenSyst(void);
+void OLEDdisplayInfoScreenLoRa(void); 
+void OLEDdisplayInfoBal(void);
 
 // Gestion saisies
 
 char* strToChar(String s);
 
+// ---------------------------------------------------------------------------*
 // Gestion serialDebug 
 void debugSerialListStruct(void);
 void debugSerialPrintMenuStruct(menuLevel_t* menu);
@@ -289,6 +375,7 @@ void debugSerialPrintKbdKey(void);
 void debugSerialPrintSystemInfo(void); 
 void debugSerialPrintHEXA(void);  // non appelée ???
 
+// ---------------------------------------------------------------------------*
 // Gestion modes et interruptions
 void handleOperationMode(void);
 void executeOperationMode(void);
@@ -297,14 +384,14 @@ void executeProgrammingMode(void);
 // fonctions debug :
 void GestionEnCours(void);   // affiche le type de traitement en cours de gestion par le handler
 
-
-
 void onRTCAlarm(void);
 
+// ---------------------------------------------------------------------------*
 // Gestion modes basse consommation
 void sleep(void);
 void configureLowPowerMode(void);
 
+// ---------------------------------------------------------------------------*
 // Gestion RN2483 LoRa
 // RS ?????
 uint8_t RN2483Version(void);    // Lit les infos du modem
@@ -331,11 +418,13 @@ void sendLoRaPayload(uint8_t *, uint8_t);
 void sleep_LoRa(void);
 void wake_LoRa(void);
 
+// ---------------------------------------------------------------------------*
 // DHT22
 // Read temp and Humidity with DHT22      
 char read_DHT(DHT dht);
 
 
+// ---------------------------------------------------------------------------*
 // Gestion mesures
 void take_All_Measure(void);
 // HX711

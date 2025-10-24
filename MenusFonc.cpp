@@ -3,7 +3,14 @@
 // IMPRESSION 79 COLONES EN TAILLE 12
 //
 // ---------------------------------------------------------------------------*
-
+//      __  __                      ______               _                    
+//     |  \/  |                    |  ____|             | |                   
+//     | \  / | ___ _ __  _   _ ___| |__ ___  _ __   ___| |_   ___ _ __  _ __ 
+//     | |\/| |/ _ \ '_ \| | | / __|  __/ _ \| '_ \ / __| __| / __| '_ \| '_ \
+//     | |  | |  __/ | | | |_| \__ \ | | (_) | | | | (__| |_ | (__| |_) | |_) |
+//     |_|  |_|\___|_| |_|\__,_|___/_|  \___/|_| |_|\___|\__(_)___| .__/| .__/
+//                                                                | |   | |   
+//                                                                |_|   |_|    
 // ---------------------------------------------------------------------------*
 #define __INIT_DONE
 #include "define.h"
@@ -68,44 +75,31 @@
 
 
 // ---------------------------------------------------------------------------*
-// ----------------------------- menu000Demarrage ------------------------
+// ------------------------------- m0_Demarrage ------------------------------
 // ---------------------------------------------------------------------------*
-
- 
 // "Page INFOS     (P)"
-void m0_0E_PageInfos()
+void m0_0E_PageInfosSyst()
 {
-//
   debugSerial.println("CONFIG. SYSTEME - Ecran INFOS demandé");   
   infoScreenRefreshTime = true;  
-  OLEDdisplayInfoScreen();     // part dans KKKKKKKKK
+  OLEDdisplayInfoScreenSyst(); 
 }
 
 // "CONFIG. SYSTEME(F)"
-void m0_1M_ConfigSysteme() //
+void m0_1M_ConfigSystem() //
 {
-  infoScreenState = INFO_SCREEN_ACTIVE;  // pour eviter KKKKK met en mode ecran info, continu par appuii touche "VALIDE"
-  debugSerial.println("Appel d'un Menu");
-  debugSerial.println("CONFIG. SYSTEME - Fonction a implementer");
-
-  OLEDDrawText(1, 7, 0, "VALIDE pour retour");
+//  infoScreenState = INFO_SCREEN_ACTIVE;  // pour eviter KKKKK met en mode ecran info, continu par appuii touche "VALIDE"
+  debugSerial.println("Appel du Menu: CONFIG. SYSTEME");
+  pushMenu("-- CONFIG Systeme --", m01_ConfigSystem, M01_ITEM, 0);
+  //OLEDDrawText(1, 7, 0, "VALIDE pour retour");
 }
 
 //  "CONFIG. LoRa  (F)",
-void m0_2M_ConnexLoRa()    //
+void m0_2M_ConfigLoRa()    //
 {
-  infoScreenState = INFO_SCREEN_ACTIVE;  // pour eviter KKKKK met en mode ecran info, continu par appuii touche "VALIDE"
-  debugSerial.print("Appel d'un Menu: ");      
-  debugSerial.println("CONFIG. LoRa   (M) - a implementer");
-  debugSerial.println("faire Menu : menu030ConfigLoRa pour : DevEUI, AppEUI, SF, Délai et RETOUR");
-
-// creer sous menu  
-  OLEDDrawText(1, 1, 0, "  CREER SOUS MENU");
-  OLEDDrawText(1, 2, 0, "DevEUI: ");
-  OLEDDrawText(1, 3, 0, "AppEUI: ");
-  OLEDDrawText(1, 4, 0, "SF    : ");
-  OLEDDrawText(1, 5, 0, "Delay : ");
-  OLEDDrawText(1, 7, 0, "VALIDE pour retour");
+ // infoScreenState = INFO_SCREEN_ACTIVE;  // pour eviter KKKKK met en mode ecran info, continu par appuii touche "VALIDE"
+  debugSerial.println("Appel du Menu: CONFIG. LoRa   (M)");
+  pushMenu("--- CONFIG LoRa ----", m02_ConfigLoRa, M02_ITEM, 0);
 }  
 
 
@@ -113,22 +107,25 @@ void m0_2M_ConnexLoRa()    //
 void m0_3M_CalibTensions()   //  
 {
   debugSerial.println("Appel d'un sous menu");    
-  pushMenu("CALIB. TENSIONS:", m03_CalibTensions, 5, 0);
+  pushMenu("CALIB. TENSIONS:", m03_CalibTensions, M03_ITEM, 0);
 }
   
   
 //  "CALIB. BALANCES(F)",
-void m0_4M_CalibBalances()   //
+void m0_4M_CalibBal()   //
 {
-  debugSerial.print("Appel d'un sous menu:");
-  debugSerial.println("CONFIG. BALANCES");   
-// pushMenu(const char* title, const char** menuList, uint8_t menuSize, uint8_t initialIndex)
-  debugSerial.println("Appel d'un sous menu");    
-  pushMenu("CALIB. TENSIONS:", m04_CalibBalances, 5, 0);
+ // debugSerial.print("Appel d'un sous menu:");
+  sprintf(serialbuf,"Appel d'un sous menu: CONFIG. BALANCE %1d", bal);   
+  debugSerial.println(serialbuf);   
+//  pushMenu(serialbuf, m04_CalibBalances, M04_ITEM, 0);
+  pushMenu("- CALIB. BALANCE # -", m04_CalibBalances, M04_ITEM, 0);
 }
 
+// ---------------------------------------------------------------------------*
+// ----------------------------- m01_ConfigSystem ---------------------------
+// ---------------------------------------------------------------------------*
 
-void m0_5F_GetDate()
+void m01_0F_GetDate()
 { DateTime systemTime;     
 
 debugSerial.println("Lancement saisie DATE");
@@ -143,9 +140,46 @@ debugSerial.println(serialbuf);
 }               
 
 
-void m0_6F_GetTime()
-{
-DateTime systemTime;     
+void m01_0F_GetDateDone()  
+{ DateTime systemTime;
+  byte jour, mois, annee;
+  static char dateBuffer[11] = "11/11/2025"; // Buffer pour la date 11/11/1965
+
+  finalizeDateInput(dateBuffer); // Récupérer l'heure finale en jj/mm/aaaa
+debugSerial.print("Nouvelle Date: ");
+debugSerial.println(dateBuffer);        // Ici vous pouvez traiter la date et revenir au menu
+// jj/mm/aaaa
+  jour = ((byte)dateBuffer[0] -48)*10;
+  jour += (byte)dateBuffer[1] -48;
+  mois = ((byte)dateBuffer[3] -48)*10;
+  mois += (byte)dateBuffer[4] -48;
+  
+  annee = ((byte)dateBuffer[8] -48)*10;
+  annee += (byte)dateBuffer[9] -48;
+  
+  systemTime = rtc.now();
+  rtc.adjust(DateTime(annee/*-2000*/, mois, jour, systemTime.hour(), systemTime.minute(), systemTime.second()));  
+
+debugSerial.println("mise à la date DS3231");
+  copyDS3231TimeToMicro(1);
+  synchronizeDS3231TimeToMicro();
+
+// utile ?????????????
+debugSerial.println("Reprogramme IRQ2");  
+  DS3231setRTCAlarm2(); // Reprogrammer prochaine alarme dans n min
+
+  
+// Activer la liste de démarrage quand fin saisie Date : void finalizeDateInput(char* outputDate)
+  if (currentMenuDepth > 0)
+  {
+    menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
+    startListInputWithTimeout(currentMenu->title, currentMenu->menuList, currentMenu->menuSize, currentMenu->selectedIndex, 0);
+  } 
+}
+
+void m01_1F_GetTime()
+{ DateTime systemTime;     
+
 debugSerial.println("Lancement saisie TIME");
 debugSerial.println("CONFIG. SYSTEME - Demande saisie TIME");
   systemTime = rtc.now();
@@ -157,7 +191,7 @@ debugSerial.println(serialbuf);
   startTimeInput(serialbuf); 
 }           
 
-void m0_6F_GetTimeDone()    
+void m01_1F_GetTimeDone()    
 { DateTime systemTime;
   byte hour, minute, second;
   static char timeBuffer[9] = ""; // Buffer pour l'heure
@@ -188,19 +222,107 @@ debugSerial.println("Reprogramme IRQ2");
 }
 
 
-void m0_7F_GetHex()
+void m01_2F_GetNumRucher()  
+{
+  debugSerial.print("Appel d'une Fonction: ");      
+  debugSerial.println("m01_2F_GetNumRucher()");       
+}
+
+void m01_2F_GetNumRucherDone()  
+{
+  debugSerial.print("Appel d'une Fonction: ");      
+  debugSerial.println("m01_2F_GetNumRucherDone()");       
+}
+
+
+void m01_3F_GetNameRucher()  // Saisir dans la liste List_Ruchers[], 12 elements
+{
+  debugSerial.print("Appel d'une Fonction: ");      
+  debugSerial.println("m01_3F_GetNameRucher()");       
+}
+
+void m01_3F_GetNameRucherDone()  
+{
+  debugSerial.print("Appel d'une Fonction: ");      
+  debugSerial.println("m01_3F_GetNameRucherDone()");       
+}
+
+void m01_5F_readConfig()  
+{
+  debugSerial.print("Appel d'une Fonction: ");      
+  debugSerial.println("m01_5F_readConfig()");       
+}
+
+void m01_5F_readConfigDone()  
+{
+  debugSerial.print("Appel d'une Fonction: ");      
+  debugSerial.println("m01_5F_readConfigDone()");       
+}
+
+void m01_6F_writeConfig()  
+{
+  debugSerial.print("Appel d'une Fonction: ");      
+  debugSerial.println("m01_6F_writeConfig()");       
+}
+
+void m01_6F_writeConfigDone()  
+{
+  debugSerial.print("Appel d'une Fonction: ");      
+  debugSerial.println("m01_6F_writeConfigDone()");       
+}
+
+
+
+//  "RET  popMenu(M000)"       // 6: Retour menu principal
+void m01_6M_PopMenu()  // retour menu000Demarrage
+{
+  debugSerial.print("Appel d'une Fonction: ");      
+  debugSerial.println("PopMenu()");  
+  popMenu();
+}
+
+
+// ---------------------------------------------------------------------------*
+// ------------------------------ m02_ConfigLoRa -----------------------------
+// ---------------------------------------------------------------------------*
+/*
+Data_LoRa.
+  uint8_t rucher_ID;  // 0:non affecté, 1: Fleurs, 2: Acacia, 3: Tilleul, 4: Chataignier
+                      // 5: Sapin 6: Jachère 7: Forêt  8: Phacélie 9: Pommes 
+  char    RucherName [20];      // Localisation Rucher (saisir direct ou liste
+  float   DHT_Temp;         // Temp DHT en °C    xx,x  Float
+  float   DHT_Hum;          // Hum DHT en %      xx,x  Float
+  float   Brightness;       // %Lum en LUX      xxxxx  uint16_t
+  float   Bat_Voltage;      // Tension BAT en V     xx,xx  Float (uint16_t)
+  float   Solar_Voltage;    // Tension BAT en V     xx,xx  Float (uint16_t)
+  float   HX711Weight[4];    // masse Ruche 1 en kg xxx,xx (précision affich. 10g)
+  float   ProcessorTemp;    // temp µC, conservé en backup DHT22 
+} LoRa_Var;   // 
+*/
+
+// "Page INFOS     (P)"
+void m02_0E_PageInfosLoRa()
+{
+  debugSerial.println("CONFIG. LoRa - Ecran INFOS demandé");   
+  infoScreenRefreshTime = true;  
+  OLEDdisplayInfoScreenLoRa(); 
+}
+
+
+void m02_1F_GetHex()  // DevEUI
 { static char hexBuffer[41] = "0123456789ABCDEF0123456789ABCDEF01234567"; // Buffer pour l'hexa
 
 debugSerial.println("Lancement saisie HEXA");
-debugSerial.println("CONFIG. SYSTEME - Demande saisie HEXA");
+debugSerial.println("CONFIG. SYSTEME - Demande saisie HEXA DevEUI");
+strcpy(hexBuffer,"0004A30B00EEEE01");
   startHexInput(hexBuffer); 
 }           
 
-void m0_7F_GetHexDone()    
+void m02_1F_GetHexDone()    // DevEUI
 { static char hexBuffer[41] = "0123456789ABCDEF0123456789ABCDEF01234567"; // Buffer pour l'hexa
 
   finalizeHexInput(hexBuffer); // Récupérer chaine HEXA
-debugSerial.print("Nouvelle chaine: ");
+debugSerial.print("Nouvelle chaine DevEUI: ");
 debugSerial.println(hexBuffer);        // Ici vous pouvez traiter l'heure et revenir au menu
   if (currentMenuDepth > 0)
   {
@@ -209,15 +331,89 @@ debugSerial.println(hexBuffer);        // Ici vous pouvez traiter l'heure et rev
   }
 }
 
-// ---------------------------------------------------------------------------*
-// ----------------------------- menu030CalibTensions --------------------
-// ---------------------------------------------------------------------------*
-//  float   LDRBrightnessScale;   // 
-//  float   VSolScale;            //  
-//  float   VBatScale;
+void m02_2F_GetHex() // AppEUI
+{
+debugSerial.println("Appel m02_2F_GetHex AppEUI - a implementer");   
 
+  if (currentMenuDepth > 0) // Relance la navigation menu après saisie  ou timeout
+  {
+    menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
+    startListInputWithTimeout(currentMenu->title, currentMenu->menuList, currentMenu->menuSize, currentMenu->selectedIndex, 0);
+  }  
+}
+
+void m02_2F_GetHexDone()    // AppEUI
+{
+debugSerial.println("Appel m02_2F_GetHexDone AppEUI - a implementer");   
+
+  if (currentMenuDepth > 0) // Relance la navigation menu après saisie  ou timeout
+  {
+    menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
+    startListInputWithTimeout(currentMenu->title, currentMenu->menuList, currentMenu->menuSize, currentMenu->selectedIndex, 0);
+  }    
+}
+
+
+void m02_3L_GetSF() // Spread Factor, saisir dans la liste List_SF[], 3 elements
+{
+ debugSerial.println("Appel m02_3L_GetSF - a implementer");   
+
+  if (currentMenuDepth > 0) // Relance la navigation menu après saisie  ou timeout
+  {
+    menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
+    startListInputWithTimeout(currentMenu->title, currentMenu->menuList, currentMenu->menuSize, currentMenu->selectedIndex, 0);
+  }   
+}
+
+void m02_3L_GetSFDone()    // Spread Factor
+{
+ debugSerial.println("Appel m02_3L_GetSFDone - a implementer");   
+
+  if (currentMenuDepth > 0) // Relance la navigation menu après saisie  ou timeout
+  {
+    menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
+    startListInputWithTimeout(currentMenu->title, currentMenu->menuList, currentMenu->menuSize, currentMenu->selectedIndex, 0);
+  }     
+}
+
+
+void m02_4F_GetPayloadDelay() // Delais Payload
+{
+ debugSerial.println("Appel m02_4F_GetPayloadDelay - a implementer");   
+
+  if (currentMenuDepth > 0) // Relance la navigation menu après saisie  ou timeout
+  {
+    menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
+    startListInputWithTimeout(currentMenu->title, currentMenu->menuList, currentMenu->menuSize, currentMenu->selectedIndex, 0);
+  }     
+}
+
+void m02_4F_GetPayloadDelayDone()    // Delais Payload
+{
+ debugSerial.println("Appel m02_4F_GetPayloadDelayDone - a implementer");   
+
+  if (currentMenuDepth > 0) // Relance la navigation menu après saisie  ou timeout
+  {
+    menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
+    startListInputWithTimeout(currentMenu->title, currentMenu->menuList, currentMenu->menuSize, currentMenu->selectedIndex, 0);
+  }       
+}
+
+//  "RET  popMenu(M000)"       // 5: Retour menu principal
+void m02_5M_PopMenu()  // retour menu000Demarrage
+{
+  debugSerial.print("Appel d'une Fonction: ");      
+  debugSerial.println("PopMenu()");  
+  popMenu();
+}
+
+
+// ---------------------------------------------------------------------------*
+// ----------------------------- m03_CalibTensions --------------------
+// ---------------------------------------------------------------------------*
 
 // "Calib. VBAT    (F)",      // 0: Mise à Echelle VBat
+//  float  Ruche.VBatScale;
 void m03_0F_CalibVBat() //
 {
   infoScreenState = INFO_SCREEN_ACTIVE;  // pour eviter KKKKK met en mode ecran info, continu par appuii touche "VALIDE"
@@ -233,6 +429,7 @@ void m03_0F_CalibVBat() //
 }
   
 //  "Calib. VSOL    (F)",       // 1: Mise à Echelle VSol
+//  float   Ruche.VSolScale; 
 void m03_1F_CalibVSol()  //
 {
   infoScreenState = INFO_SCREEN_ACTIVE;  // pour eviter KKKKK met en mode ecran info, continu par appuii touche "VALIDE"
@@ -247,6 +444,7 @@ void m03_1F_CalibVSol()  //
 }
 
 //  "Calib. LUM     (F)",       // 2: Mise à Echelle VLum
+//  float   Ruche.LDRBrightnessScale; 
 void m03_2F_CalibVLum()   //
 {
   infoScreenState = INFO_SCREEN_ACTIVE;  // pour eviter KKKKK met en mode ecran info, continu par appuii touche "VALIDE"
@@ -278,23 +476,55 @@ void m03_4M_PopMenu()  // retour menu000Demarrage
   popMenu();
 }
 
+
 // ---------------------------------------------------------------------------*
-// ----------------------------- menu043 => menu040_F3_-------------------
+// ----------------------------- menu04_CalibBalances --------------------
 // ---------------------------------------------------------------------------*
 
 
+void m04_nM_CalibBal_bal()
+{
+  debugSerial.println("Appel m04_nM_CalibBal_bal - a implementer");   
+//  OLEDDrawText(1, 7, 0, "VALIDE pour retour");  
+  OLEDDrawText(1, 7, 0, "m04_nM_CalibBal_bal");  
+  
+  infoScreenRefreshTime = true;  
+  OLEDdisplayInfoBal();     // part dans KKKKKKKKK
 
-// ---------------------------------------------------------------------------*
-// ----------------------------- menu050CalibBalances --------------------
-// ---------------------------------------------------------------------------*
+  if (currentMenuDepth > 0) // Relance la navigation menu après saisie  ou timeout
+  {
+    menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
+    startListInputWithTimeout(currentMenu->title, currentMenu->menuList, currentMenu->menuSize, currentMenu->selectedIndex, 0);
+  }
+  
+}
+
 
 //  "Calib. Bal #1  (F)",      // 0: Calibration Balance 1
+// HX711#0 parameters    
+//  uint8_t Ruche.HX711Clk_0;           
+//  uint8_t Ruche.HX711Dta_0;
+//  float   Ruche.HX711ZeroValue_0;
+//  float   Ruche.HX711Scaling_0;
+//  float   Ruche.HX711Cor_Temp_0;
 void m04_0F_CalibBal_1()  // 
 {
-  debugSerial.print("Appel d'une Fonction: ");      
-  debugSerial.println("CalibBal_1 - a implementer");   
+debugSerial.println("Appel m04_nM_CalibBal_1 - a implementer");   
 
-  OLEDDrawText(1, 7, 0, "VALIDE pour retour");
+  infoScreenRefreshTime = true;  
+  OLEDdisplayInfoBal();     // part dans KKKKKKKKK
+
+
+
+// Relance la navigation menu après saisie  ou timeout
+  if (currentMenuDepth > 0) 
+  {
+    menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
+    startListInputWithTimeout(currentMenu->title, currentMenu->menuList, currentMenu->menuSize, currentMenu->selectedIndex, 0);
+  }
+
+  
+// listInputCtx.state == LIST_INPUT_ACTIVE;  // reste dans les 
 }
 
 
@@ -302,7 +532,7 @@ void m04_0F_CalibBal_1()  //
 void m04_1F_CalibBal_2()  // 
 {
   debugSerial.print("Appel d'une Fonction: ");      
-  debugSerial.println("CalibBal_2 - a implementer");   
+  debugSerial.println("m04_1F_CalibBal_2 - a implementer");   
 
   OLEDDrawText(1, 7, 0, "VALIDE pour retour");
 }
@@ -312,7 +542,7 @@ void m04_1F_CalibBal_2()  //
 void m04_2F_CalibBal_3()  // 
 {
   debugSerial.print("Appel d'une Fonction: ");      
-  debugSerial.println("CalibBal_3 - a implementer");   
+  debugSerial.println("m04_2F_CalibBal_3 - a implementer");   
 
   OLEDDrawText(1, 7, 0, "VALIDE pour retour");
 }
@@ -322,7 +552,7 @@ void m04_2F_CalibBal_3()  //
 void m04_3F_CalibBal_4()  // 
 {
   debugSerial.print("Appel d'une Fonction: ");      
-  debugSerial.println("CalibBal_4 - a implementer");    
+  debugSerial.println("m04_3F_CalibBal_4 - a implementer");    
 
   OLEDDrawText(1, 7, 0, "VALIDE pour retour");
 }
@@ -333,4 +563,36 @@ void m04_4M_PopMenu()  // retour menu000Demarrage
   debugSerial.print("Appel d'une Fonction: ");      
   debugSerial.println("PopMenu()");    
   popMenu();
+}
+
+
+// ---------------------------------------------------------------------------*
+// --------------------------------- menu04x_CalibBal ------------------------
+// ---------------------------------------------------------------------------*
+
+
+void m04x_0F_tareBal_1(void)    // appel écran de calibration
+{
+  debugSerial.print("Appel d'une Fonction: ");      
+  debugSerial.println("m04x_0F_tareBal_1()");      
+}
+
+
+void m04x_1F_echelleBal_2(void) // appel écran de calibration
+{
+  debugSerial.print("Appel d'une Fonction: ");      
+  debugSerial.println("m04x_1F_echelleBal_2()");        
+}  
+  
+void m04x_2F_tempBal_3(void)    // appel écran de calibration
+{
+  debugSerial.print("Appel d'une Fonction: ");      
+  debugSerial.println("m04x_2F_tempBal_3()");      
+}
+
+void m04x_3M_PopMenu(void)   // Retour menu précédent m04_CalibBalances
+{
+  debugSerial.print("Appel d'une Fonction: ");      
+  debugSerial.println("PopMenu()");    
+  popMenu();  
 }

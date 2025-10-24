@@ -1,10 +1,16 @@
-
 //       1         2         3         4         5         6         7        7
 //34567890123456789012345678901234567890123456789012345678901234567890123456789
 // IMPRESSION 79 COLONES EN TAILLE 12
 //
 // ---------------------------------------------------------------------------*
-
+//       _____       _     _             _   _ ____                  
+//      / ____|     (_)   (_)           | \ | |  _ \                 
+//     | (___   __ _ _ ___ _  ___  ___  |  \| | |_) | ___ _ __  _ __ 
+//      \___ \ / _` | / __| |/ _ \/ __| | . ` |  _ < / __| '_ \| '_ \
+//      ____) | (_| | \__ \ |  __/\__ \ | |\  | |_) | (__| |_) | |_) |
+//     |_____/ \__,_|_|___/_|\___||___/ |_| \_|____(_)___| .__/| .__/
+//                                  ______               | |   | |   
+//                                 |______|              |_|   |_|    
 // ---------------------------------------------------------------------------*
 #define __INIT_DONE
 #include "define.h"
@@ -60,16 +66,8 @@
 void initStartupList(void)
 {
   // Activer la liste menu000Demarrage au démarrage
-  pushMenu("MENU PRINCIPAL:", m0_Demarrage, 8, 0);
-/*  
-14:54:59.980 -> pushMenu() MENU PRINCIPAL:
-14:54:59.980 -> Param : CONFIG. SYSTEME(F)
-14:54:59.980 -> struct: CONFIG. SYSTEME(F)
-14:54:59.980 -> Selection dans liste demarree: MENU PRINCIPAL:
-14:54:59.980 -> OLEDDisplayMessageL8() => Choix d'une valeur
-14:55:00.495 -> Menu empile: MENU PRINCIPAL: Profondeur: 1
+  pushMenu("-- MENU PRINCIPAL --", m0_Demarrage, M0_ITEM, 0);
 
- */
   startupListActivated = true;
   debugSerial.println("Menu principal active");
   debugSerial.print("currentMenuDepth apres init: ");
@@ -1301,6 +1299,7 @@ void startHexInput(const char* initialHex)
 {
   if (hexInputCtx.state != HEX_INPUT_IDLE)
   {
+  debugSerial.println("Saisie hexadecimale en cours????");
     return; // Saisie déjà en cours
   }
   
@@ -1861,9 +1860,8 @@ void finalizeTimeInput(char* outputTime)
 void cancelTimeInput(void)
 {
   timeInputCtx.state = TIME_INPUT_CANCELLED;
-  debugSerial.println("Saisie d'heure annulee");
-  OLEDDisplayMessageL8("Saisie annulee", false, false);
-  
+  debugSerial.println("cancelTimeInput() Saisie d'heure annulee");
+  OLEDDisplayMessageL8("Saisie annulee", false, false);  
   // Reset du contexte
   timeInputCtx.state = TIME_INPUT_IDLE;
 }

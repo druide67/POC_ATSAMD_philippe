@@ -1,3 +1,14 @@
+/*
+Page info => OK
+config systeme => valisd pour retour
+Config LoRa => menuLora = Dev eui attend HAX sans affichage page saisie, le reste retourne menuLoRa
+Calib Tens => menu calib => vbat page Vbat, idem Vlum/ VSol
+                             Reserve => ouvre menu reserve
+                                0 affich + retour
+                                1 se perd....
+
+
+*/
 //       1         2         3         4         5         6         7        7
 //34567890123456789012345678901234567890123456789012345678901234567890123456789
 // IMPRESSION 79 COLONES EN TAILLE 12

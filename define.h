@@ -3,9 +3,14 @@
 // IMPRESSION 79 COLONES EN TAILLE 12
 //
 // ---------------------------------------------------------------------------*
-
+//      _____        __ _              _    
+//     |  __ \      / _(_)            | |   
+//     | |  | | ___| |_ _ _ __   ___  | |__ 
+//     | |  | |/ _ \  _| | '_ \ / _ \ | '_ \
+//     | |__| |  __/ | | | | | |  __/_| | | |
+//     |_____/ \___|_| |_|_| |_|\___(_)_| |_|
+//                                          
 // ---------------------------------------------------------------------------*
-
 // ===== INCLUDES =====
 #include <Wire.h>
 #include <RTClib.h>
@@ -27,9 +32,21 @@
 #define DS3231_ADDRESS 0x68   // Adresse RTC Module DS3231
 #define EEPROM_ADDRESS 0x57   // Adresse EEPROM Module DS3231
 
+// ===== Def de LISTES =====
+#define LIST_SF       4
+#define LIST_RUCHERS  12
+
+
 // ===== MENU CONFIGURATION =====
 #define MAX_MENU_DEPTH 5
-
+// nombre d'options pour le menu
+#define M0_ITEM   5 // Menu Demarrage
+#define M01_ITEM  8 // Menu config. Système
+#define M02_ITEM  6 // Menu config. LoRa
+#define M03_ITEM  5 // menu Calb. Tensions
+#define M033_ITEM 5
+#define M04_ITEM  5 // Menu Calib. Balances
+#define M04x_ITEM 4
 
 // ===== EEPROM CONFIGURATION =====
 #define CONFIG_VERSION 100   // Version 1.00 * 100
@@ -199,6 +216,6 @@
 #define DHT_T_ERR     99      // Mesures en erreur
 #define DHT_H_ERR     99      // Mesures en erreur
 
-#include ".\struct.h"
-#include ".\var.h"
-#include ".\prototypes.h"
+#include ".\Struct.h"
+#include ".\Var.h"
+#include ".\Prototypes.h"

@@ -228,9 +228,9 @@ void synchronizeDS3231TimeToMicro(void)
 // @return void
 // ---------------------------------------------------------------------------*
 void copyDS3231TimeToMicro(bool forcer)
-{
-    static unsigned long derniereCopie = 0;
-    const unsigned long INTERVALLE_COPIE_MS = 60000; // 1 minute
+{ char localOLEDbuf[21] = "12345678901234567890";
+  static unsigned long derniereCopie = 0;
+  const unsigned long INTERVALLE_COPIE_MS = 60000; // 1 minute
     
     // Vérifier s'il faut faire la copie
     if (!forcer && (millis() - derniereCopie < INTERVALLE_COPIE_MS))
@@ -239,6 +239,8 @@ void copyDS3231TimeToMicro(bool forcer)
     }
     
     debugSerial.println("=== COPIE DS3231 -> MICRO ===");
+
+//// 2 fois la même heure lue!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
     // Lire l'heure actuelle du DS3231
     DateTime heureDS3231 = rtc.now();
@@ -277,10 +279,10 @@ void copyDS3231TimeToMicro(bool forcer)
         
         debugSerial.println("Heure copiée du DS3231 vers micro");
         
-        sprintf(OLEDbuf, "Sync: %02d:%02d:%02d", 
+        snprintf(localOLEDbuf, 21, "Sync: %02d:%02d:%02d", 
                 heureDS3231.hour(), heureDS3231.minute(), heureDS3231.second());
-        OLEDDisplayMessageL8(OLEDbuf, false, false);
-        debugSerial.println(OLEDbuf);        
+        OLEDDisplayMessageL8(localOLEDbuf, false, false);
+        debugSerial.println(localOLEDbuf);        
         derniereCopie = millis();
     }
     else

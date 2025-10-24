@@ -9,7 +9,6 @@
 //       \ \/ / _` | '__| '_ \
 //        \  / (_| | |_ | | | |
 //         \/ \__,_|_(_)|_| |_|
-//                            
 //
 // ---------------------------------------------------------------------------*
 #include ".\Menu.h"
@@ -247,6 +246,7 @@ uint8_t testPayload[8] =
 // Variable définitions RUCHE
 
 // jauges de contrainte de J01 à J15
+int bal = 0;
 float Jauge[21][4] = {                // Tare , Echelle , TareTemp , CompTemp
       {0,0,0,0},     // J00 => pas de peson connecté
       {178666,108.5,20,0},    // J01 20kg
@@ -296,7 +296,7 @@ int Peson [10][4] = {
     };
 
 HW_equipement Ruche;
-LoRa_configuration LoRa_Config = {9,WAKEUP_INTERVAL_PAYLOAD};      /// => sous IT !!!!!
+LoRa_configuration LoRa_Config = {"","","",9,WAKEUP_INTERVAL_PAYLOAD};      /// => sous IT !!!!!
 LoRa_Var Data_LoRa;
 
 
@@ -466,6 +466,7 @@ extern bool COM_DebugSerial;
 
 // Variable définitions RUCHE
 // jauges de contrainte de J01 à J15
+extern int bal;   // Numéro de balance selectionnée dans m04_CalibBalances[]
 extern float Jauge[][4];           // Tare , Echelle , TareTemp , CompTemp
 // paramètres et données des dispositif de pesée A,B,C,D
 // Clk_PIN, Dta_PIN, Poids

@@ -3,7 +3,13 @@
 // IMPRESSION 79 COLONES EN TAILLE 12
 //
 // ---------------------------------------------------------------------------*
-
+//       _____ _                   _     _    
+//      / ____| |                 | |   | |   
+//     | (___ | |_ _ __ _   _  ___| |_  | |__ 
+//      \___ \| __| '__| | | |/ __| __| | '_ \
+//      ____) | |_| |  | |_| | (__| |_ _| | | |
+//     |_____/ \__|_|   \__,_|\___|\__(_)_| |_|
+//                                             
 // ---------------------------------------------------------------------------*
 
 
@@ -374,7 +380,7 @@ typedef struct
   float   Solar_Voltage;    // Tension BAT en V     xx,xx  Float (uint16_t)
   float   HX711Weight[4];    // masse Ruche 1 en kg xxx,xx (précision affich. 10g)
   float   ProcessorTemp;    // temp µC, conservé en backup DHT22 
-} LoRa_Var;
+} LoRa_Var;   // Data_LoRa.
 
 // Config  Générale
 typedef struct     // regroupe tous les paramètres de EEPROM
@@ -383,7 +389,7 @@ typedef struct     // regroupe tous les paramètres de EEPROM
   char    RucherName [20];      // Localisation Rucher (saisir direct ou liste + "autre")
 } ConfigBalanceSW;
 
-// Config LoRa
+// Config LoRa attention a l'init dasn Var.h
 typedef struct  
 {
   uint8_t HWEUI [20];       // ID RN2483: "0004A30B00EEEE01"
@@ -392,7 +398,7 @@ typedef struct
 // {0x50, 0x48, 0x49, 0x4C, 0x49, 0x50, 0x50, 0x45, 0x4C, 0x4F, 0x56, 0x45, 0x42, 0x45, 0x45, 0x53, 0x00} 
   uint8_t SpreadingFactor;  // 7, 9 et 12 echec freudeneck
   uint8_t SendingPeriod;    // 15 minutes = 500 sans IT
-} LoRa_configuration;
+} LoRa_configuration;  // LoRa_Config.
 
 // Config Hardware
 typedef struct     // regroupe tous les paramètres de EEPROM
@@ -452,7 +458,7 @@ typedef struct
 // HX711#0 parameters    
   uint8_t HX711Clk_0;           
   uint8_t HX711Dta_0;
-  float   HX711ZeroValue_0;
+  float   HX711ZeroValue_00;
   float   HX711Scaling_0;
   float   HX711Cor_Temp_0;
 // HX711#1 parameters  

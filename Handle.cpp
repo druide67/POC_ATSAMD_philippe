@@ -5,7 +5,14 @@
 // IMPRESSION 79 COLONES EN TAILLE 12
 //
 // ---------------------------------------------------------------------------*
-
+//      _    _                 _ _                       
+//     | |  | |               | | |                      
+//     | |__| | __ _ _ __   __| | | ___   ___ _ __  _ __ 
+//     |  __  |/ _` | '_ \ / _` | |/ _ \ / __| '_ \| '_ \
+//     | |  | | (_| | | | | (_| | |  __/| (__| |_) | |_) |
+//     |_|  |_|\__,_|_| |_|\__,_|_|\___(_)___| .__/| .__/
+//                                           | |   | |   
+//                                           |_|   |_|   
 // ---------------------------------------------------------------------------*
 //  Fonctions handleOperationMode() et handleProgrammingMode()
 //  executées dans loop()
@@ -53,7 +60,15 @@ debugSerial.print("E");   // EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 // ---------------------------------------------------------------------------*
 void GestionEnCours()
 { 
-  return;
+ // return;
+
+
+
+// n'afficher qu'a chaque changement
+
+
+
+
   
   if (isListInputActive())  
     sprintf(serialbuf, "Menu/list WDT : %d",loopWDT);
@@ -104,7 +119,7 @@ infoScreenState_t processInfoScreen();
 */
    
 #ifdef __SerialDebugPoc    
-//debugSerial.print("P");   // PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
+// debugSerial.print("P");   // PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
 #endif
 // Gestion normale des menus quand pas de saisie
 GestionEnCours();
@@ -124,44 +139,53 @@ GestionEnCours(); // affiche le type de traitement en cours de gestion par le ha
     listInputState_t state = processListInput();
         
     switch (state)
-    {               debugSerial.println(m0_Demarrage[selectedModeIndex]); 
+    {           
       case LIST_INPUT_COMPLETED:
-                selectedModeIndex = finalizeListInput(); // Récupérer l'index sélectionné
+      {
+        menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
+        
+        selectedModeIndex = finalizeListInput(); // Récupérer l'index sélectionné
 
  // Gestion navigation dans les menus               
-                debugSerial.print("Mode selectionne: ");
-                debugSerial.print(selectedModeIndex);
-                 debugSerial.print(" - Depth: ");
-                debugSerial.print(currentMenuDepth);
-                debugSerial.print(" - Val: ");
-                debugSerial.println(m0_Demarrage[selectedModeIndex]);
+debugSerial.print("Mode selectionne: ");
+debugSerial.print(selectedModeIndex);
+debugSerial.print(" - Depth: ");
+debugSerial.print(currentMenuDepth);
+debugSerial.print(" - Val: ");
+debugSerial.println(currentMenu->title);
+debugSerial.println(currentMenu->menuList[selectedModeIndex]);
+//        debugSerial.println(m0_Demarrage[selectedModeIndex]);
 
-          if (currentMenuDepth > 0)
+        if (currentMenuDepth > 0)
         {
-          menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
-          debugSerial.println(currentMenu->menuList[selectedModeIndex]);
-              
-                
-                // Ici vous pouvez traiter la sélection
+//menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
+ // Gestion navigation dans les menus               
+debugSerial.print("Mode selectionne: ");
+debugSerial.print(selectedModeIndex);
+debugSerial.print(" - Depth: ");
+debugSerial.print(currentMenuDepth);
+debugSerial.print(" - Val: ");
+debugSerial.println(currentMenu->title);
+// debugSerial.println(m0_Demarrage[selectedModeIndex]);
+debugSerial.println(currentMenu->menuList[selectedModeIndex]);
 
+// Ici vous pouvez traiter la sélection
 debugSerial.print("Chaine validée : ");
 //sprintf(stringSaisie,(char *)m0_Demarrage[selectedModeIndex]);    // recopie saisie dans destination
 //debugSerial.println(stringSaisie);
 //debugSerial.println(Data_LoRa.RucherName);
-debugSerial.println(m0_Demarrage[selectedModeIndex]);
-
-                OLEDClear();// Effacer écran
-//                OLEDDrawScreenTime(0, 0); // Affiche Time/Date au complet    
-           processMenuSelection(selectedModeIndex);
+// err debugSerial.println(m0_Demarrage[selectedModeIndex]);
+debugSerial.println(currentMenu->title);
+          OLEDClear();// Effacer écran
+          processMenuSelection(selectedModeIndex);
         }
         else
         {
-          debugSerial.println("Cas ELSE");  
-         processMenuSelection(selectedModeIndex);
+debugSerial.println("Cas ELSE");  
+          processMenuSelection(selectedModeIndex);
         }
-                
-                break;
-                
+        break;        
+      }
       case LIST_INPUT_CANCELLED:
                 debugSerial.println("Selection mode annulee par timeout");
        // Si on était dans un sous-menu, revenir au menu précédent
@@ -182,13 +206,13 @@ debugSerial.println(m0_Demarrage[selectedModeIndex]);
     }
   }
 // ---------------------------------------------------------------------------*
-// Vérifier si un écran d'info est actif                >> doit retourner dans LISTE menu
+// Vérifier si un écran d'info est actif               
 // ---------------------------------------------------------------------------*
   else if (isInfoScreenActive())
   {
 GestionEnCours(); // affiche le type de traitement en cours de gestion par le handler
     infoScreenState_t state = processInfoScreen();
-//debugSerial.print("I");   // IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII    
+// debugSerial.print("S");   // SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS    
     switch (state)
     {
       case INFO_SCREEN_CLOSED:
@@ -196,8 +220,8 @@ GestionEnCours(); // affiche le type de traitement en cours de gestion par le ha
         debugSerial.println("Ecran info ferme");
         infoScreenState = INFO_SCREEN_IDLE; // Reset
 
-listInputCtx.state = LIST_INPUT_ACTIVE;
-infoScreenRefreshTime = false;
+////listInputCtx.state = LIST_INPUT_ACTIVE;
+////infoScreenRefreshTime = false;
         break;
       }  
       default:
@@ -246,9 +270,6 @@ debugSerial.println(Data_LoRa.RucherName);
           // Saisie toujours en cours, ne rien faire d'autre
           return;
     }
-#ifdef __SerialDebugPoc    
-debugSerial.print("N");   // NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
-#endif
   }
 // ---------------------------------------------------------------------------*
 // Vérifier si une saisie alphanumérique est en cours
@@ -317,7 +338,7 @@ debugSerial.print("H");   // HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
     {
       case HEX_INPUT_COMPLETED:
  
-        m0_7F_GetHexDone();
+        m02_1F_GetHexDone();
         
     //    finalizeHexInput(hexBuffer); // Récupérer la chaîne finale
       //  debugSerial.print("Nouvelle cle hexadecimale: ");
@@ -354,19 +375,23 @@ debugSerial.println("Saisie hexadecimale annulee par timeout");
 //    static char timeBuffer[9] = ""; // Buffer pour l'heure
 
 GestionEnCours();   // affiche le type de traitement en cours de gestion par le handler
-    
+#ifdef __SerialDebugPoc    
+//debugSerial.print("T");   // TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
+#endif    
+     
     timeInputState_t state = processTimeInput();
     switch (state)
     {
       case TIME_INPUT_COMPLETED:
            {
-             m0_6F_GetTimeDone();
+             m01_1F_GetTimeDone();
              break;   
            }    
       case TIME_INPUT_CANCELLED:
            {
 debugSerial.println("Saisie heure annulee par timeout");
               cancelTimeInput();
+// retour dans l'affichage et traitement du menu "Père"              
               if (currentMenuDepth > 0)           // Revenir au menu
               {
                 menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
@@ -387,17 +412,21 @@ debugSerial.println("Saisie heure annulee par timeout");
     static char dateBuffer[11] = ""; // Buffer pour la date
 
 GestionEnCours();   // affiche le type de traitement en cours de gestion par le handler
-    
+#ifdef __SerialDebugPoc    
+//debugSerial.print("D");   // DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD
+#endif    
     dateInputState_t state = processDateInput();
     
     switch (state)
     {
       case DATE_INPUT_COMPLETED:
       {
-        finalizeDateInput(dateBuffer); // Récupérer la date finale
-        debugSerial.print("Nouvelle date: ");
-        debugSerial.println(dateBuffer);
+//        finalizeDateInput(dateBuffer); // Récupérer la date finale
+//        debugSerial.print("Nouvelle date: ");
+//        debugSerial.println(dateBuffer);
         // Ici vous pouvez traiter la date et revenir au menu
+             m01_0F_GetDateDone();
+// retour dans l'affichage et traitement du menu "Père"  
         if (currentMenuDepth > 0)
         {
           menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
@@ -426,7 +455,12 @@ GestionEnCours();   // affiche le type de traitement en cours de gestion par le 
   else if (isEmailInputActive())
   {
     static char emailBuffer[41] = "user@example.com";
-    
+
+GestionEnCours();   // affiche le type de traitement en cours de gestion par le handler
+#ifdef __SerialDebugPoc    
+debugSerial.print("E");   // EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+#endif    
+ 
     emailInputState_t state = processEmailInput();
     
     switch (state)
@@ -453,6 +487,12 @@ GestionEnCours();   // affiche le type de traitement en cours de gestion par le 
   else if (isIPInputActive())
   {
     static char ipBuffer[16] = "192.168.001.001";
+
+GestionEnCours();   // affiche le type de traitement en cours de gestion par le handler
+#ifdef __SerialDebugPoc    
+debugSerial.print("I");   // IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
+#endif    
+ 
     
     ipInputState_t state = processIPInput();
     
@@ -480,7 +520,6 @@ GestionEnCours();   // affiche le type de traitement en cours de gestion par le 
   else
   {
 GestionEnCours();     // affiche le type de traitement en cours de gestion par le handler
-    
 #ifdef __SerialDebugPoc    
 debugSerial.print("K");   // KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
 #endif    
@@ -489,59 +528,53 @@ debugSerial.print("K");   // KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
       switch (touche)
       {
         case KEY_1: // Touche 1 - Fonction libre
-                    debugSerial.println("Touche 1 - Fonction libre");
-                    break;
-                    
+        {
+          debugSerial.println("Touche 1 - Fonction libre");
+          break;
+        }
         case KEY_2: // Touche 2 - Test sélection dans une liste
-                    {
+        {
 //                        static uint8_t currentModeIndex = 0; // Index actuel (peut être sauvegardé)
 //                        startListInput("CHOIX MODE:", menu000Demarrage, 9, currentModeIndex);
 // Si on était dans un sous-menu, revenir au menu précédent
-        if (currentMenuDepth > 1)
-        {
-          popMenu();
-        }
-        else
-        {
+          if (currentMenuDepth > 1)
+          {
+            popMenu();
+          }
+          else
+          {
           // Sinon réinitialiser complètement
-          currentMenuDepth = 0;
+            currentMenuDepth = 0;
+          }
+        break;
         }
-                    }
-                    break;
-                    
         case KEY_3: // Touche 3 - Test saisie numérique
+        {
   static char currentNumber[11] = "12345";
   startNumberInput("SAISIE NOMBRE:", currentNumber, 8, false);
-                    break;
-                    
+          break;
+        }            
         case KEY_4: // Touche 4 - Test saisie alphanumérique
- 
-                        static char currentString[21] = "MBVSB0CBJTPOT0WJUF";
+        {
+          static char currentString[21] = "MBVSB0CBJTPOT0WJUF";
 // appeler avec chaine a modifier    ex: Data_LoRa.RucherName[20]
-//                        startStringInput("SAISIE TEXTE:", currentString, 20); 
+//      startStringInput("SAISIE TEXTE:", currentString, 20); 
 
-                        stringSaisie=Data_LoRa.RucherName;  // pointeur sur valeur courante traiter
+          stringSaisie=Data_LoRa.RucherName;  // pointeur sur valeur courante traiter
 // attention si existe "CANCEL", proceder par variable tampon
-
-                        
-                        startStringInput("SAISIE TEXTE:", stringSaisie, 20);
-                    break;
-                    
+          startStringInput("SAISIE TEXTE:", stringSaisie, 20);
+          break;
+        }            
         case KEY_5: // Touche 5 - Reset soft
-                    debugSerial.println("Touche 5 - Reset soft");
-                    break;
-                    
-              default:
-                    break;
+          debugSerial.println("Touche 5 - Reset soft");
+          break;
+        default:
+          break;
       }
       touche = KEY_NONE; // Reset de la touche
     }
   }
 }
-
-
-
-
 
 
 // repositionner ?????

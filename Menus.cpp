@@ -3,14 +3,24 @@
 // IMPRESSION 79 COLONES EN TAILLE 12
 //
 // ---------------------------------------------------------------------------*
-
+//      __  __                                       
+//     |  \/  |                                      
+//     | \  / | ___ _ __  _   _ ___   ___ _ __  _ __ 
+//     | |\/| |/ _ \ '_ \| | | / __| / __| '_ \| '_ \
+//     | |  | |  __/ | | | |_| \__ \| (__| |_) | |_) |
+//     |_|  |_|\___|_| |_|\__,_|___(_)___| .__/| .__/
+//                                       | |   | |   
+//                                       |_|   |_|    
 // ---------------------------------------------------------------------------*
 #define __INIT_DONE
 #include "define.h"
 
 
 // Navigation entre le 5 niveaux de menus : pushMenu() et popMenu()
-
+// C'est ici qu'on navigue vers:
+//  - les sous menus
+//  - Les fonctions (tarage, balances, calibrations tension, ...)
+//  - Les saisies typées (DevEUI (HEX), SF, Var. Texte, date, heure, etc
 
 
 
@@ -27,7 +37,7 @@
 // @param initialIndex Index initial sélectionné
 // @return void
 // ---------------------------------------------------------------------------*
-// exemple appel: pushMenu("Menu Niv 3:", menu033Reserve040, 5, 0);
+// exemple appel: pushMenu("Menu Niv 3:", menu033Reserve040, M3_ITEM, 0);
 void pushMenu(const char* title, const char** menuList, uint8_t menuSize, uint8_t initialIndex)
 {
 sprintf(serialbuf, "pushMenu() title: %s",title); 
@@ -110,37 +120,43 @@ void processMenuSelection(uint8_t selectedIndex)
     debugSerial.println("Erreur: Aucun menu actif");
     return;
   }
+
+#ifdef __SerialDebugPoc    
+ debugSerial.print("M");   // MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
+#endif
+
   
   menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
 debugSerialPrintMenuStruct(currentMenu);
- // =>   currentMenuDepth 1 / title  MENU PRINCIPAL: / menuSize 3 /selectedIndex 536879296
-  // Sauvegarder la sélection dans le menu actuel
+// => debugSerialPrintMenuStruct(): currentMenuDepth 1 / title  -- MENU PRINCIPAL -- / menuSize 5 /selectedIndex 0
+
+// Sauvegarder la sélection dans le menu actuel
   currentMenu->selectedIndex = selectedIndex;
 
 debugSerial.print("processMenuSelection ");
 debugSerial.println(selectedIndex);  
+
 // Traitement selon le menu actuel
-// ---------------------------------------------------------------------------*
-  if (currentMenu->menuList == m0_Demarrage)
+// ------------------------------------------------------------m0_Demarrage---*
+  if (currentMenu->menuList == m0_Demarrage)    // Menu principal
   {
-// Menu principal
     switch (selectedIndex)
     {
       case 0: // "INFOS"
       {
 debugSerial.print("Appel d'un ecran: ");        
-        m0_0E_PageInfos();   // APPEL D'UN AFFICHAGE D'ECRAN 
+        m0_0E_PageInfosSyst();   // APPEL D'UN AFFICHAGE D'ECRAN 
 debugSerial.println("CONFIG. SYSTEME - Ecran INFOS demandé");   
         break;
       }
       case 1: // "CONFIG. SYSTEME"
       {
-        m0_1M_ConfigSysteme();       // APPEL D'UN MENU
+        m0_1M_ConfigSystem();       // APPEL D'UN MENU
         break;
       }
       case 2: // "CONNEX. RESEAU"
       {  
-        m0_2M_ConnexLoRa();
+        m0_2M_ConfigLoRa();
         break;
       }  
       case 3: // "CALIB. TENSIONS"
@@ -150,22 +166,7 @@ debugSerial.println("CONFIG. SYSTEME - Ecran INFOS demandé");
       }
       case 4: // "CALIB. BALANCES"
       {  
-        m0_4M_CalibBalances();    
-        break;
-      }
-      case 5: // "SAISIE DATE"
-      {
-        m0_5F_GetDate();   // APPEL D'UNE SAISIE, ici DATE
-        break;
-      }
-      case 6: // "SAISIE HEURE"
-      {
-        m0_6F_GetTime();   // APPEL D'UNE SAISIE, ici HEURE
-        break;
-      }
-      case 7: 
-      {
-        m0_7F_GetHex();    // "SAISIE HEXA "
+        m0_4M_CalibBal();    
         break;
       }
       default:
@@ -174,121 +175,136 @@ debugSerial.println("CONFIG. SYSTEME - Ecran INFOS demandé");
       }  
     }
   }
-// ---------------------------------------------------------------------------*
-  else if (currentMenu->menuList == m01_ConfigSysteme)
+// -------------------------------------------------------m01_ConfigSystem---*
+  else if (currentMenu->menuList == m01_ConfigSystem)
   {
     switch (selectedIndex)
     {
-      case 0:  
+      case 0: // "SAISIE DATE"
       {
-debugSerial.println("m01_0 demandé");   
+        m01_0F_GetDate();   // APPEL D'UNE SAISIE, ici DATE
         break;
       }
-      case 1: 
+      case 1: // "SAISIE HEURE"
       {
-debugSerial.println("m01_1 demandé");   
+        m01_1F_GetTime();   // APPEL D'UNE SAISIE, ici HEURE
         break;
       }
-      case 2:
+     case 2:  // Numéro de Rucher
       {
-debugSerial.println("m01_2 demandé");   
+debugSerial.println("m01_2F_GetNumRucher demandé");   
+        m01_2F_GetNumRucher();
         break;
       }
-      case 3:
+      case 3: // Nom de Rucher (Liste avec autre  => saisie TXT)
       {
-debugSerial.println("m01_3 demandé");   
+debugSerial.println("m01_3F_GetNameRucher demandé");   
+        m01_3F_GetNameRucher();
         break;
       }
-      case 4:
+      case 4: // ReadEEPROM
       {  
-debugSerial.println("m01_4 demandé");   
+debugSerial.println("m01_5F_readConfig demandé");   
+        m01_5F_readConfig();
         break;
       }
-      case 5:
+      case 5: // WriteEEPROM
       {  
-debugSerial.println("m01_5 demandé");   
+debugSerial.println("m01_6F_writeConfig demandé");   
+        m01_6F_writeConfig();
         break;
       }
-      case 6:
-      {  
-debugSerial.println("m01_6 demandé");   
+      
+      case 7: // Retour m0_Demarrage
+      {
+        popMenu(); // Retour au menu principal
         break;
-      }
+      }  
       default:
       {
         break;
       }  
     }
   }
-// ---------------------------------------------------------------------------*
+// ----------------------------------------------------------m02_ConfigLoRa---*
   else if (currentMenu->menuList == m02_ConfigLoRa)
   {
     switch (selectedIndex)
     {
-      case 0:  
+      case 0: // "INFOS"
       {
-debugSerial.println("m02_0 demandé");   
+debugSerial.print("Appel d'un ecran: ");        
+        m02_0E_PageInfosLoRa();   // APPEL D'UN AFFICHAGE D'ECRAN 
+debugSerial.println("CONFIG. SYSTEME - Ecran INFOS demandé");   
         break;
       }
-      case 1: 
+      case 1: // DevEUI => HEX
       {
-debugSerial.println("m02_1 demandé");   
+debugSerial.println("m02_1F_GetHex demandé");   
+        m02_1F_GetHex();
         break;
       }
-      case 2:
+      case 2: // AppEUI => HEX
       {
-debugSerial.println("m02_2 demandé");   
-
+debugSerial.println("m02_2F_GetHex demandé");   
+        m02_2F_GetHex();
         break;
       }
-      case 3:
+      case 3: // SpreadFactor => ListeSF
       {
-debugSerial.println("m02_3 demandé");   
+debugSerial.println("m02_3L_GetSF demandé");   
+        m02_3L_GetSF();
         break;
       }
-      case 4:
-      {  
-debugSerial.println("m02_4 demandé");   
+      case 4: // delayPayload => TXT converti en uint8
+      {
+debugSerial.println("m02_4F_GetPayloadDelay demandé");   
+        m02_4F_GetPayloadDelay();
         break;
       }
+      case 5: // Retour m0_Demarrage
+      {
+        popMenu(); // Retour au menu principal
+        break;
+      }  
       default:
       {
         break;
       }  
     }
   }
-// ---------------------------------------------------------------------------*
+// -------------------------------------------------------m03_CalibTensions---*
   else if (currentMenu->menuList == m03_CalibTensions)
   {
     switch (selectedIndex)
     {
       case 0: // "Calib. VBAT"
       {
-        debugSerial.println("Calib. VBAT - Fonction a implementer");
+        debugSerial.println("m03_0F_CalibVBat - Fonction a implementer");
+        m03_0F_CalibVBat();
 //        popMenu(); // Retour au menu principal
         break;
       }  
       case 1: // "Calib. VSOL"
       {
-        debugSerial.println("Calib. VSOL - Saisie numerique a implementer");
+        debugSerial.println("m03_1F_CalibVSol - Saisie numerique a implementer");
+        m03_1F_CalibVSol();
 // startNumericInput("CALIB VSOL:", &variable_vsol, min, max);
-//        popMenu(); // Retour au menu principal
         break;
       }  
       case 2: // "Calib. LUM"
       {
-        debugSerial.println("Calib. LUM - Fonction a implementer");
-//        popMenu(); // Retour au menu principal
+        debugSerial.println("m03_2F_CalibVLum - Fonction a implementer");
+        m03_2F_CalibVLum();
         break;
       } 
       case 3: // "Reserve"
       {
-        debugSerial.println("Reserve - Fonction libre");
-        pushMenu("Menu Niv 3:", m033_Reserve040, 5, 0);
-//        popMenu(); // Retour au menu principal
+        debugSerial.println("m03_3F_Reserve - Fonction libre");
+        pushMenu("Menu Niv 3:", m033_Reserve, M033_ITEM , 0);
         break;
       } 
-      case 4: // "RETOUR"
+      case 4:  // Retour m0_Demarrage
       {
         popMenu(); // Retour au menu principal
         break;
@@ -297,102 +313,109 @@ debugSerial.println("m02_4 demandé");
         break;
     }
   }  
-// ---------------------------------------------------------------------------*
-  else if (currentMenu->menuList == m033_Reserve040)
+// -------------------------------------------------------m033_Reserve--------*
+  else if (currentMenu->menuList == m033_Reserve)
   {
     switch (selectedIndex)
     {
-      case 0: // menu033-0
+      case 0: //
       {
-        debugSerial.println("0");
-//        popMenu(); // Retour au menu principal
+        debugSerial.println("m033_0F_xxx - Fonction a implementer");
+      }  
+      case 1: //
+      {
+        debugSerial.println("m033_1F_xxx - Fonction a implementer");
+        break;
+      }  
+      case 2: //
+      {
+        debugSerial.println("m033_2F_xxx - Fonction a implementer");
         break;
       } 
-      case 1: // menu033-1
+      case 3: 
       {
-        debugSerial.println("menu033-1");
-//        popMenu(); // Retour au menu principal
+        debugSerial.println("m033_3F_xxx - Fonction a implementer");
         break;
-      }  
-      case 2: // menu033-2
+      } 
+      case 4:  // Retour m0_Demarrage
       {
-        debugSerial.println("menu033-2");
-//        popMenu(); // Retour au menu principal
-        break;
-      }  
-      case 3: // menu033-3
-      {
-        debugSerial.println("menu033-3");
-//        popMenu(); // Retour au menu principal
-        break;
-      }  
-      case 4: // RET   popMenu(M030)
-      {
-        popMenu(); // Retour au menu: menu040CaliTensions
+        popMenu(); // Retour au menu principal
         break;
       }  
       default:
         break;
     }
-  }
-// ---------------------------------------------------------------------------*
+  }  
+  
+// -------------------------------------------------------m04_CalibBalances---*
   else if (currentMenu->menuList == m04_CalibBalances)
   {
     switch (selectedIndex)
     {
       case 0:  
       {
-debugSerial.println("m04_0 demandé");   
+bal = 1;   
+sprintf(serialbuf,"m04_0 demandé avec balance %d : m04_CalibBal[]", bal); 
+debugSerial.println(serialbuf); 
+m04_0F_CalibBal_1();      
         break;
       }
       case 1: 
       {
-debugSerial.println("m04_1 demandé");   
+bal = 2;    
+sprintf(serialbuf,"m04_1 demandé avec balance %d : m04_CalibBal[]", bal); 
+debugSerial.println(serialbuf); 
+m04_nM_CalibBal_bal();
         break;
       }
       case 2:
       {
-debugSerial.println("m04_2 demandé");   
+bal = 3;    
+sprintf(serialbuf,"m04_2 demandé avec balance %d : m04_CalibBal[]", bal); 
+debugSerial.println(serialbuf); 
+m04_nM_CalibBal_bal();
         break;
       }
-      case 3:
+      case 3: 
       {
-debugSerial.println("m04_3 demandé");   
+bal = 4;    
+sprintf(serialbuf,"m04_3 demandé avec balance %d : m04_CalibBal[]", bal); 
+debugSerial.println(serialbuf); 
+m04_nM_CalibBal_bal();
         break;
       }
-      case 4:
-      {  
-debugSerial.println("m04_4 demandé");   
+      case 4:  // Retour m0_Demarrage
+      {
+        popMenu(); // Retour au menu principal
         break;
-      }
+      }  
       default:
       {
         break;
       }  
     }
   }  
-// ---------------------------------------------------------------------------*
+// -----------------------------------------------------------m04x_CalibBal---*
   else if (currentMenu->menuList == m04x_CalibBal)
   {
     switch (selectedIndex)
     {
       case 0: // m04x-0
-        debugSerial.println("menu04x-0  demandé");
-//        popMenu(); // Retour au menu principal
+        sprintf(serialbuf,"menu04x-0  demandé avec Bal %d pour Tare Balance", bal);
+// tester cas pour tare Balance
+        m02_1F_GetHex();    // "SAISIE HEXA "
+
+        
+        
+        
         break;
       case 1: // m04x-1
-        debugSerial.println("menu04x-1  demandé");
-//        popMenu(); // Retour au menu principal
+        sprintf(serialbuf,"menu04x-1  demandé avec Bal %d pour Echelle Balance", bal);
         break;
       case 2: // m04x-2
-        debugSerial.println("menu04x-2  demandé");
-//        popMenu(); // Retour au menu principal
+        sprintf(serialbuf,"menu04x-2  demandé avec Bal %d pour Comp. T° Balance", bal);
         break;
-      case 3: // m04x-3
-        debugSerial.println("menu04x-3  demandé");
-//        popMenu(); // Retour au menu principal
-        break;
-      case 4: // RET   popMenu(M04)
+      case 3: // RET   popMenu(M04)
         popMenu(); // Retour au menu: m04_CalibBalances
         break;
       default:
