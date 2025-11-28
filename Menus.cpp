@@ -21,6 +21,7 @@
 //  - les sous menus
 //  - Les fonctions (tarage, balances, calibrations tension, ...)
 //  - Les saisies typées (DevEUI (HEX), SF, Var. Texte, date, heure, etc
+//  - Les écrans d'affichages (dynamiques ou statiques)
 
 
 
@@ -40,7 +41,7 @@
 // exemple appel: pushMenu("Menu Niv 3:", menu033Reserve040, M3_ITEM, 0);
 void pushMenu(const char* title, const char** menuList, uint8_t menuSize, uint8_t initialIndex)
 {
-sprintf(serialbuf, "pushMenu() title: %s",title); 
+sprintf(serialbuf, "pushMenu()\\title: %s",title); 
 debugSerial.println(serialbuf);
   if (currentMenuDepth < MAX_MENU_DEPTH)
   {
@@ -50,11 +51,11 @@ debugSerial.println(serialbuf);
     strncpy(menuStack[currentMenuDepth].title, title, 20);
     menuStack[currentMenuDepth].title[20] = '\0';    
     currentMenuDepth++;
-    
-    // Démarrer l'affichage du nouveau menu
+
+// Démarrer l'affichage du nouveau menu
     startListInput(title, menuList, menuSize, initialIndex, 0);
     
-sprintf(serialbuf,"Menu empile: %s  currentMenuDepth: %d" ,title, currentMenuDepth); 
+sprintf(serialbuf,"pushMenu()\\Menu empile: %s  currentMenuDepth: %d" ,title, currentMenuDepth); 
 debugSerial.println(serialbuf);
   }
   else
@@ -80,13 +81,13 @@ debugSerial.println(serialbuf);
     // Redémarrer l'affichage du menu précédent
     startListInput(prevMenu->title, prevMenu->menuList, prevMenu->menuSize, prevMenu->selectedIndex, 0);
     
-    debugSerial.print("Retour menu precedent: ");
+    debugSerial.print("popMenu()\\Retour menu precedent: ");
     debugSerial.print(prevMenu->title);
     debugSerial.print(" Profondeur: ");
     debugSerial.println(currentMenuDepth);
   }
 // Apres 
-  debugSerial.print(" menu apres popMenu(): ");
+  debugSerial.print("popMenu()\\menu apres popMenu(): ");
   debugSerialPrintMenuStruct(&menuStack[currentMenuDepth - 1]);  
 }
 
@@ -98,6 +99,8 @@ debugSerial.println(serialbuf);
 // ---------------------------------------------------------------------------*
 void backMenu(void)
 {
+  sprintf(serialbuf, "backMenu()"); 
+debugSerial.println(serialbuf);  
   if (currentMenuDepth > 0)
   {
     menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
@@ -107,12 +110,14 @@ void backMenu(void)
 
 
 // ---------------------------------------------------------------------------*
-// @brief Réaffiche le menu actuel après execution Fonction.
+// @brief Réaffiche le menu actuel après Timeout selection dans LISTE.
 // @param void
 // @return void
 // ---------------------------------------------------------------------------*
 void backMenuFromList(void)
 {
+sprintf(serialbuf, "backMenuFromList()"); 
+debugSerial.println(serialbuf);    
   if (currentMenuDepth > 0)
   {
     menuLevel_t* currentMenu = &menuStack[currentMenuDepth - 1];
@@ -135,7 +140,7 @@ void processMenuSelection(uint8_t selectedIndex)
   }
 
 #ifdef __SerialDebugPoc    
- debugSerial.print("M");   // MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
+// debugSerial.print("M");   // MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 #endif
 
   
@@ -155,29 +160,29 @@ debugSerial.println(selectedIndex);
   {
     switch (selectedIndex)
     {
-      case 0: // "INFOS"
+      case 0:                               // "INFOS" => m0_0E_PageInfosSyst()
       {
 debugSerial.print("Appel d'un ecran: ");        
         m0_0E_PageInfosSyst();   // APPEL D'UN AFFICHAGE D'ECRAN 
 debugSerial.println("CONFIG. SYSTEME - Ecran INFOS demandé");   
         break;
       }
-      case 1: // "CONFIG. SYSTEME"
+      case 1:                     // "CONFIG. SYSTEME" => m0_1M_ConfigSystem()
       {
         m0_1M_ConfigSystem();       // APPEL D'UN MENU
         break;
       }
-      case 2: // "CONNEX. RESEAU"
+      case 2:                        // "CONNEX. RESEAU" => m0_2M_ConfigLoRa()
       {  
         m0_2M_ConfigLoRa();
         break;
       }  
-      case 3: // "CALIB. TENSIONS"
+      case 3:                    // "CALIB. TENSIONS" => m0_3M_CalibTensions()
       {
         m0_3M_CalibTensions();
         break;
       }
-      case 4: // "CALIB. BALANCES"
+      case 4:                         // "CALIB. BALANCES" => m0_4M_CalibBal()
       {  
         m0_4M_CalibBal();    
         break;
@@ -230,7 +235,7 @@ debugSerial.println("m01_6F_writeConfig demandé");
       
       case 6: // Retour m0_Demarrage
       {
-        m01_6M_PopMenu();    // Retour au menu principal
+        popMenu();    // Retour au menu principal
         break;
       }  
       default:
@@ -378,15 +383,30 @@ debugSerial.println("m02_6F_SendPayload() demandé");
   {
     switch (selectedIndex)
     {
-      case 0:  
+      case 0: 
+      { 
+sprintf(serialbuf,"m04_0F_InfoBal() demandé"); 
+debugSerial.println(serialbuf); 
+m04_0F_InfoBal();
+        break;
+      }
+      case 1: 
+      {
+bal = 4;    
+sprintf(serialbuf,"m04_1F_PoidsBal() demandé"); 
+debugSerial.println(serialbuf); 
+m04_1F_PoidsBal();
+        break;
+      }
+      case 2:  
       {
 bal = 1;   
 sprintf(serialbuf,"m04_0 demandé avec balance %d : m04_CalibBal[]", bal); 
 debugSerial.println(serialbuf); 
-m04_0F_CalibBal_1();      
+m04_2F_CalibBal_1();      
         break;
       }
-      case 1: 
+      case 3: 
       {
 bal = 2;    
 sprintf(serialbuf,"m04_1 demandé avec balance %d : m04_CalibBal[]", bal); 
@@ -394,7 +414,7 @@ debugSerial.println(serialbuf);
 m04_nM_CalibBal_bal();
         break;
       }
-      case 2:
+      case 4:
       {
 bal = 3;    
 sprintf(serialbuf,"m04_2 demandé avec balance %d : m04_CalibBal[]", bal); 
@@ -402,27 +422,12 @@ debugSerial.println(serialbuf);
 m04_nM_CalibBal_bal();
         break;
       }
-      case 3: 
+      case 5: 
       {
 bal = 4;    
 sprintf(serialbuf,"m04_3 demandé avec balance %d : m04_CalibBal[]", bal); 
 debugSerial.println(serialbuf); 
 m04_nM_CalibBal_bal();
-        break;
-      }
-      case 4: 
-      { 
-sprintf(serialbuf,"m04_4F_InfoBal() demandé"); 
-debugSerial.println(serialbuf); 
-m04_4F_InfoBal();
-        break;
-      }
-      case 5: 
-      {
-bal = 4;    
-sprintf(serialbuf,"m04_5F_PoidsBal() demandé"); 
-debugSerial.println(serialbuf); 
-m04_5F_PoidsBal();
         break;
       }
       case 6:  // Retour m0_Demarrage

@@ -43,14 +43,65 @@ void handleOperationMode(void) // Mode exploitation : que réveil payload
 { 
   if (switchToOperationMode)    // affiche qu'une fois
   { 
+// supprimer 3 lignes si pa revu.
+debugSerial.println("Passage en mode EXPLOITATION");
+
     switchToProgrammingMode = true;
-    OLEDClear(); 
-    OLEDDrawText(1, 7, 0, "MODE EXPLOITATION");
     switchToOperationMode = false;
+
+// Reactive l'affichage du menu de démarrage pour sortie mode EXPLOITATION
+    startupListActivated = false;
+    OLEDClear(); 
+    OLEDDrawText(1, 7, 0, "MODE EXPLOITATION   ");
+
+// préciser le statut des menus, retour au propre au PRINCIPAL
+//debugSerialPrintMenuStruct(&menuStack[currentMenuDepth]);
+//debugSerialListStruct();
+/**/
   }  
 #ifdef __SerialDebugPoc    
-debugSerial.print("E");   // EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+//debugSerial.print("E");   // EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 #endif
+
+// ---------------------------------------------------------------------------*
+// ISR2
+// ---------------------------------------------------------------------------*
+  if (wakeupPayload)                          // Envoi LoRa, LED Activité LoRa
+  { static int counterPayload=0;   
+
+//GestionEnCours("ISR2a");  // Surveillance pour Debug
+    wakeupPayload = false;
+    counterPayload++;  // compte le nombre d'envois Payload
+//#ifdef __SerialDebugPoc    
+sprintf(serialbuf, "I2£%d ", counterPayload);   
+debugSerial.println(serialbuf);       // I2£n I2£n I2£n I2£n I2£n I2£n I2£n
+//#endif
+    turnOnRedLED();     // PCB donne GREEN?
+    buildLoraPayload();
+#ifdef __SendLoRa
+  sendLoRaPayload((uint8_t*)payload,19);   // hex
+#endif    
+    turnOffRedLED();
+debugSerial.println("Fin Payload, Reactive IRQ1");    
+    alarm1_enabled = true;   // Réactiver alarme 1 
+#ifdef __SerialDebugPoc  
+debugSerial.print("7");   // 777777777777777777777777777777777777
+#endif
+// GestionEnCours("ISR2b");  // Surveillance pour Debug
+  }
+
+#ifdef __SerialDebugPoc    
+//debugSerial.print("8");   // 888888888888888888888888888888888888
+#endif
+
+// Entrée en veille si activée
+  if (DEBUG_LOW_POWER && modeExploitation) // pas de low power en config
+  {
+debugSerial.println("Low");     
+    debugSerial.flush();  
+    sleep();
+debugSerial.println("low"); 
+  }
 }
 
 
@@ -67,8 +118,6 @@ unsigned int dtobin(unsigned char h)
  
    return b;
 }
-// puis printf("%d",dtobin(ton_nombre_allant_de_0_à_255));
-
 
 // ---------------------------------------------------------------------------*
 // @brief affiche le type de traitement en cours de gestion par le handler
@@ -78,18 +127,12 @@ unsigned int dtobin(unsigned char h)
 void GestionEnCours(char *from)
 { unsigned char encours=0;
   static unsigned char oldencours=255;
- // return;
 // n'afficher qu'a chaque changement
-
-
-
-
-
   
   if (isListInputActive())  
   {
     encours += 1;
-    sprintf(serialbuf, "Menu/list WDT : %d GestionEnCours ",loopWDT);
+    sprintf(serialbuf, "GestionEnCours()\\Menu/list WDT : %d GestionEnCours ",loopWDT);
   }  
   else if (isInfoScreenActive()) 
   {
@@ -126,15 +169,6 @@ if (encours != oldencours)
   debugSerial.println(serialbuf);
   oldencours = encours;
 }  
-//  debugSerial.println(encours);
-//  
-//  sprintf(serialbuf, "List %d / Infos %d / Number %d / String %d / Time %d / Date, Mail, IP,...",
-//  isListInputActive(), isInfoScreenActive(), isNumberInputActive(), isStringInputActive(), isTimeInputActive()); 
-//  debugSerial.println(serialbuf);
-
-
-
-
 }
 
 
@@ -150,21 +184,47 @@ void handleProgrammingMode(void)
 {    // Mode programmation : réveil payload + 1 sec + interface utilisateur
   if (switchToProgrammingMode)    // affiche qu'une fois
   {  
+// supprimer ligne si pas revu.
+debugSerial.println("Passage en mode PROGRAMMATION");
+
+// préciser le statut des menus, retour au PRINCIPAL
     switchToOperationMode = true;
-    OLEDClear();
     switchToProgrammingMode = false;
-// Activer la liste au démarrage si pas encore fait
+    OLEDClear();
+// Réinit structure à Default
+// listInputContext_t listInputCtx = {LIST_INPUT_IDLE, 0, 0, 10, 0, 0, false, false, 0, false, 0, 0, 0, "", NULL};
+    listInputCtx.state = LIST_INPUT_IDLE;
+    listInputCtx.selectedIndex = 0;
+    listInputCtx.scrollOffset = 0;
+    listInputCtx.maxItems = 5;
+    listInputCtx.lastScrollOffset = 0;
+    listInputCtx.lastSelectedIndex = 0;
+    listInputCtx.lastCursorBlink = false;                    
+    listInputCtx.displayRefresh = false;
+    listInputCtx.lastUpdate = 0;
+    listInputCtx.cursorBlink = false;
+    listInputCtx.lastActivity = 0;
+    listInputCtx.lastActivity = 0;
+    listInputCtx.timeoutDuration = 0;                   
+    strncpy(listInputCtx.title,"",21);
+    listInputCtx.itemList = NULL;                    
+ 
+ // Reset de tous les rafraichissement OLED
+    InfoScreenRefreshTime = false;  
+    LoRaScreenRefreshTime = false;
+    InfoBalScreenRefreshTime = false;
+    WeightScreenRefreshWeights = false;
+
+// remise Niveau menus à 0
+    currentMenuDepth = 0;  // départ menu PRINCIPAL
+ // Activer la liste au démarrage si pas encore fait
     if (!startupListActivated)
     {
-// afficher structure gestion menu avant 1er menu
 debugSerial.println("Lancement Menu principal");
-      initStartupList();
+      initStartupList();  // Initialise l'affichage de la liste au démarrage
     }
+    wakeupPayload = false; // désactive envoi généré pendant PROGRAMMATION
   }
-/*  
-// Traite l'écran d'informations (à appeler dans loop)
-infoScreenState_t processInfoScreen();
-*/
    
 #ifdef __SerialDebugPoc    
 // debugSerial.print("P");   // PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
@@ -190,14 +250,12 @@ GestionEnCours("handleProgrammingModeb"); // affiche le type de traitement en co
     {           
       case LIST_INPUT_COMPLETED:
       {
-  
- // cas sortie list de selection paramètres (SF, Ruchers, ...)
+// cas sortie list de selection paramètres (SF, Ruchers, ...)
         switch (saisieActive)
         {
           case 23:
           {
-            
-            m02_3L_GetSFDone();
+             m02_3L_GetSFDone();
 debugSerial.println("lancement m02_3L_GetSFDone()");                       
             saisieActive=0;
             break;
@@ -209,8 +267,7 @@ debugSerial.println("lancement m02_3L_GetSFDone()");
             saisieActive=0;
             break;
           }
-
-         default:  // ne rien faire
+          default:  // ne rien faire
           {
  debugSerial.println("default dans isListInputActive()/saisieActive/default, pourquoi ???????????????????");           
             break;      
@@ -264,15 +321,20 @@ debugSerial.println("Cas ELSE");
        // Si on était dans un sous-menu, revenir au menu précédent
         if (currentMenuDepth > 1)
         {
-          popMenu();
+          if (saisieActive) // sortie par timeout d'une saisie de liste
+          {
+            backMenuFromList(); 
+            saisieActive=0; // annulation saisie
+          }  
+          else
+            popMenu();   // sortie navigation MENU
         }
         else
         {
           // Sinon réinitialiser complètement
           currentMenuDepth = 0;
         }
-                break;
-                
+        break;
       default:
                 // Sélection toujours en cours, ne rien faire d'autre
               return;
@@ -283,35 +345,11 @@ debugSerial.println("Cas ELSE");
 // ---------------------------------------------------------------------------*
  #define REFRESHSCREEN 1000
  else if (isInfoScreenActive())
-  { static unsigned long refreshScreen=0;
-    if (millis() - refreshScreen > REFRESHSCREEN) // Refresh heure et datas toutes les 1s
-    {
-      refreshScreen = millis();
-// selectionner l'écran cible
-    if (PageInfosLoRaRefresh)             // rien à rafraichir
-    {
-     
-    }
-    else if (PageInfosSystRefresh)        // rafraichir Heure
-    {
-      OLEDDrawScreenRefreshTime(1, 0);    // refresh Time/Date every second 
-    }
-/*
-    else if (PageInfosBalRefresh)   // rafraichir les poids temp, hum
-    {
-    
-    }
-*/
-    } 
-
-GestionEnCours("handleProgrammingModec"); // affiche le type de traitement en cours de gestion par le handler
+  { 
+    GestionEnCours("handleProgrammingModec"); // affiche le type de traitement en cours de gestion par le handler
     infoScreenState_t state = processInfoScreen();
 // debugSerial.print("S");   // SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS    
 
-    
-    
-    
-    
     switch (state)
     {
       case INFO_SCREEN_CLOSED:
@@ -320,7 +358,25 @@ GestionEnCours("handleProgrammingModec"); // affiche le type de traitement en co
         infoScreenState = INFO_SCREEN_IDLE; // Reset
 
 ////listInputCtx.state = LIST_INPUT_ACTIVE;
-////infoScreenRefreshTime = false;
+
+        if (ScreenRefreshed)  // Suppresion des indicateur de Refresh
+        {
+          ScreenRefreshed = false;
+// Pas de connaissance de l'écran en cours pour l'instant.
+
+// NE SERT A RIEN EN L'ETAT
+
+
+// RAZ brutale de tous les indicateurs
+// écran InfoSysteme
+          InfoScreenRefreshTime = false;   
+// écran InfoLoRa
+          LoRaScreenRefreshTime = false;
+          LoraScreenRefreshNextPayload = false;
+// écran InFoBal
+          InfoBalScreenRefreshTime = false;
+          WeightScreenRefreshWeights = false;
+        }
         break;
       }  
       default:
@@ -355,7 +411,19 @@ sprintf(stringSaisie,(char *)numBuffer);    // recopie saisie dans destination !
 debugSerial.println(stringSaisie);
 debugSerial.println(Data_LoRa.RucherName);
 */
-        m01_2F_GetNumRucherDone(); // retour au menu
+        switch (saisieActive)
+        {
+          case 12:
+          {
+            m01_2F_GetNumRucherDone(); // retour au menu        
+          }
+          default:
+            break; 
+        }
+       
+// peut être on peut enlever break??? pour executer le valid suivi du TMT 
+// en veillant a ne pas annuler laa saisie validée ;-)
+// ceci peut éviter de doubler les tests 
         break;        
       case NUM_INPUT_CANCELLED:
         debugSerial.println("Saisie numerique annulee par timeout");
@@ -369,50 +437,6 @@ m01_2F_GetNumRucherDone(); // retour au menu
         return;
     }
   }
-
-/*  
-// ci dessous caduque  
-  else if (isNumberInputActive())   // numberInputCtx.state == NUMBER_INPUT_ACTIVE
-  {
-    static char numberBuffer[11] = ""; // Buffer pour le nombre
-
-GestionEnCours("handleProgrammingModed");   // affiche le type de traitement en cours de gestion par le handler
-      
-#ifdef __SerialDebugPoc    
-  debugSerial.print("N");   // NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
-#endif
-
-    numberInputState_t state = processNumberInput();
-      
-    switch (state)
-    {
-      case NUMBER_INPUT_COMPLETED:
-          finalizeNumberInput(numberBuffer); // Récupérer le nombre final
-          debugSerial.print("Nouveau nombre: ");
-          debugSerial.println(numberBuffer);
-          // Ici vous pouvez traiter le nombre
-
-debugSerial.println("Chaine validée : ");
-sprintf(stringSaisie,(char *)numberBuffer);    // recopie saisie dans destination !!!!!  attentin LISTE
-debugSerial.println(stringSaisie);
-debugSerial.println(Data_LoRa.RucherName);
-
-                OLEDClear();// Effacer écran
-//                OLEDDrawScreenTime(0, 0); // Affiche Time/Date au complet    
-
-          break;
-          
-      case NUMBER_INPUT_CANCELLED:
-          debugSerial.println("Saisie numerique annulee");
-          break;
-          
-      default:
-          // Saisie toujours en cours, ne rien faire d'autre
-          return;
-    }
-  }
-*/
-  
 // ---------------------------------------------------------------------------*
 // Vérifier si une saisie alphanumérique est en cours
 // ---------------------------------------------------------------------------*
@@ -723,6 +747,9 @@ infoScreenState_t processInfoScreen(void)
   {
     touche = KEY_NONE;
     infoScreenState = INFO_SCREEN_CLOSED;
+
+
+
     
     // Revenir au menu principal
     if (currentMenuDepth > 0)

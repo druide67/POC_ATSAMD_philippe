@@ -80,14 +80,15 @@
 void m0_0E_PageInfosSyst()
 {
   debugSerial.println("CONFIG. SYSTEME - Ecran INFOS demandé");   
-  PageInfosSystRefresh = true;  
+  InfoScreenRefreshTime = true;  
   OLEDdisplayInfoScreenSyst(); 
 }
 
 // trouver ou appeler
 void m0_0E_PageInfosSystDone()
-{
-  PageInfosSystRefresh = false;
+{  
+// voir si pas désactivé de façon globale?????  azerty
+  InfoScreenRefreshTime = false;
 }
 
 // "CONFIG. SYSTEME(F)"
@@ -250,6 +251,8 @@ debugSerial.println("Reprogramme IRQ2");
 void m01_2F_GetNumRucher()  
 { static char number[4];
 
+  saisieActive = 12; // pour identifier variable saisie lors de l'affectation
+
 debugSerial.print("Appel d'une Fonction: m01_2F_GetNumRucher()");   
   sprintf(number,"%d", ConfigMateriel.Noeud_LoRa);
 debugSerial.println(ConfigMateriel.Noeud_LoRa);   
@@ -260,6 +263,8 @@ debugSerial.println(number);
 // Sauvegarde de ConfigMateriel.Noeud_LoRa
 void m01_2F_GetNumRucherDone()  
 { static char number[9] = ""; // Buffer pour le numérique
+
+  saisieActive = 0; // pour identifier variable saisie lors de l'affectation
 
 debugSerial.print("Appel d'une Fonction: ");      
 debugSerial.println("m01_2F_GetNumRucherDone()");   
@@ -334,15 +339,6 @@ void m01_5F_writeConfigDone()
   backMenu(); // supprimer dans pas Done
 }
 
-//  "RET  popMenu(M000)"       // 6: Retour menu principal
-void m01_6M_PopMenu()  // retour menu000Demarrage
-{
-  debugSerial.print("Appel d'une Fonction: ");      
-  debugSerial.println("PopMenu()");  
-  popMenu();
-}
-
-
 // ---------------------------------------------------------------------------*
 // ------------------------------ m02_ConfigLoRa -----------------------------
 // ---------------------------------------------------------------------------*
@@ -365,14 +361,19 @@ Data_LoRa.
 void m02_0E_PageInfosLoRa()
 {
   debugSerial.println("CONFIG. LoRa - Ecran INFOS demandé");   
-  PageInfosLoRaRefresh = true;  
+  //PageInfosLoRaRefresh = true; 
+  LoRaScreenRefreshTime = true;
+  LoraScreenRefreshNextPayload = true;
+   
   OLEDdisplayInfoScreenLoRa(); 
 }
 
 // trouver ou appeler
 void m02_0E_PageInfosLoRaDone()
 {
-  PageInfosLoRaRefresh = false;
+//  PageInfosLoRaRefresh = false;
+  LoRaScreenRefreshTime = false;
+  LoraScreenRefreshNextPayload = false;  
 }
 
 // AppKey => {0x50,0x48,0x49,0x4C,0x49,0x50,0x50,0x45,0x4C,0x4F,0x56,0x45,0x42,0x45,0x45,0x53,0x00} 
@@ -458,7 +459,7 @@ debugSerial.println(selectedSF);
 
 sprintf(localBuffer,"Nouvelle chaine RC: %d / item: %s / SF: %d", index, selectedSF, LoRa_Config.SpreadingFactor );
 debugSerial.println(localBuffer);        // Ici vous pouvez traiter SF et revenir au menu
-  backMenu(); 
+backMenuFromList(); // Fin de gestion hors Timeout
 }
 
 void m02_4F_GetPayloadDelay() // Delais Payload
@@ -533,6 +534,34 @@ void m02_7M_PopMenu()  // retour menu000Demarrage
 // ----------------------------- m03_CalibTensions --------------------
 // ---------------------------------------------------------------------------*
 
+void m03_0E_DisplayVoltageInput()
+{ char localOLEDbuf[21] = "12345678901234567890"; 
+
+  infoScreenState = INFO_SCREEN_ACTIVE;  // pour eviter KKKKK met en mode ecran info, continu par appuii touche "VALIDE"
+  debugSerial.print("Appel d'une Fonction: ");      
+  debugSerial.println("CalibVBat - Fonction a implementer");  
+
+
+
+// Passer en mode lecure ANA avec rafraichissement rapide (10 lect /appel)
+// Activer rafraichissement VBat, VSol, VLum
+
+
+// creer sous menu  
+  OLEDDrawText(1, 1, 0, "Tension Lues");
+  sprintf(localOLEDbuf, "Bat : %3.2f / %7.6f", VBat[11], VBatScale_List [bal]);    // 16
+  OLEDDrawText(1, 3, 0,localOLEDbuf);           // Affichage à chaque seconde, sans effet si valid
+
+  sprintf(localOLEDbuf, "Sol : %3.2f / %7.6f", VSol[11], VSolScale_List [bal]);    // 16
+  OLEDDrawText(1, 4, 0,localOLEDbuf);           // Affichage à chaque seconde, sans effet si valid
+
+  sprintf(localOLEDbuf, "Lum : %3.2f / %7.6f", readingL, VLumScale_List [bal]);    // 16
+  OLEDDrawText(1, 5, 0,localOLEDbuf);           // Affichage à chaque seconde, sans effet si valid
+
+  OLEDDrawText(1, 7, 0, "VALIDE pour retour");  // fin
+}
+
+
 // "Calib. VBAT    (F)",      // 0: Mise à Echelle VBat
 //  float  Ruche.VBatScale;
 void m03_0F_CalibVBat() //
@@ -545,7 +574,7 @@ void m03_0F_CalibVBat() //
   OLEDDrawText(1, 1, 0, "  CALIBRER VBat");
   OLEDDrawText(1, 3, 0, "VBat :  ");            // Affichage à chaque seconde, sans effet si valid
   OLEDDrawText(1, 4, 0, "VBatScale: ");         // affichage, sans effet si valid
-  OLEDDrawText(1, 5, 0, "New : ");              // saisie Num nouvelle val de VBatScale => menu041_F0_GetNum()
+  OLEDDrawText(1, 5, 0, "New : ");              // saisie Num nouvelle val de VBatScale => menu030_F0_GetNum()
   OLEDDrawText(1, 7, 0, "VALIDE pour retour");  // fin
 }
   
@@ -560,7 +589,7 @@ void m03_1F_CalibVSol()  //
   OLEDDrawText(1, 1, 0, "  CALIBRER VSol");
   OLEDDrawText(1, 3, 0, "VSol :  ");            // Affichage à chaque seconde, sans effet si valid
   OLEDDrawText(1, 4, 0, "VSolScale: ");         // affichage, sans effet si valid
-  OLEDDrawText(1, 5, 0, "New : ");              // saisie Num nouvelle val de VSolScale => menu041_F0_GetNum()
+  OLEDDrawText(1, 5, 0, "New : ");              // saisie Num nouvelle val de VSolScale => menu031_F0_GetNum()
   OLEDDrawText(1, 7, 0, "VALIDE pour retour");  // fin
 }
 
@@ -603,29 +632,82 @@ void m03_4M_PopMenu()  // retour menu000Demarrage
 // ---------------------------------------------------------------------------*
 
 
-void m04_nM_CalibBal_bal()
+//  "info.  Balances(F)",      //   Page info Balances 
+void m04_0F_InfoBal(void)    // 
 {
-  debugSerial.println("Appel m04_nM_CalibBal_bal - a implementer");   
-//  OLEDDrawText(1, 7, 0, "VALIDE pour retour");  
-  OLEDDrawText(1, 7, 0, "m04_nM_CalibBal_bal");  
-  
-  infoScreenRefreshTime = true;  
-  OLEDdisplayInfoBal();     // part dans KKKKKKKKK
+//  saisieActive=44;  // pas de saisie de variable à affecter, sans objet
+
+// attention activer ScreenRefreshed
+// ne donne pas ce que j'attends... analyse:
+// passe à false tous les bool de refresh
+//ScreenRefreshed = true;          // active rafraichissement en général
+  InfoBalScreenRefreshTime = true; // active rafraichissement time/date
+  OLEDdisplayInfoBal();
+  OLEDDrawText(1, 7, 0, "VALIDE pour retour");
+//  backMenu(); // Relance la navigation menu après saisie  ou timeout
+}
+
+
+// trouver ou appeler
+void m04_0F_InfoBalDone()
+{
+//  saisieActive=0;  // pas de saisie de variable à affecter, sans objet
+  InfoBalScreenRefreshTime = false; // desactive rafraichissement time/date
   backMenu(); // Relance la navigation menu après saisie  ou timeout
 }
 
 
+// "Poids  Balances(F)"   // Affichage rafraichi du poids des balances
+void m04_1F_PoidsBal(void)   //
+{
+//  saisieActive=45;  // pas de saisie de variable à affecter, sans objet
+  ScreenRefreshed = true;         // active rafraichissement en général
+  WeightScreenRefreshTime = true;   // active rafraichissement date/heure
+  WeightScreenRefreshWeights = true;  // active rafraichissement poids
+  OLEDdisplayWeightBal();
+// backMenu(); // Relance la navigation menu après saisie  ou timeout
+}
 
-void m04_0F_CalibBal_1()  // 
+// trouver ou appeler
+void m04_1F_PoidsBalDone()
+{
+//  saisieActive=0;  // pas de saisie de variable à affecter, sans objet
+  ScreenRefreshed = false;         // désactive rafraichissement en général
+  WeightScreenRefreshTime = false;   // désactive rafraichissement date/heure
+  WeightScreenRefreshWeights = false;  // désactive rafraichissement poids
+  backMenu(); // Relance la navigation menu après saisie  ou timeout 
+}
+
+void m04_nM_CalibBal_bal()    // utiliser la var gloale bal
+{
+  debugSerial.println("Appel m04_nM_CalibBal_bal - a implementer");   
+//  OLEDDrawText(1, 7, 0, "VALIDE pour retour");  
+  OLEDDrawText(1, 7, 0, "m04_nM_CalibBal_bal");  
+/*  
+  ScreenRefreshed = true;         // active rafraichissement en général
+  BalScreenRefreshTime = true;   // active rafraichissement date/heure
+  BalScreenRefreshWeights = true;  // active rafraichissement poids
+  OLEDdisplayInfoBal();     // part dans KKKKKKKKK
+*/   
+  // fonction implementer
+   OLEDdisplayCalibBal();  
+  InfoScreenRefreshTime = false;  
+//  backMenu(); // Relance la navigation menu après saisie  ou timeout 
+}
+
+
+
+void m04_2F_CalibBal_1()  // 
 {
 debugSerial.println("Appel m04_nM_CalibBal_1 - a implementer");   
 
-  infoScreenRefreshTime = true;  
+  InfoScreenRefreshTime = true;  
   OLEDdisplayInfoBal();     // part dans KKKKKKKKK
 
-  backMenu(); // Relance la navigation menu après saisie  ou timeout
-   
-// listInputCtx.state == LIST_INPUT_ACTIVE;  // reste dans les 
+  // fonction implementer
+  
+  InfoScreenRefreshTime = false;  
+//  backMenu(); // Relance la navigation menu après saisie  ou timeout   
 }
 
 
@@ -665,22 +747,6 @@ void m04_3F_CalibBal_4()  //
   backMenu(); // Relance la navigation menu après saisie  ou timeout
  }
 
-//  "info.  Balances(F)",      //   Page info Balances 
-void m04_4F_InfoBal(void)    // 
-{
-
-  OLEDDrawText(1, 7, 0, "VALIDE pour retour");
-  backMenu(); // Relance la navigation menu après saisie  ou timeout
-}
-
- 
-// "Poids  Balances(F)"   // Affichage rafraichi du poids des balances
-void m04_5F_PoidsBal(void)   //
-{
-  
-  OLEDDrawText(1, 7, 0, "VALIDE pour retour");
-  backMenu(); // Relance la navigation menu après saisie  ou timeout
-}
 
 //  "RET  popMenu(M000)"       // 4: Retour menu principal
 void m04_6M_PopMenu()  // retour menu000Demarrage

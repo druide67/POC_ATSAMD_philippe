@@ -53,6 +53,7 @@ uint16_t calculateChecksum(ConfigGenerale_t* cfg);
 void pushMenu(const char* title, const char** menuList, uint8_t menuSize, uint8_t initialIndex);
 void popMenu(void); // Retour menu précédent
 void backMenu(void); // Réaffiche le menu actuel après execution Fonction.
+void backMenuFromList(void); // Réaffiche le menu actuel après Selection LISTE.
 void processMenuSelection(uint8_t selectedIndex);
 
 // ---------------------------------------------------------------------------*
@@ -86,9 +87,6 @@ void m01_4F_readConfigDone(void);
 void m01_5F_writeConfig(void);
 void m01_5F_writeConfigDone(void);
 
-void m01_6M_PopMenu(void);  // Retour menu précédent m0_Demarrage
-
-
 // ---------------------------------------------------------------------------*
 // Appels du menu m02
 void m02_0E_PageInfosLoRa(void);     // Page info
@@ -111,11 +109,14 @@ void m02_5F_JoinDone(void); // Connexion LoRa
   
 void m02_6F_SendPayLoad(void); // Envoyer Payload  
 
-void m02_7M_PopMenu(void);          // Retour menu précédent m0_Demarrage
-
-
 // ---------------------------------------------------------------------------*
 // Appels du menu m03
+
+// modif en cours:
+void m03_0E_DisplayVoltageInput(void);
+
+
+
 void m03_0F_CalibVBat(void);      // appel écran de calibration
 void m03_0F_CalibVBatDone(void);
 void m03_1F_CalibVSol(void);      // appel écran de calibration
@@ -124,7 +125,6 @@ void m03_2F_CalibVLum(void);      // appel écran de calibration
 void m03_2F_CalibVLumDone(void); 
 void m03_3F_Reserve(void);  
 void m03_3F_ReserveDone(void); 
-void m03_4M_PopMenu(void);        // Retour menu précédent m0_Demarrage
 
 /*
 // Appels du menu 033
@@ -140,20 +140,20 @@ void m033_4(void);
 
 void m04_nM_CalibBal_bal(void); // appel menu calib#bal des paramètre
 
-void m04_0F_CalibBal_1(void); // appel menu calib#1 des paramètre
+void m04_2F_CalibBal_1(void); // appel menu calib#1 des paramètre
 void m04_1F_CalibBal_2(void); // appel menu calib#2 des paramètre
 void m04_2F_CalibBal_3(void); // appel menu calib#3 des paramètre
 void m04_3F_CalibBal_4(void); // appel menu calib#4 des paramètre
-void m04_4F_InfoBal(void);    // 
-void m04_5F_PoidsBal(void);   //
-void m04_6M_PopMenu(void);    // Retour menu précédent m0_Demarrage
+void m04_0F_InfoBal(void);    // 
+void m04_0F_InfoBalDone(void);   
+void m04_1F_PoidsBal(void);   //
+void m04_1F_PoidsBalDone(void);
 
 // ---------------------------------------------------------------------------*
 // Appels du menu m04x => appel écrans de calibrations
 void m04x_0F_tareBal_1(void);    // appel écran de calibration
 void m04x_1F_echelleBal_2(void); // appel écran de calibration
 void m04x_2F_tempBal_3(void);    // appel écran de calibration
-void m04x_3M_PopMenu(void);   // Retour menu précédent m04_CalibBalances
 
 // ---------------------------------------------------------------------------*
 // Fonctions de gestion des calibrations
@@ -392,11 +392,15 @@ void OLEDDisplayDate(char *d, uint8_t pos);
 void OLEDDisplayTime(char *h, uint8_t pos);
 void OLEDSetDebug(bool actif);
 void OLEDDisplayHivesDatas(void);
+void OLEDRefreshDisplay(void);
 
 //void OLEDDisplaySystemInfo(void);  // voir si pas remplacée par suivante.
 void OLEDdisplayInfoScreenSyst(void);
 void OLEDdisplayInfoScreenLoRa(void); 
 void OLEDdisplayInfoBal(void);
+void OLEDdisplayWeightBal(void);
+void OLEDdisplayCalibBal(void);
+
 
 // Gestion saisies
 

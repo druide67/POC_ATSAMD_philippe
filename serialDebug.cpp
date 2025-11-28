@@ -32,7 +32,8 @@
 void debugSerialPrintMenuStruct(menuLevel_t* menu)
 {
   sprintf(serialbuf,"\ndebugSerialPrintMenuStruct(): currentMenuDepth %d / title  %s / menuSize %d /selectedIndex %d", currentMenuDepth, menu->title, menu->menuSize, menu->selectedIndex);
-                        // /* menuList %s /16 // ---------------------------------------------------------------------------*=>  /*menu->menuList[selectedModeIndex],
+                        // /* menuList %s /16 
+ // ---------------------------------------------------------------------------*=>  /*menu->menuList[selectedModeIndex],
   debugSerial.println(serialbuf); 
 }
 
@@ -337,9 +338,19 @@ void debugSerialPrintHEXA(char *txt, char len)
 
 // ---------------------------------------------------------------------------*
 // ---------------------------------------------------------------------------*
+/*
+-> Reprogramme IRQ2
+13:07:44.308 -> === CONFIGURATION ALARMES RTC + INTERRUPTIONS ===
+13:07:44.308 -> 
+13:07:44.308 -> IRQ2 Reprogrammée à 13:07:19
+13:07:44.308 -> IRQ2 prévue pour: 13:07:19
+13:07:44.308 -> backMenu()
+*/
+
+
 void debugSerialPrintReprogNextAlarm(int IRQ)  
 { DateTime systemTime = rtc.now();
-  
+
   sprintf(serialbuf,"\nIRQ%d Reprogrammée à %02d:%02d:%02d",
           IRQ, systemTime.hour(),systemTime.minute(),systemTime.second());
   debugSerial.println(serialbuf); 
@@ -350,8 +361,8 @@ void debugSerialPrintReprogNextAlarm(int IRQ)
 // ---------------------------------------------------------------------------*
 void debugSerialPrintNextAlarm(DateTime nextPayload, int IRQ)  
 {   
-  sprintf(serialbuf,"IRQ%d prévue pour: %02d:%02d:%02d",
-          IRQ, nextPayload.hour(),nextPayload.minute(),nextPayload.second());
+  sprintf(serialbuf,"Prochaine IRQ%d prévue pour: %02d:%02d:%02d (dans %d min) ",
+          IRQ, nextPayload.hour(),nextPayload.minute(),nextPayload.second(), config.applicatif.SendingPeriod);
   debugSerial.println(serialbuf); 
 }
 

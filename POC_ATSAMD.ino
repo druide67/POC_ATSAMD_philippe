@@ -241,74 +241,63 @@ setupDone = true;
 // ---------------------------------------------------------------------------*
 void loop() 
 {  static int index=0; 
-   static int counter1s=0,counterPayload=0;   
+   static int counter1s=0;   
 
       loopWDT  = millis();
 //debugSerial.println("M");  // MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
+  gererLEDsNonBloquant();        // *** APPEL OBLIGATOIRE À CHAQUE CYCLE ***
 
-// Utilisable dans les 2 Modes
-// *** APPEL OBLIGATOIRE À CHAQUE CYCLE ***
-  gererLEDsNonBloquant(); 
+// Vérification du mode
+  modeExploitation = digitalRead(PIN_PE);  
+  if (modeExploitation)         // OK, validé, GreenLED => couleur Red
+  {
+    delay(10);  // anti rebond ILS/Switch
+    handleOperationMode();    // normalement rien à faire dans ce mode.
+// Envoi du payLoad si ISR2 
 
-
+// ---------------------------------------------------------------------------*
+// Gestion Clignotement LED Rouge non bloquant
+// ---------------------------------------------------------------------------*
+    if (wakeup1Sec) 
+    {  
+      config.applicatif.redLedDuration = 100;  // Clignotement Rouge = 100 ms
+      LEDStartRed();                           //Clignotement 100ms
+//debugSerial.println("BlinkRED");   
+      wakeup1Sec = false;  
+    }  
+// FIN Gestion Clignotement LED non bloquant
+  } 
+  else                          // OK, validé, BlueLED
+  {
 // seulement en PROG  
-// *** UTILISATION DES TOUCHES ***
-// *** TRAITEMENT CLAVIER NON-BLOQUANT ***
-  processContinuousKeyboard();
-  touche = readKeyNonBlocking();      // lecture du clavier
-  if (touche != KEY_NONE)               // Affiche la touche pressée  (KEY 1 à 5)
+// ---------------------------------------------------------------------------*
+// Gestion clavier non bloquant
+// ---------------------------------------------------------------------------*
+  processContinuousKeyboard();      // *** TRAITEMENT CLAVIER NON-BLOQUANT ***
+  touche = readKeyNonBlocking();  // lecture du clavier
+  if (touche != KEY_NONE)         // Affiche touche pressée (KEY1..5, KEY_INVALID)
   {
     // Traiter la touche
     sprintf(serialbuf,"Touche pressée: %s",keyToString(touche));
     debugSerial.println(serialbuf);
   }
- 
-  
 #ifdef __SerialDebugPoc
 debugSerial.print("2");   // 22222222222222222222222
 #endif  
-
+// seulement en PROG  sans envoi Payload, contrôle process
 // Affiche l'heure du prochain PayLoad si displayNextPayload == true     
  if (displayNextPayload)
  {
    displayNextPayload = false;
    debugSerialPrintNextAlarm(nextPayload,2);
-//OLEDDrawScreenNextPayload(7, 0, nextPayload );  // Status message
  }
-
-
-    
 #ifdef __SerialDebugPoc
 debugSerial.print("3");   // 333333333333333333333333333
 #endif  
 
-
-// Vérification du mode
-  modeExploitation = digitalRead(PIN_PE);
-  if (modeExploitation)         // OK, validé, GreenLED => couleur Red
-  {
-    handleOperationMode();    // normalement rien à faire dans ce mode.
-  } 
-  else                          // OK, validé, BlueLED
-  {
-    handleProgrammingMode();  // faire gestion Clavier et actions associées
-  }
-
-#ifdef __SerialDebugPoc  
-debugSerial.print("4");   // 444444444444444444444444444444
-#endif
-
-  if (!DEBUG_INTERVAL_1SEC)
-  { static unsigned long noIRQSecLast=0;
-    if (millis() - noIRQSecLast > 1000) // Clignotement toutes les 1s
-    {
-      noIRQSecLast = millis();
-      wakeup1Sec = true;
-    } 
-//debugSerial.println("dans if (!DEBUG_INTERVAL_1SEC) /////////////////////////////////////////////////////////////////////////////////");    
-  }
+// seulement en PROG  
 // ---------------------------------------------------------------------------*
-// ISR1
+// ISR1 => Lecture Cyclique des paramètres répartis à chaque seconde
 // ---------------------------------------------------------------------------*
   if (wakeup1Sec) // && !modeExploitation)            // màj heure, blink LED
   {    
@@ -319,11 +308,13 @@ debugSerial.print("4");   // 444444444444444444444444444444
 //#endif
     wakeup1Sec = false;   
     counter1s++;
+    
+// rappel toutes les minutes
     if (!(counter1s %60)) 
     {     
 //      debugSerialPrintReprogNextAlarm(2);
       debugSerialPrintNextAlarm(nextPayload,2);
-      debugSerial.print("Min/ menuDeep: ");    // MMMMMMMMMMMMMMMMMMMMMMMMMMM
+      debugSerial.print("menuDeep: ");    // MMMMMMMMMMMMMMMMMMMMMMMMMMM
       debugSerial.println(currentMenuDepth);
     }
     switch (counter1s %10)
@@ -339,19 +330,17 @@ debugSerial.print("4");   // 444444444444444444444444444444
                break;
      case 2 :
 //debugSerial.println("Case2");
-
-               
                Data_LoRa.Brightness = getLuminance();
 //  Data_LoRa.Lux = ???();
 //  Data_LoRa.ProcessorTemp = getTemperature(); // lecture Temp en String
 /*               Data_LoRa.Bat_Voltage=getVBatMoy();
 */              Data_LoRa.Solar_Voltage=getVSolMoy();
-
                break;
      case 3 :
 //debugSerial.println("Case3");
               if (Peson[Ruche.Num_Carte][0])
                 Poids_Peson(0) = GetPoids(1,1);
+// afficher poids bal(1) sur fenêtre OLEDdisplayWeightBal(void)
               break;
      case 4 :
 //debugSerial.println("Case4");
@@ -382,67 +371,46 @@ debugSerial.print("4");   // 444444444444444444444444444444
                debugSerial.print("WTF");  
                break;
     }
-
 #ifdef __SerialDebugPoc      
  debugSerial.print("5");    // 55555555555555555555555555555555555
 #endif 
+// FIN ISR1 => Lecture Cyclique des paramètres répartis à chaque seconde
+
+// ---------------------------------------------------------------------------*
+// Gestion Clignotement LED Bleue non bloquant
+// ---------------------------------------------------------------------------*
     config.applicatif.blueLedDuration = 100;  // Clignotement Blue = 100 ms
     LEDStartBlue();                           //Clignotement 100ms
-// si Affichage menu "INFOS" 
+// FIN Gestion Clignotement LED non bloquant
 
-// if non valide..... 
-   if (infoScreenRefreshTime)
-    {
-debugSerial.println("OLEDDrawScreenRefreshTime dans ISR 1 ttes sec \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");          
-      OLEDDrawScreenRefreshTime(1, 0); // refresh Time/Date every second
-    }  
+// ---------------------------------------------------------------------------*
+// Gestion rafraichissement écrans (System\INFOS, )
+// ---------------------------------------------------------------------------*
+    OLEDRefreshDisplay();
   }
+// fin de ISR1
 #ifdef __SerialDebugPoc  
 debugSerial.print("6");   // 666666666666666666666666666666666666666666666
 #endif
-// ---------------------------------------------------------------------------*
-// ISR2
-// ---------------------------------------------------------------------------*
-  if (wakeupPayload)                          // Envoi LoRa, LED Activité LoRa
-  {
 
-GestionEnCours("ISR2a");  // Surveillance pour Debug
-    
-    wakeupPayload = false;
-    counterPayload++;  // compte le nombre d'envois Payload
-//#ifdef __SerialDebugPoc    
-sprintf(serialbuf, "I2£%d ", counterPayload);   
-debugSerial.println(serialbuf);       // I2£n I2£n I2£n I2£n I2£n I2£n I2£n
-//#endif
-    turnOnRedLED();     // PCB donne GREEN?
-    buildLoraPayload();
-#ifdef __SendLoRa
-  sendLoRaPayload((uint8_t*)payload,19);   // hex
-#endif    
-    turnOffRedLED();
-debugSerial.println("Fin Payload, Reactive IRQ1");    
-    alarm1_enabled = true;   // Réactiver alarme 1 
+// ---------------------------------------------------------------------------*
+// traite : 
+// ---------------------------------------------------------------------------*
+    handleProgrammingMode();  // faire gestion Clavier et actions associées
+  }
+
 #ifdef __SerialDebugPoc  
-debugSerial.print("7");   // 777777777777777777777777777777777777
+debugSerial.print("4");   // 444444444444444444444444444444
 #endif
 
-// perte de l'info de la saisie en cours si existe dans Handle.cpp passe de 
-//   isInfoScreenActive() à inactive  commentaire ligne 215 handle !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-// get void GestionEnCours()
-
-GestionEnCours("ISR2b");  // Surveillance pour Debug
+  if (!DEBUG_INTERVAL_1SEC)
+  { static unsigned long noIRQSecLast=0;
+    if (millis() - noIRQSecLast > 1000) // Clignotement toutes les 1s
+    {
+      noIRQSecLast = millis();
+      wakeup1Sec = true;
+    } 
+//debugSerial.println("dans if (!DEBUG_INTERVAL_1SEC) /////////////////////////////////////////////////////////////////////////////////");    
   }
-#ifdef __SerialDebugPoc    
-debugSerial.print("8");   // 888888888888888888888888888888888888
-#endif
   
-// Entrée en veille si activée
-  if (DEBUG_LOW_POWER && modeExploitation) // pas de low power en config
-  {
-debugSerial.println("Low");     
-    debugSerial.flush();  
-    sleep();
-debugSerial.println("low"); 
-  }
 }

@@ -22,36 +22,34 @@
 // @description Gère l'anti-rebond et la détection des touches de manière non-bloquante
 // ---------------------------------------------------------------------------*
 void processContinuousKeyboard(void)
-{
-    unsigned long currentTime = millis();
+{ unsigned long currentTime = millis();
 
 // debugSerial.println("C");
     
-    // Vérifier l'intervalle minimum entre lectures
-    if (currentTime - clavierContext.derniereLecture < DEBOUNCE_DELAY_MS)
-       return; // Trop tôt pour une nouvelle lecture
+// Vérifier l'intervalle minimum entre lectures
+  if (currentTime - clavierContext.derniereLecture < DEBOUNCE_DELAY_MS)
+    return; // Trop tôt pour une nouvelle lecture
 
-    clavierContext.derniereLecture = currentTime;
+  clavierContext.derniereLecture = currentTime;
     
-    // Lire la touche actuelle
-    key_code_t toucheActuelle = readKeyOnce();
+// Lire la touche actuelle
+  key_code_t toucheActuelle = readKeyOnce();
     
-    // Vérifier la stabilité
-    if (toucheActuelle == clavierContext.derniereTouche)
-    {
-        clavierContext.compteStable++;
+// Vérifier la stabilité
+  if (toucheActuelle == clavierContext.derniereTouche)
+  {
+    clavierContext.compteStable++;
         
-        // Si suffisamment stable et différente de la précédente
-        if (clavierContext.compteStable >= DEBOUNCE_COUNT)
+// Si suffisamment stable et différente de la précédente
+    if (clavierContext.compteStable >= DEBOUNCE_COUNT)
+    {
+      if (toucheActuelle != clavierContext.toucheStable)
+      {
+        clavierContext.toucheStable = toucheActuelle;
+// Nouvelle touche disponible (pas KEY_NONE)
+        if (toucheActuelle != KEY_NONE)
         {
-            if (toucheActuelle != clavierContext.toucheStable)
-            {
-                clavierContext.toucheStable = toucheActuelle;
-                
-                // Nouvelle touche disponible (pas KEY_NONE)
-                if (toucheActuelle != KEY_NONE)
-                {
-                    clavierContext.toucheDisponible = true;
+          clavierContext.toucheDisponible = true;
 /*                    
                     // Debug optionnel
                     static int toucheCount = 0;
@@ -64,16 +62,16 @@ void processContinuousKeyboard(void)
                         debugSerial.println(keyToString(toucheActuelle));
                     }
 */                    
-                }
-            }
         }
+      }
     }
-    else
-    {
-        // Touche différente, recommencer le comptage
-        clavierContext.derniereTouche = toucheActuelle;
-        clavierContext.compteStable = 0;
-    }
+  }
+  else
+  {
+// Touche différente, recommencer le comptage
+    clavierContext.derniereTouche = toucheActuelle;
+    clavierContext.compteStable = 0;
+  }
 }
 
 // ---------------------------------------------------------------------------*
@@ -86,12 +84,19 @@ key_code_t readKeyOnce(void)
   static const key_code_t keycodes[NB_KEYS] = {KEY_1, KEY_2, KEY_3, KEY_4, KEY_5};
   int val = analogRead(KBD_ANA);
 
-  if (val > 1000) return KEY_NONE;                        // pas de touche appuyée
+  if (val > levels[4] + TOL) return KEY_NONE;           // pas de touche appuyée
   for (int i = 0; i < NB_KEYS; i++) 
   {
     if (val >= levels[i] - TOL && val <= levels[i] + TOL) // teste les 5 levels
       return keycodes[i];                                 // renvoie KEY_n identifiée
   }
+
+// supprimer 3 lignes si pa revu.
+char localserialbuf[81];
+// 14:14:37.305 -> KEY-INVALID: 661/755
+sprintf(localserialbuf, "KEY-INVALID: %d/%d",val, levels[4] + TOL); 
+debugSerial.println(localserialbuf);
+
   return KEY_INVALID;                                     // Val non identifiable
 }
 
@@ -153,11 +158,10 @@ const char* keyToString(key_code_t key)
 // ---------------------------------------------------------------------------*
 key_code_t readKeyNonBlocking(void)
 {
-    if (clavierContext.toucheDisponible)
-    {
-        clavierContext.toucheDisponible = false; // Consommer la touche
-        return clavierContext.toucheStable;
-    }
-    
-    return KEY_NONE; // Pas de touche disponible
+  if (clavierContext.toucheDisponible)
+  {
+    clavierContext.toucheDisponible = false; // Consommer la touche
+    return clavierContext.toucheStable;
+  }
+  return KEY_NONE; // Pas de touche disponible
 }

@@ -645,16 +645,16 @@ void nonOLEDDisplaySystemInfo(void)
 void OLEDdisplayInfoScreenSyst(void)
 { char localOLEDbuf[21] = "12345678901234567890";
   infoScreenState = INFO_SCREEN_ACTIVE;   // pour eviter KKKKKKKK
-  
+
+  ScreenRefreshed = true;         // active rafraichissement en général
+  InfoScreenRefreshTime = true;   // active rafraichissement date/heure
+    
   debugSerial.print("OLEDdisplayInfoScreenSyst - currentMenuDepth: ");
   debugSerial.println(currentMenuDepth);
 
   OLEDClear();
   OLEDDrawText(1, 0, 0, "=== INFOS SYSTEME ==");
   OLEDDrawScreenTime(1, 0); // Affiche Time/Date au complet
-// forcer refresh
- // displayInfoScreenSystTimeRefresh = true;
-  infoScreenRefreshTime = true;
   OLEDDrawText(1, 2, 0, "     POC ATSAMD     ");
   OLEDDrawText(1, 3, 0, "Version: " VERSION);
   OLEDDrawText(1, 4, 0, "Build: 20250924");
@@ -702,13 +702,17 @@ typedef struct
 void OLEDdisplayInfoScreenLoRa(void)
 { char localOLEDbuf[21] = "12345678901234567890";
   infoScreenState = INFO_SCREEN_ACTIVE;   // pour eviter KKKKKKKK
+
+  ScreenRefreshed = true;         // active rafraichissement en général
+  LoRaScreenRefreshTime = true;   // active rafraichissement date/heure
+  LoraScreenRefreshNextPayload = true;  // active rafraichissement heure payload
   
   debugSerial.print("OLEDdisplayInfoScreenSyst - currentMenuDepth: ");
   debugSerial.println(currentMenuDepth);
 
   OLEDClear();
   OLEDDrawText(1, 0, 0, "==== INFOS LoRa ====");
-
+  OLEDDrawScreenTime(1, 0); // Affiche Time/Date au complet
   snprintf(localOLEDbuf, 21,"#%2d %15s",Ruche.Num_Carte,ConfigApplicatif.RucherName);  // ConfigApplicatif_t =>   uint8_t Balance_ID + char    RucherName [20]; 
   OLEDDrawText(1, 2, 0,localOLEDbuf);
 // Affichage SF
@@ -730,11 +734,8 @@ void OLEDdisplayInfoScreenLoRa(void)
 // AE => AppEUI => 414245494C4C4533  (16 char vers 8 uint8_t )
   snprintf(localOLEDbuf, 21,"AE: %s",AppEUI_List[Ruche.Num_Carte]);  
   OLEDDrawText(1, 6, 0,localOLEDbuf);
-
- 
   OLEDDrawText(1, 7, 0, "VALIDE pour retour");
-// infoScreenState = INFO_SCREEN_ACTIVE;   // pour eviter KKKKKKKK
-  debugSerial.println("Ecran infos affiche");
+debugSerial.println("Ecran infos affiche");
 }
 
 
@@ -745,15 +746,17 @@ void OLEDdisplayInfoScreenLoRa(void)
 // ---------------------------------------------------------------------------*
 void OLEDdisplayInfoBal(void)
 { char localOLEDbuf[21] = "12345678901234567890";
-  infoScreenState = INFO_SCREEN_ACTIVE;   // pour eviter KKKKKKKK
+  int num = 1;
   
+  infoScreenState = INFO_SCREEN_ACTIVE;   // pour eviter KKKKKKKK
+
   debugSerial.print("OLEDdisplayInfoBal - currentMenuDepth: ");
   debugSerial.println(currentMenuDepth);
-
   OLEDClear();
 
-snprintf(localOLEDbuf, 21,"= INFOS BALANCE %d =", bal);
+snprintf(localOLEDbuf, 21,"= INFOS BALANCE %d ==", bal);
   OLEDDrawText(1, 0, 0, localOLEDbuf);
+  OLEDDrawScreenTime(1, 0); // Affiche Time/Date au complet
 /*
 // N° des jauge montée sur le dispositif de pesée A,B,C,D
 int Peson [10][4] = {
@@ -768,7 +771,7 @@ float Jauge[21][4] = {                // Tare , Echelle , TareTemp , CompTemp
 Tare : Jauge[Peson [Ruche.Num_Carte  ][Bal-1]][0] 
 
 */
-int num = 1;
+
   snprintf(localOLEDbuf, 21,"Poids   : %d ", BalPoids(num-1) );
   OLEDDrawText(1, 2, 0, localOLEDbuf);
   snprintf(localOLEDbuf, 21,"Tare    : %d ", Jauge[Peson[Ruche.Num_Carte][bal-1]][0]);
@@ -782,9 +785,125 @@ int num = 1;
   OLEDDrawText(1, 6, 0, localOLEDbuf);
 
   OLEDDrawText(1, 7, 0, "VALIDE pour retour");
+}
+
+
+// ---------------------------------------------------------------------------*
+// @brief Affiche l'écran d'informations des Balances (non-bloquant)
+// @param void
+// @return void
+// ---------------------------------------------------------------------------*
+void OLEDdisplayWeightBal(void)
+{ char localOLEDbuf[21] = "12345678901234567890";
+  infoScreenState = INFO_SCREEN_ACTIVE;   // pour eviter KKKKKKKK
+  
+  debugSerial.print("OLEDdisplayWeightBal - currentMenuDepth: ");
+  debugSerial.println(currentMenuDepth);
+  OLEDClear();
+
+snprintf(localOLEDbuf, 21,"== POIDS BALANCES ==", bal);
+  OLEDDrawText(1, 0, 0, localOLEDbuf);
+  OLEDDrawScreenTime(1, 0); // Affiche Time/Date au complet
+  
+  snprintf(localOLEDbuf, 21,"Bal1 : %4.2d kg ", BalPoids(0) );
+  OLEDDrawText(1, 2, 0, localOLEDbuf);
+  snprintf(localOLEDbuf, 21,"Bal1 : %4.2d kg ", BalPoids(1) );
+  OLEDDrawText(1, 3, 0, localOLEDbuf);
+  snprintf(localOLEDbuf, 21,"Bal1 : %4.2d kg ", BalPoids(2) );
+  OLEDDrawText(1, 4, 0, localOLEDbuf);
+  snprintf(localOLEDbuf, 21,"Bal1 : %4.2d kg ", BalPoids(3) );
+  OLEDDrawText(1, 5, 0, localOLEDbuf);
+
+  OLEDDrawText(1, 7, 0, "VALIDE pour retour");
+}
+
+
+
+// pas reelement du INFO_SCREEN
+
+void OLEDdisplayCalibBal(void)
+{char localOLEDbuf[21] = "12345678901234567890";
+  infoScreenState = INFO_SCREEN_ACTIVE;   // pour eviter KKKKKKKK
+  
+  debugSerial.print("OLEDdisplayCalibBal - currentMenuDepth: ");
+  debugSerial.println(currentMenuDepth);
+  OLEDClear();
+
+snprintf(localOLEDbuf, 21,"=== CALIB. BAL:%d ===", bal);
+  OLEDDrawText(1, 0, 0, localOLEDbuf);
+
+  snprintf(localOLEDbuf, 21,"Bal%d : %4.2d kg ", bal, Peson[Ruche.Num_Carte][bal] );
+  OLEDDrawText(1, 2, 0, localOLEDbuf);
+  snprintf(localOLEDbuf, 21,"Scale%d : %4.2d kg ", bal, Jauge[Peson[Ruche.Num_Carte][bal]][1] );
+  OLEDDrawText(1, 3, 0, localOLEDbuf);
+  snprintf(localOLEDbuf, 21,"Temp%d : %4.2d kg ", bal, BalPoids(2) );
+  OLEDDrawText(1, 4, 0, localOLEDbuf);
+  snprintf(localOLEDbuf, 21,"Tare%D : %4.2d kg ", bal, Jauge[Peson[Ruche.Num_Carte][bal]][0] );
+  OLEDDrawText(1, 5, 0, localOLEDbuf);
+
+/*
+ * Peson[Ruche.Num_Carte][num] // num. peson
+ *  Jauge[Peson[Ruche.Num_Carte][num]][0] = valAVid; // tare
+  Jauge[Peson[Ruche.Num_Carte][num]][1] = Echelle; // scale 
+
+ // noms courts et explicites, parametrer (num: 0..3) par Macro
+#define Poids_Peson(num)      Data_LoRa.HX711Weight[num]   //  Data_LoRa de type LoRa_Var (ligne 38)
+//#define Temp_Peson(num)       Data_LoRa.Temp_Peson[num]
+#define Tare_Peson(num)       Jauge[Peson[Ruche.Num_Carte][num]][0]
+#define Echelle_Peson(num)    Jauge[Peson[Ruche.Num_Carte][num]][1]
+//#define BalPoids(num)  (Contrainte_List[num]-Jauge[Peson[Ruche.Num_Carte][num]][0])/Jauge[Peson[Ruche.Num_Carte][num]][1]/1000) //retourne float
+#define BalPoids(num) (Contrainte_List[num]-Tare_Peson(num))/Echelle_Peson(num)/1000 //retourne float
+
+#define TareTemp(num)   Jauge[Peson[Ruche.Num_Carte][num]][2]  // Ruche de type HW_equipement (ligne 21)
+#define CompTemp(num)   Jauge[Peson[Ruche.Num_Carte][num]][3]
+
+ * 
+ * 
+ */
+  OLEDDrawText(1, 7, 0, "VALIDE pour retour");
+  
+}
+
+
+// ---------------------------------------------------------------------------*
+// Gestion rafraichissement écrans (System\INFOS, )
+// ---------------------------------------------------------------------------*
+void OLEDRefreshDisplay(void)
+{
+  if (InfoScreenRefreshTime)             // rien à rafraichir
+  {
+//debugSerial.println("OLEDDrawScreenRefreshTime dans ISR 1 ttes sec \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");  
+    OLEDDrawScreenRefreshTime(1, 0);    // refresh Time/Date every second      
   }
+// LoRa INFOS   
+  else if (LoRaScreenRefreshTime)        // rafraichir Heure
+  {
+    OLEDDrawScreenRefreshTime(1, 0);    // refresh Time/Date every second 
+  }
+// Balances INFOS
+  else if (InfoBalScreenRefreshTime)        // rafraichir Heure
+  {
+    OLEDDrawScreenRefreshTime(1, 0);    // refresh Time/Date every second 
+  }
+// Weight INFOS
+  else if (WeightScreenRefreshWeights)   // rafraichir les poids temp, hum
+  { char localOLEDbuf[21] = "";
+    int num = 0;
+    do
+    {
+      if (Peson[Ruche.Num_Carte][0])
+      { 
+        snprintf(localOLEDbuf, 21,"Bal1 : %4.2d kg ",Poids_Peson(0)); // BalPoids(0) );
+        OLEDDrawText(1, 2, 0, localOLEDbuf);
+      }
+    }
+    while (num < NB_RUCHES);  // 4
+  } 
+// FIN Gestion rafraichissement écrans (System\INFOS, )
+}
 
 
+//azerty entrer et sortir des ecrans infos balances
 
 // ---------------------------------------------------------------------------*
 // @brief Active ou désactive l'affichage au boot

@@ -21,12 +21,15 @@
 #define PROJECT_NAME "POC IRQ_Payload IRQ_1s LOW_POWER OLED RN2483 DHT22 KEY5"  // len = 55
 #define VERSION "1.1.1-PL"
 
+#define NB_RUCHES 4 // 3 Protos Atsamd, Fixe à 4 pesées
+
+
 // ===== TIMING CONSTANTS =====
 #define RED_LED_DURATION        100   // Durée d'allumage LED rouge 300 ms
 #define GREEN_LED_DURATION      100   // Durée d'allumage LED verte 300 ms
 #define BLUE_LED_DURATION       100   // Durée d'allumage LED bleue 300 ms
 #define BUILTIN_LED_DURATION    100   // Durée d'allumage LED builtin 100 ms
-#define WAKEUP_INTERVAL_PAYLOAD 0     // Intervalle de réveil en minutes 
+#define WAKEUP_INTERVAL_PAYLOAD 5     // Intervalle de réveil en minutes 
 #define INTERVAL_1SEC           1000  // Intervalle 1 seconde en ms
 #define DEFAULT_SF              12     // Spread Factor par defaut
 #define TIMEOUT_SAISIE          20000    // Timeout saisies écrans (ms)
@@ -195,7 +198,7 @@
 #include <Sodaq_wdt.h>
 //#define LORA_BAUD 57600   >> loraSerial.begin(LoRaBee.getDefaultBaudRate());
 #define LORA_Start_SESSION      // à activer hors phase de developpement.
-
+#define __SendLoRa
 // ---------------------------------------------------------------------------*
 // cayenne pour tests gateway
 // ---------------------------------------------------------------------------*

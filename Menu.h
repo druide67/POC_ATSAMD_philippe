@@ -16,7 +16,6 @@
 #ifdef __MAIN__
 // Penser à les déclarer en extern
 
-
 // Exemple de liste de valeurs alphanumériques
 
 #define LIST_SF 4 // Maintenir dans Define.h
@@ -61,7 +60,7 @@ const char* m01_ConfigSystem[] = {
   "NOM. RUCHER    (S)",  // m01_3F_NomRucher()
   "Lire EEPROM    (F)",  // m01_4F_readConfig()
   "Ecrire EEPROM  (F)",  // m01_5F_writeConfig()
-  "RET  popMenu(m0)"     // m01_6M_PopMenu()
+  "RET  popMenu(m0)"     // popMenu()
 };
 
 #define M02_ITEM 8 // Maintenir dans Define.h
@@ -78,41 +77,62 @@ const char* m02_ConfigLoRa[] = {
 
 #define M03_ITEM 5 // Maintenir dans Define.h
 const char* m03_CalibTensions[] = {
-  "Calib. VBAT    (F)",  // m03_0F_CalibVBat()
+  "Calib. VBAT    (F)",  // m03_0F_CalibVBat() appel de scalingVBat() à écrire avec startNumInput("--CALIBRATION VBAT--", char* initialNum (VBatScale_List [10]), 6, 0, 1, 0, 1); ex:0.0032252
   "Calib. VSOL    (F)",  // m03_1F_CalibVSol()
   "Calib. LUM     (F)",  // m03_2F_CalibVLum()
   "Reserve     (m033)",  // m03_3F_Reserve()
   "RET  popMenu(m0)"     // m03_4M_PopMenu()
 };
 
+
+/*
+Modification en cours du menu des calib tensions
+L1 affiche un ecran des tensions V1, V2, V3 et Scales correspondantes
+L2 saisie scale V1
+L3 saisie scale V2
+L4 saisie scale V3
+*/
+
+
+#define M03_ITEM 5 // Maintenir dans Define.h
+const char* m03_Future_CalibTensions[] = {
+  "Affiche Tens.  (S)",  // m03_0E_DisplayVoltageInput()
+  "Calib. VBAT    (F)",  // m03_1F_CalibVBat() appel de scalingVBat() à écrire avec startNumInput("--CALIBRATION VBAT--", char* initialNum (VBatScale_List [10]), 6, 0, 1, 0, 1); ex:0.0032252
+  "Calib. VSOL    (F)",  // m03_2F_CalibVSol()
+  "Calib. LUM     (F)",  // m03_3F_CalibVLum()
+  "RET  popMenu(m0)"     // m03_4M_PopMenu()
+};
+
+
+
 #define M033_ITEM 5 // Maintenir dans Define.h
 const char* m033_Reserve[] = {
   "menu033-0       (F)",      // Mise à Echelle VBat
   "menu033-1       (F)",      // Mise à Echelle VSol
   "menu033-2       (F)",      // Mise à Echelle VLum
-  "menu033-3       (F)",    // Libre
-  "RET   popMenu (m03)"     // Retour menu principal
+  "menu033-3       (F)",      // Libre
+  "RET   popMenu (m03)"       // PopMenu()
 };
 
 #define M04_ITEM 7 // Maintenir dans Define.h
 const char* m04_CalibBalances[] = {
-  "Calib. Bal #1  (F)",  // m04_0F_CalibBal_1()
-  "Calib. Bal #2  (F)",  // m04_1F_CalibBal_2()
-  "Calib. Bal #3  (F)",  // m05_2F_CalibBal_3()
-  "Calib. Bal #4  (F)",  // m05_3F_CalibBal_4()
-  "info.  Balances(F)",  // m04_4F_InfoBal()  Page info Balances 
-  "Poids  Balances(F)",   // m04_5F_PoidsBal() Affichage rafraichi du poids des balances
-  "RET  popMenu  (m0)"   // m05_6M_PopMenu()
+  "info.  Balances(F)",  // m04_0F_InfoBal()  Page info Balances 
+  "Poids  Balances(F)",  // m04_1F_PoidsBal() Affichage rafraichi du poids des balances
+  "Calib. Bal #1  (F)",  // m04_2F_CalibBal_1()
+  "Calib. Bal #2  (F)",  // m04_nM_CalibBal_bal()
+  "Calib. Bal #3  (F)",  // m04_nM_CalibBal_bal()
+  "Calib. Bal #4  (F)",  // m04_nM_CalibBal_bal()
+  "RET  popMenu  (m0)"   // PopMenu()
 };
 
 
 #define M04x_ITEM 4 // Maintenir dans Define.h
 const char* m04x_CalibBal[] = {
-//  "Num. Balance    (S)", // m04x_0F_numBalx()
-  "Tare Balance    (F)", // m04x_1F_tareBalx()
-  "Echelle Balance (F)", // m04x_2F_echBalx()
-  "Comp. Temp.     (F)", // m04x_3F_tempBalx()
-  "RET   popMenu (m04)"  // Retour menu principal
+//  "Num. Balance    (S)",  // m04x_0F_numBalx()
+  "Tare Balance    (F)",    // m04x_1F_tareBalx()
+  "Echelle Balance (F)",    // m04x_2F_echBalx()
+  "Comp. Temp.     (F)",    // m04x_3F_tempBalx()
+  "RET   popMenu (m04)"     // PopMenu()
 };
 
 #else

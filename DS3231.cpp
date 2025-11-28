@@ -118,8 +118,7 @@ debugSerial.println("=== 1s DONE ===");
 // ---------------------------------------------------------------------------*
 void DS3231setRTCAlarm2(void) 
 {
-
-  if (LoRa_Config.SendingPeriod)     // si 0 pas d'envois par IT
+  if (!LoRa_Config.SendingPeriod)     // si 0 pas d'envois par IT
     return;  
 
 // Désactiver TOUTES les interruptions temporairement
@@ -137,7 +136,7 @@ void DS3231setRTCAlarm2(void)
    
     // Reprogrammer A2
 debugSerial.println("=== CONFIGURATION ALARMES RTC + INTERRUPTIONS ===");
-  // ALARME 2 : Payload toutes les X minutes
+  // ALARME 2 : Payload toutes les config.applicatif.SendingPeriod minutes
   if (DEBUG_WAKEUP_PAYLOAD) 
   {
     nextPayload = rtc.now() + TimeSpan(0, 0, config.applicatif.SendingPeriod, 0);
@@ -153,6 +152,11 @@ debugSerial.println("=== CONFIGURATION ALARMES RTC + INTERRUPTIONS ===");
   
 // Réactiver les interruptions
     interrupts();
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// (LoraScreenRefreshNextPayload)  géré dans Prog IRQ2
+// Payload envoyé, nouvelle heure prochain payload calculée et pragramée
+// rafraichir si écran Lora en cours l'heure du prochain payload
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 }
 
 // ---------------------------------------------------------------------------*

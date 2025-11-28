@@ -179,8 +179,8 @@ float Set_Scale_Bal(char num, float poids_en_grammes)    // N° de jauges des ba
 
   scale.power_down();              // put the ADC in sleep mode
 
-  Jauge[Peson[Ruche.Num_Carte][num]][0] = valAVid;
-  Jauge[Peson[Ruche.Num_Carte][num]][1] = Echelle;
+  Jauge[Peson[Ruche.Num_Carte][num]][0] = valAVid; // tera
+  Jauge[Peson[Ruche.Num_Carte][num]][1] = Echelle; // scale 
   return ((Contrainte_List [num] - valAVid ) / Echelle);
 }
 

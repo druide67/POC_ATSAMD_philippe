@@ -22,7 +22,7 @@
 // ---------------------------------------------------------------------------*
 void onRTCAlarm(void) // $ ou £
 {
-debugSerial.println("\n€");  // €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
+debugSerial.println("\n€ISR€");  // €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 
 
 // ISR1 doit être activé, sinon vu toutes les n minutes de ISR2
@@ -46,7 +46,7 @@ debugSerial.println(loopWDT);
     if (!alarm1_enabled) 
       return;     // interruption execution code de IRQ1 pendant IRQ2
     wakeup1Sec = alarm1_enabled;  // True si autorisé par IRQ2
-debugSerial.print("\n$irq\n");   // $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+debugSerial.print("\n$1$\n");   // $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
   }
   
 // ALARME 2 : Payload périodique    
@@ -65,6 +65,6 @@ displayNextPayload = true;
     {
       DS3231setRTCAlarm2(); // Reprogrammer prochaine alarme
     }
-debugSerial.println("\n£");  // £££££££££££££££££££££££££££££££££££££££££££££££££££££££££
+debugSerial.println("\n£2£\n");  // £££££££££££££££££££££££££££££££££££££££££££££££££££££££££
   }
 }

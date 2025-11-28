@@ -15,7 +15,6 @@
 #ifdef __MAIN__
 
 // pas de const dans les globales => erreur ce compile !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 // Cas typiques nécessitant volatile
 
 // Variables modifiées par interruptions : controler rtc,nextPayload passé volatile pour test compile pas
@@ -86,10 +85,25 @@ ipInputContext_t ipInputCtx = {IP_INPUT_IDLE, 0, 0xFF, "192.168.001.001", "", fa
 
 // État de l'écran d'information
 infoScreenState_t infoScreenState = INFO_SCREEN_IDLE;
-bool infoScreenRefreshTime = false;
 
-bool PageInfosLoRaRefresh = false;
-bool PageInfosSystRefresh = false;
+
+bool ScreenRefreshed = false;  // info generale de maj ecran info pour desactiver dans Handle.cpp
+
+// Système
+bool InfoScreenRefreshTime = false;
+
+// LoRa
+bool LoRaScreenRefreshTime = false;
+bool LoraScreenRefreshNextPayload = false;
+// Balances
+bool InfoBalScreenRefreshTime = false;
+bool WeightScreenRefreshTime = false;
+bool WeightScreenRefreshWeights = false;
+
+
+
+bool PvageInfosLoRaRefresh = false;  // utile?
+bool PvageInfosSystRefresh = false;  // utile?
 
 //bool displayInfoScreenSystTimeRefresh = false;
 
@@ -204,7 +218,7 @@ uint8_t testPayload[8] =
 // Variable définitions RUCHE
 
 // jauges de contrainte de J01 à J15
-int bal = 0;
+int bal = 0;      // indiquer le contenu, Num de proto identifié par init lora & HWEUI_List ???????????????????????
 float Jauge[21][4] = {                // Tare , Echelle , TareTemp , CompTemp
       {0,0,0,0},     // J00 => pas de peson connecté
       {178666,108.5,20,0},    // J01 20kg
@@ -414,11 +428,24 @@ extern ipInputContext_t ipInputCtx;
 
 // État de l'écran d'information
 extern infoScreenState_t infoScreenState;
-extern bool infoScreenRefreshTime;
 
-extern bool PageInfosLoRaRefresh;
-extern bool PageInfosSystRefresh;
+extern bool PvageInfosLoRaRefresh;
+extern bool PvageInfosSystRefresh;
 
+extern bool ScreenRefreshed;  // info generale de maj ecran info pour desactiver dans Handle.cpp
+
+// Système
+extern bool InfoScreenRefreshTime;
+
+// LoRa
+extern bool LoRaScreenRefreshTime;
+extern bool LoraScreenRefreshNextPayload;
+// Balances
+extern bool InfoBalScreenRefreshTime;
+extern bool WeightScreenRefreshTime;
+extern bool WeightScreenRefreshWeights;
+
+//bool displayInfoScreenSystTimeRefresh = false;
 
 #ifdef OLED096
   extern Adafruit_SSD1306 display; //(OLED_RESET);
