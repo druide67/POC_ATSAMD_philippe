@@ -41,14 +41,14 @@
 // ---------------------------------------------------------------------------*
 void handleOperationMode(void) // Mode exploitation : que réveil payload
 { 
+// debugSerial.println("handleOperationMode()"); // non,  defile en continu.
   if (switchToOperationMode)    // affiche qu'une fois
   { 
-// supprimer 3 lignes si pa revu.
+// supprimer 3 lignes si pas revu.
 debugSerial.println("Passage en mode EXPLOITATION");
 
     switchToProgrammingMode = true;
     switchToOperationMode = false;
-
 // Reactive l'affichage du menu de démarrage pour sortie mode EXPLOITATION
     startupListActivated = false;
     OLEDClear(); 
@@ -71,6 +71,8 @@ debugSerial.println("Passage en mode EXPLOITATION");
 
 //GestionEnCours("ISR2a");  // Surveillance pour Debug
     wakeupPayload = false;
+debugSerial.println("handleOperationMode/wakeupPayload = false");
+    
     counterPayload++;  // compte le nombre d'envois Payload
 //#ifdef __SerialDebugPoc    
 sprintf(serialbuf, "I2£%d ", counterPayload);   
@@ -78,7 +80,8 @@ debugSerial.println(serialbuf);       // I2£n I2£n I2£n I2£n I2£n I2£n I2�
 //#endif
     turnOnRedLED();     // PCB donne GREEN?
     buildLoraPayload();
-#ifdef __SendLoRa
+#ifdef __SendLoRaInOperationMode
+debugSerial.println("__SendLoRaInOperationMode DEFINED => sendLoRaPayload()");   
   sendLoRaPayload((uint8_t*)payload,19);   // hex
 #endif    
     turnOffRedLED();
@@ -253,6 +256,9 @@ void handleProgrammingMode(void)
 // supprimer ligne si pas revu.
 debugSerial.println("Passage en mode PROGRAMMATION");
 
+
+// faire void Restart_Gestion_Saisie_OLED()
+
 // préciser le statut des menus, retour au PRINCIPAL
     switchToOperationMode = true;
     switchToProgrammingMode = false;
@@ -289,8 +295,48 @@ debugSerial.println("Passage en mode PROGRAMMATION");
 debugSerial.println("Lancement Menu principal");
       initStartupList();  // Initialise l'affichage de la liste au démarrage
     }
-    wakeupPayload = false; // désactive envoi généré pendant PROGRAMMATION
+// fin void Restart_Gestion_Saisie_OLED() 
+    
+  wakeupPayload = false; // désactive envoi généré pendant PROGRAMMATION
+debugSerial.println("handleProgrammingMode1/wakeupPayload = false");
+}
+
+#ifdef __SendLoRaInProgrammationMode
+  if (wakeupPayload)                          // Envoi LoRa, LED Activité LoRa
+  { static int counterPayload=0;   
+
+//GestionEnCours("ISR2a");  // Surveillance pour Debug
+    wakeupPayload = false;
+debugSerial.println("handleProgrammingMode2/wakeupPayload = false");
+    
+    counterPayload++;  // compte le nombre d'envois Payload
+//#ifdef __SerialDebugPoc    
+sprintf(serialbuf, "I2£%d ", counterPayload);   
+debugSerial.println(serialbuf);       // I2£n I2£n I2£n I2£n I2£n I2£n I2£n
+//#endif
+    turnOnRedLED();     // PCB donne GREEN?
+    buildLoraPayload();
+//#ifdef __SendLoRaInOperationMode
+
+debugSerial.println("__SendLoRaInOperationMode DEFINED => sendLoRaPayload()");   
+
+  sendLoRaPayload((uint8_t*)payload,19);   // hex
+//#endif    
+    turnOffRedLED();
+debugSerial.println("Fin Payload, Reactive IRQ1");    
+    alarm1_enabled = true;   // Réactiver alarme 1 
+#ifdef __SerialDebugPoc  
+debugSerial.print("7");   // 777777777777777777777777777777777777
+#endif
+// GestionEnCours("ISR2b");  // Surveillance pour Debug
   }
+#endif    
+
+
+
+
+
+
    
 #ifdef __SerialDebugPoc    
 // debugSerial.print("P");   // PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
@@ -778,7 +824,7 @@ debugSerial.print("K");   // KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
 // appeler avec chaine a modifier    ex: Data_LoRa.RucherName[20]
 //      startStringInput("SAISIE TEXTE:", currentString, 20); 
 
-          stringSaisie=Data_LoRa.RucherName;  // pointeur sur valeur courante traiter
+          stringSaisie=config.applicatif.RucherName;  // pointeur sur valeur courante traiter
 // attention si existe "CANCEL", proceder par variable tampon
           startStringInput("SAISIE TEXTE:", stringSaisie, 20);
           break;

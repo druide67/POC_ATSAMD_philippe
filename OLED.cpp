@@ -12,6 +12,25 @@
 //                                      | |   | |   
 //                                      |_|   |_|    
 // ---------------------------------------------------------------------------*
+
+// Hailege 2,42 "SSD1309 128x64 Module d’affichage OLED 2,42 pouces 4 broches Module d’affichage LCD (IIC blanc) 
+// https://www.amazon.fr/Hailege-SSD1309-128x64-Display-Module/dp/B0CJY3VS12/ref=sr_1_1?__mk_fr_FR=%C3%85M%C3%85%C5%BD%C3%95%C3%91&crid=3DDGR7BUX1IVB&dib=eyJ2IjoiMSJ9.N1OyjiI5D-TWOkCwTrXSXsfjKXhkJ7zKc7sc43fwx0zGjHj071QN20LucGBJIEps.JjrFKTpqg3E94FFfvZ1CGXbK2NocWfFiRkYYlshZmpU&dib_tag=se&keywords=hailege%2B2.42&qid=1768289462&sprefix=hailege%2B2.42%2Caps%2C225&sr=8-1&th=1
+// https://fr.aliexpress.com/item/1005003091769556.html?spm=a2g0o.order_list.order_list_main.5.43d35e5b8FWOPk&gatewayAdapt=glo2fra
+
+// Module OLED 1.54 pouces 12864 128x64 SSD1309, pilote IIC I2C, Interface série, panneau d'affichage auto-lumineux pour Raspberry Pi
+// https://fr.aliexpress.com/item/1005009313931934.html?spm=a2g0o.order_list.order_list_main.15.43d35e5b8FWOPk&gatewayAdapt=glo2fra
+
+// Fonctionne
+// Module OLED 1.3 pouces, Module d'affichage blanc/bleu 128x64 I2C SSD1306 12864, panneau d'écran LCD 1.3 pouces IIC OLED LED pour Arduino
+// https://fr.aliexpress.com/item/1005007176955358.html?spm=a2g0o.order_list.order_list_main.10.43d35e5b8FWOPk&gatewayAdapt=glo2fra
+
+// Fonctionne
+// Carte d'écran LCD pour Ardu37, technologie d'affichage OLED, 0.96 pouces, série IIC éventuelles I, 7 broches, 4 broches, blanc, bleu, jaune, bleu, jaune, SSD1306 12864
+// https://fr.aliexpress.com/item/32638662748.html?spm=a2g0o.order_list.order_list_main.31.43d35e5b8FWOPk&gatewayAdapt=glo2fra
+
+// https://electroniqueamateur.blogspot.com/2019/01/ecran-oled-sh1106-i2c-et-arduino.html  image BITMAP
+
+
 #define __INIT_DONE
 #include "define.h"
 
@@ -23,14 +42,17 @@
 // ---------------------------------------------------------------------------*
 void OLEDInit(void) 
 {
-#ifdef OLED096
+#ifdef OLED096      // SSD1306
     OLEDInit096();
 #endif
-#ifdef OLED130
+#ifdef OLED130      // SSD1306
     OLEDInit130();
 #endif
-#ifdef OLED154
+#ifdef OLED154      // SSD1309
     OLEDInit154();
+#endif
+#ifdef OLED242      // SSD1309
+    //OLEDInit242();
 #endif
     debugSerial.print("LOGO ");
     delay(500);
@@ -103,10 +125,10 @@ void OLEDClear(void)
 // ---------------------------------------------------------------------------*
 void OLEDEraseText(int16_t colonne, int16_t lig, int16_t Ncar)
 {
-  char TL_ColPixel = (colonne*OLED_Col);
+  char TL_ColPixel = (OLED_Col_Offset + colonne*OLED_Col);
   char TL_LigPixel = lig * OLED_L1;
     
-  display.fillRect(TL_ColPixel, TL_LigPixel, OLED_Col * Ncar, OLED_L1, 0);
+  display.fillRect( TL_ColPixel, TL_LigPixel, OLED_Col * Ncar, OLED_L1, 0);
   display.display(); // Ajoutez ceci pour forcer l'affichage
 }
 
@@ -180,7 +202,7 @@ void OLEDDrawScreenRefreshTime(uint8_t ligne, uint8_t colonne)
                if (oldSystemTime.month() != systemTime.month())
                { val = systemTime.month();
         //         OLEDPrintVar(ligne, 14, &val, 'i');
-               }               
+               }              
                if (oldSystemTime.year() != systemTime.year())
                { val = systemTime.year();
      //            OLEDPrintVar(ligne, 17, &val, 'i');
@@ -214,7 +236,7 @@ void OLEDDebugDisplay(char* message)
   display.clearDisplay();
   for (uint8_t i = 1; i < MAX_LIGNES; i++) // uint8_t i = 0 => reserve L0 pour Time/Date
   {
-//    display.setCursor(0, i// TAILLE_LIGNE);
+//    setCursorAdjusted(0, i// TAILLE_LIGNE);
     OLEDDrawText(1,i, 0, lignesDebug[i]);
   }
   display.display();
@@ -242,7 +264,7 @@ OLEDClear();
 /* 
   for (uint8_t i = 0; i < MAX_LIGNES; i++) 
   {
-  //  display.setCursor(0, i// TAILLE_LIGNE);
+  //  setCursorAdjusted(0, i// TAILLE_LIGNE);
     OLEDDrawText(1,i, 0, lignesDebug[i]);
   }
   display.display();
@@ -271,10 +293,10 @@ delay(1000);
 // @return void
 // ---------------------------------------------------------------------------*
 void OLEDPrintChar(uint8_t ligne, uint8_t colonne, char c) 
-{
-    display.setCursor(colonne * 6, ligne * 8);
-    display.write(c);
-    display.display();
+{  
+  setCursorAdjusted(colonne * 6, ligne * 8);
+  display.write(c);
+  display.display();
 }
 
 // ---------------------------------------------------------------------------*
@@ -400,7 +422,7 @@ void OLEDDisplayMessageL8(const char* message, bool defilant, bool inverse)
     for (int offset = 0; offset <= (len// 6 - SCREEN_WIDTH); offset += 2) 
     {
       display.clearDisplay();
-      display.setCursor(-offset, pixelLine);
+      setCursorAdjusted(-offset, pixelLine);   // OLED_Col_Offset +
       display.print(message);
       display.display();
       delay(30);
@@ -409,7 +431,7 @@ void OLEDDisplayMessageL8(const char* message, bool defilant, bool inverse)
   } 
   else 
   {
-    display.setCursor((SCREEN_WIDTH - len// 6) / 2, pixelLine);
+   setCursorAdjusted((SCREEN_WIDTH - len// 6) / 2, pixelLine);
     display.print(message);
     display.display();
     delay(1000);
@@ -458,7 +480,13 @@ void OLEDDrawText(int8_t Txt_Size, uint8_t ligne, uint8_t colonne, const char *t
   #define OLED_L1       8
 */
 // coordonnées en PIXELS
-  display.setCursor((colonne*OLED_Col), (ligne*OLED_L1));
+
+//colonne++;  // 242
+
+
+
+
+  setCursorAdjusted((colonne*OLED_Col), (ligne*OLED_L1)); // OLED_ColOffset
         
   for (uint8_t i = 0; i < strlen(text); i++)
   {
@@ -561,16 +589,16 @@ void OLEDDisplayHivesDatas(void)
 
   OLEDDrawText(1,1, 0, "=== INFOS Ruches ===");
 // faire Fonction()
-  snprintf(localOLEDbuf, 21, "Tem: %4.1f - Hum: %4.1f", Data_LoRa.DHT_Temp , Data_LoRa.DHT_Hum);
+  snprintf(localOLEDbuf, 21, "Tem: %4.1f - Hum: %4.1f", HiveSensor_Data.DHT_Temp , HiveSensor_Data.DHT_Hum);
   OLEDDrawText(1,2, 0, localOLEDbuf );
         
-  snprintf(localOLEDbuf, 21, "LDR: %4.1f -  VB: %4.1f", Data_LoRa.Brightness, Data_LoRa.Bat_Voltage);
+  snprintf(localOLEDbuf, 21, "LDR: %4.1f -  VB: %4.1f", HiveSensor_Data.Brightness, HiveSensor_Data.Bat_Voltage);
   OLEDDrawText(1,3, 0, localOLEDbuf);
         
-  snprintf(localOLEDbuf, 21,"VSo: %4.1f -  mT: %4.1f", Data_LoRa.Solar_Voltage, readingT);
+  snprintf(localOLEDbuf, 21,"VSo: %4.1f -  mT: %4.1f", HiveSensor_Data.Solar_Voltage, readingT);
   OLEDDrawText(1,4, 0, localOLEDbuf);
 
-//#define Poids_Peson(num)      Data_LoRa.HX711Weight[num]   //  Data_LoRa de type LoRa_Var (ligne 38)
+//#define Poids_Peson(num)      HiveSensor_Data.HX711Weight[num]   //  Data_LoRa de type LoRa_Var (ligne 38)
 
 
 ////    sprintf(OLEDbuf, "Ba1: %4.1f - Ba2: %4.1f", Poids_Peson(0), Poids_Peson(1));
@@ -578,9 +606,9 @@ void OLEDDisplayHivesDatas(void)
 
  float poids = (float)Poids_Peson(0);
        poids = poids/1000;
-//Data_LoRa.HX711Weight[0]=123456;
+//HiveSensor_Data.HX711Weight[0]=123456;
        
-  snprintf(localOLEDbuf, 21,"Ba1: %4.1f - Ba2: %4.1f", Data_LoRa.HX711Weight[0]/1000, 15.22); //Poids_Peson(1));
+  snprintf(localOLEDbuf, 21,"Ba1: %4.1f - Ba2: %4.1f", HiveSensor_Data.HX711Weight[0]/1000, 15.22); //Poids_Peson(1));
   OLEDDrawText(1,5, 0, localOLEDbuf);
 
   snprintf(localOLEDbuf, 21, "Ba3: %4.1f - Ba4: %4.1f", Poids_Peson(2), Poids_Peson(3));
@@ -673,7 +701,7 @@ void OLEDdisplayInfoScreenSyst(void)
 // faire Fonction()  
   if  (!read_DHT(dht))  // temp et hum. DHT22
   {
-    snprintf(localOLEDbuf, 21,"T: %.2f C H: %.f %%",Data_LoRa.DHT_Temp ,Data_LoRa.DHT_Hum);
+    snprintf(localOLEDbuf, 21,"T: %.2f C H: %.f %%",HiveSensor_Data.DHT_Temp ,HiveSensor_Data.DHT_Hum);
 //debugSerial.println("OLEDdisplayInfoScreenSyst() DHT OK");
   }
   else    // /!\   Si pas DHT22, T:µC et H:N/A
@@ -728,27 +756,27 @@ void OLEDdisplayInfoScreenLoRa(void)
   OLEDClear();
   OLEDDrawText(1, 0, 0, "==== INFOS LoRa ====");
   OLEDDrawScreenTime(1, 0); // Affiche Time/Date au complet
-  snprintf(localOLEDbuf, 21,"#%2d %15s",ConfigApplicatif.RucherID,ConfigApplicatif.RucherName);  // ConfigApplicatif_t =>   uint8_t Balance_ID + char    RucherName [20]; 
+  snprintf(localOLEDbuf, 21,"#%2d %15s",config.applicatif.RucherID,config.applicatif.RucherName);  // config.applicatif_t =>   uint8_t Balance_ID + char    RucherName [20]; 
   OLEDDrawText(1, 2, 0,localOLEDbuf);
 // Affichage SF
   snprintf(localOLEDbuf, 21,"SF: %d  Tx: %d min.",config.applicatif.SpreadingFactor,config.applicatif.SendingPeriod);  // SF + Tx Interval (min)  
   OLEDDrawText(1, 3, 0,localOLEDbuf);
 // Affichage DevEUI
 char Module_ID[17];
-  convertToHexString(ConfigMateriel.DevEUI, Module_ID, 8);
+  convertToHexString(config.materiel.DevEUI, Module_ID, 8);
   snprintf(localOLEDbuf, 21,"SN: %16s",Module_ID);  // DevEUI (N° RN 16 car) 
   OLEDDrawText(1, 4, 0, localOLEDbuf);
   
 // AK => AppKey = (uint8_t *)AppKey_List[Ruche.Num_Carte];  
 // 5048494C49505045 4C4F56454C414B4F != PHILIPPELOVEBEES
-  snprintf(localOLEDbuf, 21,"AK: %s",ConfigApplicatif.AppKey); 
+  snprintf(localOLEDbuf, 21,"AK: %s",config.applicatif.AppKey); 
   OLEDDrawText(1, 5, 0,localOLEDbuf);
 
 //  snprintf(localOLEDbuf, 21,"+ %s",&AppKey_List[Ruche.Num_Carte][16]);  // AppKey 1/2 => "5048494C49505045"
 //  OLEDDrawText(1, 5, 0,localOLEDbuf);
 
 // AE => AppEUI => 414245494C4C4533  (16 char vers 8 uint8_t )
-  snprintf(localOLEDbuf, 21,"AE: %s",ConfigApplicatif.AppEUI);  
+  snprintf(localOLEDbuf, 21,"AE: %s",config.applicatif.AppEUI);  
   OLEDDrawText(1, 6, 0,localOLEDbuf);
   OLEDDrawText(1, 7, 0, "VALIDE pour retour");
 debugSerial.println("Ecran infos affiche");
@@ -793,14 +821,14 @@ Tare : Jauge[Peson [Ruche.Num_Carte  ][Bal-1]][0]
 // faire Fonction()
   snprintf(localOLEDbuf, 21,"Poids   : %d ", BalPoids(num-1) );
   OLEDDrawText(1, 2, 0, localOLEDbuf);
-  snprintf(localOLEDbuf, 21,"Tare    : %d ", Jauge[Peson[ConfigMateriel.Num_Carte][bal-1]][0]);
+  snprintf(localOLEDbuf, 21,"Tare    : %d ", Jauge[Peson[config.materiel.Num_Carte][bal-1]][0]);
   OLEDDrawText(1, 3, 0, localOLEDbuf);
-  snprintf(localOLEDbuf, 21,"Echelle : %d ", Jauge[Peson[ConfigMateriel.Num_Carte][bal-1]][1]);
+  snprintf(localOLEDbuf, 21,"Echelle : %d ", Jauge[Peson[config.materiel.Num_Carte][bal-1]][1]);
   OLEDDrawText(1, 4, 0, localOLEDbuf);
-  snprintf(localOLEDbuf, 21,"Comp. T : %d ", Jauge[Peson[ConfigMateriel .Num_Carte][bal-1]][3]);
+  snprintf(localOLEDbuf, 21,"Comp. T : %d ", Jauge[Peson[config.materiel .Num_Carte][bal-1]][3]);
   OLEDDrawText(1, 5, 0, localOLEDbuf);
 
-  snprintf(localOLEDbuf, 21, "#%1d - Num Pes:%2d", ConfigMateriel.Num_Carte,Peson[ConfigMateriel.Num_Carte][bal-1]);
+  snprintf(localOLEDbuf, 21, "#%1d - Num Pes:%2d", config.materiel.Num_Carte,Peson[config.materiel.Num_Carte][bal-1]);
   OLEDDrawText(1, 6, 0, localOLEDbuf);
 // fin Fonction()
 
@@ -858,13 +886,13 @@ snprintf(localOLEDbuf, 21,"=== CALIB. BAL:%d ===", bal);
   OLEDDrawText(1, 0, 0, localOLEDbuf);
 
 // faire Fonction()
-  snprintf(localOLEDbuf, 21,"Bal%d : %4.2d kg ", bal, Peson[ConfigMateriel.Num_Carte][bal] );
+  snprintf(localOLEDbuf, 21,"Bal%d : %4.2d kg ", bal, Peson[config.materiel.Num_Carte][bal] );
   OLEDDrawText(1, 2, 0, localOLEDbuf);
-  snprintf(localOLEDbuf, 21,"Scale%d : %4.2d kg ", bal, Jauge[Peson[ConfigMateriel.Num_Carte][bal]][1] );
+  snprintf(localOLEDbuf, 21,"Scale%d : %4.2d kg ", bal, Jauge[Peson[config.materiel.Num_Carte][bal]][1] );
   OLEDDrawText(1, 3, 0, localOLEDbuf);
   snprintf(localOLEDbuf, 21,"Temp%d : %4.2d kg ", bal, BalPoids(2) );
   OLEDDrawText(1, 4, 0, localOLEDbuf);
-  snprintf(localOLEDbuf, 21,"Tare%D : %4.2d kg ", bal, Jauge[Peson[ConfigMateriel.Num_Carte][bal]][0] );
+  snprintf(localOLEDbuf, 21,"Tare%D : %4.2d kg ", bal, Jauge[Peson[config.materiel.Num_Carte][bal]][0] );
   OLEDDrawText(1, 5, 0, localOLEDbuf);
 // fin Fonction()
 
@@ -926,7 +954,7 @@ void OLEDRefreshDisplay(void)
     int num = 0;
     do
     {
-      if (Peson[ConfigMateriel.Num_Carte][0])
+      if (Peson[config.materiel.Num_Carte][0])
       { 
         snprintf(localOLEDbuf, 21,"Bal1 : %4.2d kg ",Poids_Peson(0)); // BalPoids(0) );
         OLEDDrawText(1, 2, 0, localOLEDbuf);
@@ -1022,4 +1050,24 @@ void OLEDRefreshVlum(uint8_t ligne, uint8_t colonne)
 
   sprintf(localOLEDbuf,"%3.2f", analogRead(LUM_SENSOR) / 10.23);
   OLEDDrawText(1, ligne, colonne, localOLEDbuf);
+}
+
+
+
+// correction OLED 2.42 pouces
+
+// Fonction wrapper pour setCursor
+void setCursorAdjusted(int16_t x, int16_t y) 
+{
+  display.setCursor(x + OLED_Col_Offset, y);
+}
+
+// Fonction wrapper pour drawPixel
+void drawPixelAdjusted(int16_t x, int16_t y, uint16_t color) {
+  display.drawPixel(x + OLED_Col_Offset, y, color);
+}
+
+// Fonction wrapper pour drawRect
+void drawRectAdjusted(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
+  display.drawRect(x + OLED_Col_Offset, y, w, h, color);
 }

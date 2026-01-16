@@ -23,7 +23,6 @@
 
 #define NB_RUCHES 4 // 3 Protos Atsamd, Fixe à 4 pesées
 
-
 // ===== TIMING CONSTANTS =====
 #define RED_LED_DURATION        100   // Durée d'allumage LED rouge 300 ms
 #define GREEN_LED_DURATION      100   // Durée d'allumage LED verte 300 ms
@@ -56,22 +55,25 @@
 #define M04x_ITEM 4
 
 // ===== EEPROM CONFIGURATION =====
-#define CONFIG_VERSION 100   // Version 1.00// 100
+#define CONFIG_VERSION 111   // Version 1.1.1
+// ===== ADRESSE EEPROM CONFIGURATION =====
+#define CONFIG_EEPROM_START 0x0000  // Adresse de début en EEPROM
+#define CONFIG_MAGIC_NUMBER 0xBE69  // Nombre magique pour valider config
 
 // defines pour raccourcir et clarifier les instructions
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // noms courts et explicites, parametrer (num: 0..3) par Macro
-#define Poids_Peson(num)      Data_LoRa.HX711Weight[num]   //  Data_LoRa de type LoRa_Var (ligne 38)
-//#define Temp_Peson(num)       Data_LoRa.Temp_Peson[num]
-#define Tare_Peson(num)       Jauge[Peson[ConfigMateriel.Num_Carte][num]][0]
-#define Echelle_Peson(num)    Jauge[Peson[ConfigMateriel.Num_Carte][num]][1]
-//#define BalPoids(num)  (Contrainte_List[num]-Jauge[Peson[ConfigMateriel.Num_Carte][num]][0])/Jauge[Peson[ConfigMateriel.Num_Carte][num]][1]/1000) //retourne float
+#define Poids_Peson(num)      HiveSensor_Data.HX711Weight[num]   //  Data_LoRa de type LoRa_Var (ligne 38)
+//#define Temp_Peson(num)       HiveSensor_Data.Temp_Peson[num]
+#define Tare_Peson(num)       Jauge[Peson[config.materiel.Num_Carte][num]][0]
+#define Echelle_Peson(num)    Jauge[Peson[config.materiel.Num_Carte][num]][1]
+//#define BalPoids(num)  (Contrainte_List[num]-Jauge[Peson[config.materiel.Num_Carte][num]][0])/Jauge[Peson[config.materiel.Num_Carte][num]][1]/1000) //retourne float
 #define BalPoids(num) (Contrainte_List[num]-Tare_Peson(num))/Echelle_Peson(num)/1000 //retourne float
 
 // ?? attention step(num) entre TareTemp et la correespondance
 //         1..4                    0..3
-#define TareTemp(num)   Jauge[Peson[ConfigMateriel.Num_Carte][num]][2]  // Ruche de type HW_equipement (ligne 21)
-#define CompTemp(num)   Jauge[Peson[ConfigMateriel.Num_Carte][num]][3]
+#define TareTemp(num)   Jauge[Peson[config.materiel.Num_Carte][num]][2]  // Ruche de type HW_equipement (ligne 21)
+#define CompTemp(num)   Jauge[Peson[config.materiel.Num_Carte][num]][3]
 // passer de 0..3 dans l'appelant: fait
 
 
@@ -155,11 +157,12 @@
 //#define OLED096  // Sélection du type d'écran
 #define OLED130  // Sélection du type d'écran
 //#define OLED154  // Sélection du type d'écran
+//#define OLED242  // Sélection du type d'écran
 
 // Pour OLED selon type sélectionné
-#ifdef OLED096
+#ifdef OLED096                            // SSD1306
   #include <Adafruit_SSD1306.h>
-#else
+#else                                     // OLED130, OLED154?, OLED242?
   #include <Adafruit_SH110X.h>
 #endif
 
@@ -173,11 +176,13 @@
 #ifdef OLED096
   #define OLEDTEXTSIZE  1
   #define OLED_Col      6
+  #define OLED_ColOffset  0
   #define OLED_Max_Col  20
   #define OLED_L1       8
 #else
   #define OLEDTEXTSIZE  1
   #define OLED_Col      6
+  #define OLED_Col_Offset  2     // pour 2.42 pouces
   #define OLED_Max_Col  20
   #define OLED_L1       8
   #define WHITE         SH110X_WHITE
@@ -198,7 +203,9 @@
 #include <Sodaq_wdt.h>
 //#define LORA_BAUD 57600   >> loraSerial.begin(LoRaBee.getDefaultBaudRate());
 #define LORA_Start_SESSION      // à activer hors phase de developpement.
-#define __SendLoRa
+#define __SendLoRaInOperationMode
+#define __SendLoRaInProgrammationMode
+
 // ---------------------------------------------------------------------------*
 // cayenne pour tests gateway
 // ---------------------------------------------------------------------------*

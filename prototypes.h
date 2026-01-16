@@ -20,6 +20,7 @@
 void initDebugSerial(void);
 void softReset(void);
 void DHTInit(void);
+void setStructDefaultValues(void);
 
 
 // ===== PROTOTYPES DE FONCTIONS DE POC_ATSAMD.INO=====
@@ -41,12 +42,29 @@ void DS3231CompleteReset(void);
 // ---------------------------------------------------------------------------*
 // encore dans POC...cpp, déplacer?
 // Gestion Config et EEPROM
-void setDefaultConfig(void);
+//void setDefaultConfig(void);
 void initConfig(void);
+//void loadConfigFromEEPROM(void);
+//void readConfigFromEEPROM(void);
+//void saveConfigToEEPROM(void);
+//uint16_t calculateChecksum(ConfigGenerale_t* cfg);
+
+// ===== PROTOTYPES DE FONCTIONS EEPROM =====
 void loadConfigFromEEPROM(void);
 void readConfigFromEEPROM(void);
 void saveConfigToEEPROM(void);
 uint16_t calculateChecksum(ConfigGenerale_t* cfg);
+void writeEEPROMByte(uint16_t address, uint8_t data);
+uint8_t readEEPROMByte(uint16_t address);
+void writeEEPROMBlock(uint16_t address, uint8_t* data, uint16_t length);
+void readEEPROMBlock(uint16_t address, uint8_t* data, uint16_t length);
+// void initDefaultConfig(void);  remplacé par  : setStructDefaultValues()
+// Dump pour contôles
+void dumpConfigToJSON(void);
+void printByteArrayJSON(uint8_t* array, uint8_t length);
+
+
+
 
 // ---------------------------------------------------------------------------*
 // Fonctions de gestion des menus
@@ -397,6 +415,7 @@ void OLEDDisplayHivesDatas(void);
 void OLEDRefreshDisplay(void);
 void OLEDRefreshlum(uint8_t ligne, uint8_t colonne);
 void OLEDRefreshVlum(uint8_t ligne, uint8_t colonne);
+void setCursorAdjusted(int16_t x, int16_t y);
 
 //void OLEDDisplaySystemInfo(void);  // voir si pas remplacée par suivante.
 void OLEDdisplayInfoScreenSyst(void);
@@ -428,6 +447,7 @@ void debugSerialPrintNextAlarm(DateTime nextPayload, int IRQ);
 void debugSerialPrintKbdKey(void);
 void debugSerialPrintSystemInfo(void); 
 void debugSerialPrintHEXA(void);  // non appelée ???
+void debugSerialDisplayScaledSensorState(int num);
 
 // ---------------------------------------------------------------------------*
 // Gestion modes et interruptions
@@ -463,22 +483,22 @@ void newgetHWEUI(uint8_t *AppEUI);
 
 
 
-void Reset_LoRa(void);
+// void Reset_LoRa(void);
 void clearLoRaBuffer(void); // Vide complètement le buffer série du modem
 String readLoRaResponse(int timeoutMs); // Lit la réponse du modem avec timeout
  
-bool setupLoRa(void);   // appelé par Send_Lora_Mess() et setup()
+bool setupLoRa(void);   // appelé /*par Send_Lora_Mess() et*/ setup()
 bool setupLoRaOTAA(void);
 
-void Send_DATA_LoRa(void);
+//void no_Send_DATA_LoRa(void);
 
 void buildLoraPayload(void);
 void sendLoRaPayload(uint8_t *, uint8_t);
 
 
 // basse conso.
-void sleep_LoRa(void);
-void wake_LoRa(void);
+//void sleep_LoRa(void);
+//void wake_LoRa(void);
 
 // ---------------------------------------------------------------------------*
 // DHT22

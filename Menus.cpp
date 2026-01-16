@@ -228,7 +228,7 @@ debugSerial.println("m01_5F_readConfig demandé");
       }
       case 5: // WriteEEPROM
       {  
-debugSerial.println("m01_6F_writeConfig demandé");   
+debugSerial.println(" demandé");   
         m01_5F_writeConfig();
         break;
       }

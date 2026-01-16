@@ -251,20 +251,20 @@ void m01_1F_GetTimeDone()   // appel dans Handle.cpp en fonction de saisieActive
   backMenu();
 }
 
-// Saisie de ConfigMateriel.Noeud_LoRa
+// Saisie de config.materiel.Noeud_LoRa
 void m01_2F_GetNumRucher()
 { static char number[4];
 
   saisieActive = 12; // pour identifier variable saisie lors de l'affectation
 
   debugSerial.print("Appel d'une Fonction: m01_2F_GetNumRucher()");
-  sprintf(number, "%d", ConfigApplicatif.RucherID);
-  debugSerial.println(ConfigApplicatif.RucherID);
+  sprintf(number, "%d", config.applicatif.RucherID);
+  debugSerial.println(config.applicatif.RucherID);
   debugSerial.println(number);
   startNumInput("-NUM. SYSTEME LoRa-", number, 4, false, false, 0, 10);
 }
 
-// Sauvegarde de ConfigMateriel.Noeud_LoRa
+// Sauvegarde de config.materiel.Noeud_LoRa
 void m01_2F_GetNumRucherDone()   // appel dans Handle.cpp en fonction de saisieActive
 { static char number[9] = ""; // Buffer pour le numérique
 
@@ -273,72 +273,77 @@ void m01_2F_GetNumRucherDone()   // appel dans Handle.cpp en fonction de saisieA
   finalizeNumInput(number); // Récupérer saisie finale
   debugSerial.print("Nouveau nombre: ");
   debugSerial.println(number);
-  ConfigApplicatif.RucherID = atoi(number);
+  config.applicatif.RucherID = atoi(number);
   debugSerial.print("Nombre memorisé: ");
-  debugSerial.println(ConfigApplicatif.RucherID);
+  debugSerial.println(config.applicatif.RucherID);
   backMenu();
 }
 
 
-// Saisie de ConfigApplicatif.RucherName
+// Saisie de config.applicatif.RucherName
 void m01_3F_GetNameRucher()  // Saisir dans la liste List_Ruchers[], 12 elements
 { static char currentString[21];
   debugSerial.println("Appel d'une Fonction: m01_4F_GetNameRucher()");
 
-  sprintf(currentString, "%s", ConfigApplicatif.RucherName);
+  sprintf(currentString, "%s", config.applicatif.RucherName);
   debugSerial.print("Appel avec: "); debugSerial.println(currentString);
   //sprintf(currentString,Data_LoRa.RucherName); // pointeur sur valeur courante traiter
   startStringInput("---- NOM RUCHER ----", currentString, 20);
 }
 
-// Sauvegarde de ConfigApplicatif.RucherName
+// Sauvegarde de config.applicatif.RucherName
 void m01_3F_GetNameRucherDone()   // appel dans Handle.cpp en fonction de saisieActive
 { static char currentString[21];
-  debugSerial.print("Appel d'une Fonction: ");
-  debugSerial.println("m01_4F_GetNameRucherDone()");
+debugSerial.println("Appel d'une Fonction: m01_4F_GetNameRucherDone()");
 
   finalizeStringInput(currentString); // Récupérer saisie finale
   debugSerial.print("Nouveau nom: ");
   debugSerial.println(currentString);
-  sprintf(ConfigApplicatif.RucherName, "%s", currentString);
-  debugSerial.println(ConfigApplicatif.RucherName);
+  sprintf(config.applicatif.RucherName, "%s", currentString);
+  debugSerial.println(config.applicatif.RucherName);
   backMenu();
 }
 
 void m01_4F_readConfig()
 {
   debugSerial.print("Appel d'une Fonction: ");
-  debugSerial.println("m01_5F_readConfig() à developper");
+  debugSerial.println("m01_5F_readConfig()");
 
   //
 
+
+readConfigFromEEPROM();
+
+dumpConfigToJSON();
+  
 
   // Si pas fonction_Done();
   // Activer la liste de démarrage quand fin saisie
   backMenu();
 }
 
-void m01_4F_readConfigDone()   // appel dans Handle.cpp en fonction de saisieActive
+void non_m01_4F_readConfigDone()   // appel dans Handle.cpp en fonction de saisieActive
 {
-  debugSerial.print("Appel d'une Fonction: ");
-  debugSerial.println("m01_5F_readConfigDone() à developper");
+  debugSerial.println("Appel d'une Fonction: m01_5F_readConfigDone() à developper");
   backMenu(); // supprimer dans pas Done
 }
 
 void m01_5F_writeConfig()
 {
-  debugSerial.print("Appel d'une Fonction: ");
-  debugSerial.println("m01_6F_writeConfig()");
+  debugSerial.println("Appel d'une Fonction: m01_5F_writeConfig()");
+
+saveConfigToEEPROM();
+dumpConfigToJSON();
 
   // Si pas fonction_Done();
   // Activer la liste de démarrage quand fin saisie
   backMenu();
 }
 
-void m01_5F_writeConfigDone()   // appel dans Handle.cpp en fonction de saisieActive
+void non_m01_5F_writeConfigDone()   // appel dans Handle.cpp en fonction de saisieActive
 {
-  debugSerial.print("Appel d'une Fonction: ");
-  debugSerial.println("m01_6F_writeConfigDone()");
+  debugSerial.println("Appel d'une Fonction: m01_5F_writeConfigDone()");
+
   backMenu(); // supprimer dans pas Done
 }
 
@@ -388,7 +393,7 @@ void m02_1F_AppKEY()  // AppKEY
 
   saisieActive = 21;
   debugSerial.println("CONFIG. SYSTEME - Demande saisie HEXA AppKEY");
-  byteArrayToHexString(&AppKey_List [ConfigMateriel.Num_Carte][0], 16, hexBuffer, 33);
+  byteArrayToHexString(&AppKey_List [config.materiel.Num_Carte][0], 16, hexBuffer, 33);
   startHexInput("-- SAISIR APPKEY ---", hexBuffer, 32);
 }
 
@@ -399,7 +404,7 @@ void m02_1F_AppKEYDone()    // appel dans Handle.cpp en fonction de saisieActive
   finalizeHexInput(hexBuffer); // Récupérer chaine HEXA
   debugSerial.print("Nouvelle chaine AppKEY: ");
   debugSerial.println(hexBuffer);        // Ici vous pouvez traiter AppKEY et revenir au menu
-  hexStringToByteArray(hexBuffer, &AppKey_List [ConfigMateriel.Num_Carte][0], strlen(hexBuffer));
+  hexStringToByteArray(hexBuffer, &AppKey_List [config.materiel.Num_Carte][0], strlen(hexBuffer));
   backMenu();
 }
 
@@ -410,7 +415,7 @@ void m02_2F_AppEUI() // AppEUI
 
   saisieActive = 22;
   debugSerial.println("CONFIG. SYSTEME - Demande saisie HEXA AppEUI");
-  byteArrayToHexString(&AppEUI_List [ConfigMateriel.Num_Carte][0], 8, hexBuffer, 17);
+  byteArrayToHexString(&AppEUI_List [config.materiel.Num_Carte][0], 8, hexBuffer, 17);
   startHexInput("-- SAISIR APPEUI ---", hexBuffer, 16);
 }
 
@@ -421,7 +426,7 @@ void m02_2F_AppEUIDone()    // appel dans Handle.cpp en fonction de saisieActive
   finalizeHexInput(hexBuffer); // Récupérer chaine HEXA
   debugSerial.print("Nouvelle chaine AppEUI: ");
   debugSerial.println(hexBuffer);        // Ici vous pouvez traiter AppEUI et revenir au menu
-  hexStringToByteArray(hexBuffer, &AppEUI_List [ConfigMateriel.Num_Carte][0], strlen(hexBuffer));
+  hexStringToByteArray(hexBuffer, &AppEUI_List [config.materiel.Num_Carte][0], strlen(hexBuffer));
   backMenu();
 }
 
@@ -509,7 +514,7 @@ void m02_5F_Join() // Connexion LoRa
   GestionEnCours("m02_5Fa");
 
   
-  init2483A(ConfigMateriel.DevEUI);  // Réinitialise DevEUI, AppEUI et AppKey
+  init2483A(config.materiel.DevEUI);  // Réinitialise DevEUI, AppEUI et AppKey
 
   
   debugSerial.println("Fin init2483A");
@@ -537,7 +542,7 @@ void m02_6F_SendPayLoad() // Envoyer Payload
   debugSerial.println("Appel m02_6F_SendPayLoad - a tester");
   turnOnRedLED();     // PCB donne GREEN?
   buildLoraPayload();
-#ifdef __SendLoRa
+#ifdef __SendLoRaInProgrammationMode
   sendLoRaPayload((uint8_t*)payload, 19);  // hex
 #endif
   turnOffRedLED();
@@ -596,12 +601,12 @@ void m03_0F_CalibVBat() //
   saisieActive = 30; // pour identifier variable saisie lors de l'affectation
 
   debugSerial.print("Appel d'une Fonction: m03_0F_CalibVBat()");
-  sprintf(number, "%f", ConfigMateriel.VBatScale);
+  sprintf(number, "%f", config.materiel.VBatScale);
 
-  debugSerial.println(ConfigMateriel.VBatScale); //11:18:22.650 -> Appel d'une Fonction: m03_2F_CalibVLum()1.13
+  debugSerial.println(config.materiel.VBatScale); //11:18:22.650 -> Appel d'une Fonction: m03_2F_CalibVLum()1.13
   debugSerial.println(number);  //  11:18:22.650 -> -536870912
 
-  sprintf(number, "%1.6f", ConfigMateriel.VBatScale);
+  sprintf(number, "%1.6f", config.materiel.VBatScale);
   startNumInput("--- CALIBRER VBat --", number, 8, false, true, 0, 1000); // allow dec
   // texte hors startNumInput() affiché qu'une fois, à rafraichir dans loop()
   // ligne 0: Title
@@ -616,7 +621,7 @@ void m03_0F_CalibVBat() //
 }
 
 
-// Sauvegarde de ConfigMateriel.Noeud_LoRa
+// Sauvegarde de config.materiel.Noeud_LoRa
 void m03_0F_CalibVBatDone()                        // appel de Handle.cpp
 { static char number[9] = ""; // Buffer pour le numérique
 
@@ -626,9 +631,9 @@ void m03_0F_CalibVBatDone()                        // appel de Handle.cpp
   finalizeNumInput(number); // Récupérer saisie finale
   debugSerial.print("Nouveau nombre: ");
   debugSerial.println(number);
-  ConfigMateriel.VBatScale = atof(number);   // atof????
+  config.materiel.VBatScale = atof(number);   // atof????
   debugSerial.print("Nombre memorisé: ");
-  debugSerial.println(ConfigMateriel.VBatScale);
+  debugSerial.println(config.materiel.VBatScale);
   backMenu();
 }
 
@@ -642,12 +647,12 @@ void m03_1F_CalibVSol()  //
   saisieActive = 31; // pour identifier variable saisie lors de l'affectation
 
   debugSerial.print("Appel d'une Fonction: m03_0F_CalibVSol()");
-  sprintf(number, "%f", ConfigMateriel.VSolScale);
+  sprintf(number, "%f", config.materiel.VSolScale);
 
-  debugSerial.println(ConfigMateriel.VSolScale); //11:18:22.650 -> Appel d'une Fonction: m03_2F_CalibVLum()1.13
+  debugSerial.println(config.materiel.VSolScale); //11:18:22.650 -> Appel d'une Fonction: m03_2F_CalibVLum()1.13
   debugSerial.println(number);  //  11:18:22.650 -> -536870912
 
-  sprintf(number, "%1.6f", ConfigMateriel.VSolScale);
+  sprintf(number, "%1.6f", config.materiel.VSolScale);
   startNumInput("--- CALIBRER VSol --", number, 8, false, true, 0, 1000); // allow dec
   // texte hors startNumInput() affiché qu'une fois, à rafraichir dans loop()
   // ligne 0: Title
@@ -662,7 +667,7 @@ void m03_1F_CalibVSol()  //
 }
 
 
-// Sauvegarde de ConfigMateriel.Noeud_LoRa
+// Sauvegarde de config.materiel.Noeud_LoRa
 void m03_1F_CalibVSolDone()                        // appel de Handle.cpp
 { static char number[9] = ""; // Buffer pour le numérique
 
@@ -672,9 +677,9 @@ void m03_1F_CalibVSolDone()                        // appel de Handle.cpp
   finalizeNumInput(number); // Récupérer saisie finale
   debugSerial.print("Nouveau nombre: ");
   debugSerial.println(number);
-  ConfigMateriel.VSolScale = atof(number);   // atof????
+  config.materiel.VSolScale = atof(number);   // atof????
   debugSerial.print("Nombre memorisé: ");
-  debugSerial.println(ConfigMateriel.VSolScale);
+  debugSerial.println(config.materiel.VSolScale);
   backMenu();
 }
 
@@ -686,12 +691,12 @@ void m03_2F_CalibVLum()   //
   saisieActive = 32; // pour identifier variable saisie lors de l'affectation
 
   debugSerial.print("Appel d'une Fonction: m03_2F_CalibVLum()");
-  sprintf(number, "%f", ConfigMateriel.LDRBrightnessScale);
+  sprintf(number, "%f", config.materiel.LDRBrightnessScale);
 
-  debugSerial.println(ConfigMateriel.LDRBrightnessScale); //11:18:22.650 -> Appel d'une Fonction: m03_2F_CalibVLum()1.13
+  debugSerial.println(config.materiel.LDRBrightnessScale); //11:18:22.650 -> Appel d'une Fonction: m03_2F_CalibVLum()1.13
   debugSerial.println(number);  //  11:18:22.650 -> -536870912
 
-  sprintf(number, "%1.6f", ConfigMateriel.LDRBrightnessScale);
+  sprintf(number, "%1.6f", config.materiel.LDRBrightnessScale);
   startNumInput("--- CALIBRER LDR ---", number, 8, false, true, 0, 1000); // allow dec
   // texte hors startNumInput() affiché qu'une fois, à rafraichir dans loop()
   // ligne 0: Title
@@ -705,7 +710,7 @@ void m03_2F_CalibVLum()   //
   InfoVLumScreenRefresh = true;             // active rafraichissement des mesures de Vlum
 }
 
-// Sauvegarde de ConfigMateriel.Noeud_LoRa
+// Sauvegarde de config.materiel.Noeud_LoRa
 void m03_2F_CalibVLumDone()                        // appel de Handle.cpp
 { static char number[9] = ""; // Buffer pour le numérique
 
@@ -715,9 +720,9 @@ void m03_2F_CalibVLumDone()                        // appel de Handle.cpp
   finalizeNumInput(number); // Récupérer saisie finale
   debugSerial.print("Nouveau nombre: ");
   debugSerial.println(number);
-  ConfigMateriel.LDRBrightnessScale = atof(number);   // atof????
+  config.materiel.LDRBrightnessScale = atof(number);   // atof????
   debugSerial.print("Nombre memorisé: ");
-  debugSerial.println(ConfigMateriel.LDRBrightnessScale);
+  debugSerial.println(config.materiel.LDRBrightnessScale);
   backMenu();
 }
 

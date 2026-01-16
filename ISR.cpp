@@ -53,11 +53,16 @@ debugSerial.print("\n$1$\n");   // $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
   if (rtc.alarmFired(2)) 
   {
     if (!alarm2_enabled) 
+    {
+      debugSerial.println("onRTCAlarm() => alarm2_enabled = False");
       return;     // interruption execution code de IRQ1 pendant IRQ2
+    }
     wakeup1Sec = false;    // annule si activée
 displayNextPayload = true;
     alarm1_enabled = false;  // Bloquer alarme 1
     wakeupPayload = true;
+debugSerial.println("OnRTCAlarm/wakeupPayload = true");
+    
     rtc.clearAlarm(1);       
     rtc.clearAlarm(2); 
 

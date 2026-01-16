@@ -372,9 +372,9 @@ void debugSerialPrintNextAlarm(DateTime nextPayload, int IRQ)
 void debugSerialPrintLoRaStatus()  
 {
   debugSerial.println("\n=== STATUS LoRa ===");
-  sprintf(serialbuf," => RN2483#%02d",ConfigMateriel.Num_Carte);        // affiche N° de carte
+  sprintf(serialbuf," => RN2483#%02d",config.materiel.Num_Carte);        // affiche N° de carte
   debugSerial.println(serialbuf);
-//debugSerial.print("DevEUI = ");debugSerial.println((char *)ConfigMateriel_t.DevEUI,8);
+//debugSerial.print("DevEUI = ");debugSerial.println((char *)config.materiel_t.DevEUI,8);
 //debugSerial.print("AppEUI = ");debugSerial.println((char *)AppEUI,8);
 //debugSerial.print("AppKey = ");debugSerial.println((char *)AppKey,16); 
 // print...()
@@ -432,7 +432,7 @@ void debugSerialPrintKbdKey(void)
 // @param Aucun
 // @return void
 // ---------------------------------------------------------------------------*
-void serialDebugPrintSystemInfo(void)
+void debugSerialPrintSystemInfo(void)
 {
     debugSerial.println("=== INFORMATIONS SYSTEME ===");
     debugSerial.println("Projet: " PROJECT_NAME);
@@ -447,4 +447,38 @@ void serialDebugPrintSystemInfo(void)
     debugSerial.print(__DATE__);
     debugSerial.print(" ");
     debugSerial.println(__TIME__);
+}
+
+
+void debugSerialDisplayScaledSensorState(int num)     // num 0 .. 3
+{ 
+  float temp = ((analogRead(TEMP_SENSOR) * 3300.0 / 1023.0) - 500.0) / 10.0; // Lecture temp µC  
+            // put the ADC in sleep mode
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// temp : utiliser DHT22 si existe sinon temperature interne µC
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// Rappel:
+// #define Poids_Peson(num)      Data_LoRa.HX711Weight[num]   //  Data_LoRa de type LoRa_Var (ligne 38)
+// #define Tare_Peson(num)       Jauge[Peson[config.materiel.Num_Carte][num]][0]
+// #define Echelle_Peson(num)    Jauge[Peson[config.materiel.Num_Carte][num]][1]
+// #define BalPoids(num) (Contrainte_List[num]-Tare_Peson(num))/Echelle_Peson(num)/1000 //retourne float
+// float GetPoids(int num)  // ?????   
+// lecture brute => poids en gr
+float pesonTare  = Jauge[Peson[config.materiel.Num_Carte][num]][0];  // correction pour avoir valeur balance sans charge.
+float pesonScale = Jauge[Peson[config.materiel.Num_Carte][num]][1];  // Mise à l'Echelle de pesonValue vers peson Poids
+float pesonValue = Poids_Peson(num) - pesonTare;           // valeur à convertir
+float pesonPoids = pesonValue / pesonScale;                // poids correspondant
+float pesee;                                               // 
+  //  Poids_List [num] = pesee*(1-Jauge[Peson[carte][num]][3]*(Jauge[Peson[carte][num]][2]/temp));
+  Contrainte_List [num] = pesee; // *(1-Jauge[Peson[carte][num]][3]*(Jauge[Peson[carte][num]][2]/temp));
+  // (peson-tare)/echelle
+  pesee = BalPoids(num);   // ( pesee - Jauge[Peson[config.materiel.Num_Carte][num]][0] ) / Jauge[Peson[Ruche.Num_Carte][num]][1] / 1000; 
+ 
+// /* 
+  sprintf(serialbuf,"temp %5.2f, lu %5.2f, tare %5.2f, echelle %5.2f,  tare en moins %5.2f, poids %5.2f ",
+          temp,Poids_Peson(num) , pesonTare, pesonScale,  pesonValue, pesonPoids  );
+  debugSerial.println(serialbuf);
+// */
+debugSerial.print(F("--------------------------------- Fin calcule Poids ------------------"));
+debugSerial.println(num);
 }

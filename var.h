@@ -155,6 +155,12 @@ bool blinkState = true;
 // Variables config
 bool setupDone = false;
 ConfigGenerale_t config;
+//config.materiel_t config.materiel;
+//config.applicatif_t config.applicatif;
+HiveSensor_Data_t HiveSensor_Data;  // nommer en payload !!!! existe: uint8_t payload[PAYLOADSIZE];
+
+
+
 
 // Variables debug
 bool COM_DebugSerial = true;
@@ -193,9 +199,6 @@ uint8_t SN2483_List [6][9] = {   // donne le DevEUI (Module_ID)   // renommer en
   {  0x00, 0x04, 0xA3, 0x0B, 0x00, 0xF5, 0x47, 0xCF, 0x00 }   // Proto PCB#2-1 Cave
 };
 
-
-
-
 uint8_t AppEUI_List [6][9] ={ 
   {0x4C, 0x4F, 0x56, 0x45, 0x4C, 0x41, 0x4B, 0x4F, 0x00},     // Module pas Lu
   {0x41, 0x42, 0x45, 0x49, 0x4C, 0x4C, 0x45, 0x31, 0x00},     // PROTO SODAQ 1
@@ -224,7 +227,7 @@ uint8_t testPayload[8] =
 
 // jauges de contrainte de J01 à J15
 int bal = 0;      // indiquer le contenu, Num de proto identifié par init lora & HWEUI_List ???????????????????????
-float Jauge[21][4] = {                // Tare , Echelle , TareTemp , CompTemp
+float Jauge[22][4] = {                // Tare , Echelle , TareTemp , CompTemp
       {0,0,0,0},     // J00 => pas de peson connecté
       {178666,108.5,20,0},    // J01 20kg
       {30250,21.2,20,0},      // J02
@@ -246,6 +249,7 @@ float Jauge[21][4] = {                // Tare , Echelle , TareTemp , CompTemp
       {34134.50,103.77,20,0},    // J18 proto1  20kg (OK à 1 et 5kg)
       {7929.70,97.49,20,0},    // J19 proto1  20kg (OK à 1 et 5kg) + DHT22
       {22005.70,97.49,20,0},    // J20
+      {1,2,20,3}                // J21
     };
 
 // paramètres et données des dispositif de pesée A,B,C,D
@@ -264,7 +268,7 @@ int Peson [10][4] = {
       {0,0,0,17},    // 0004A30B0020300A carte 1 HS; sur Carte PROTO2 en service le 05/03/2021
       {13,8,9,0}, //15},    // 0004A30B0024BF45 carte 2; en service le 10/05/2020
       {19,18,0,0},    // 0004A30B00EEEE01 Carte PROTO1 mis en service Loess le 08/03/2021
-      {0,0,0,0},    // 0004A30B00EEA5D5
+      {19,21,0,0},    // 0004A30B00EEA5D5
       {19,21,17,14},
       {6,0,0,0},
       {7,0,0,0},
@@ -327,36 +331,8 @@ typedef struct
   float   LDRBrightnessScale;   // 
   float   VSolScale;            //  
   float   VBatScale;
-} ConfigMateriel_t;
+} config.materiel_t;
 */
-
-ConfigMateriel_t ConfigMateriel;
-/* init faitee dans POC_ATSAMD.ino
-= // valeurs par défaut proto 03
-{ 3, 0x68, 0x3C, 0x57,
-  0, 3, 1, 1, 1, 0, 1, 1, 
-  19, 3, 4, 7929.70, 97.49, 0,   // N° Peson, CLK, DTA, Tare, scale, temp
-  18, 3, 6, 34134.50, 103.77, 0,
-  0, 3, 8, 0, 0, 0,
-  0, 3, 10, 0.123, 0, 0    
-};
-*/
-
-ConfigApplicatif_t ConfigApplicatif;
-/*
-=
-{ 1000101, RED_LED_DURATION, GREEN_LED_DURATION, BLUE_LED_DURATION, BUILTIN_LED_DURATION,    // version, RED, GREEN, BLUE, BUILTIN duration
-  91, "FREUDENECK",
-  "0004A30B00EEEE01", 
-  {0x41, 0x42, 0x45, 0x49, 0x4C, 0x4C, 0x45, 0x31, 0x00},
-  {0x50, 0x48, 0x49, 0x4C, 0x49, 0x50, 0x50, 0x45, 0x4C, 0x4F, 0x56, 0x45, 0x42, 0x45, 0x45, 0x53, 0x00},
-                 // "5048494C495050454C4F564542454553", PHILIPPELOVEBEES
-  DEFAULT_SF, WAKEUP_INTERVAL_PAYLOAD, INTERVAL_1SEC     // SF, Delai Payload, Refresh OLED
-};
-*/
-LoRa_Var Data_LoRa;
-
-
 
 // n'est ce pas en doublon avec Data_LoRa.HX711Weight[num]
 float Contrainte_List [4] = {
@@ -542,7 +518,17 @@ extern uint8_t AppKey_List [][17];
 
 // Variables config
 extern bool setupDone;
+// Structures de données des configurations
 extern ConfigGenerale_t config;
+//extern config.materiel_t config.materiel;
+//extern config.applicatif_t config.applicatif;
+extern HiveSensor_Data_t HiveSensor_Data;
+
+
+
+
+
+
 
 // Variables debug
 extern bool COM_DebugSerial;
@@ -557,10 +543,6 @@ extern int balance [][2];
 extern int Peson [][4];
 
 
-// Structures de données des configurations
-extern ConfigMateriel_t ConfigMateriel;
-extern ConfigApplicatif_t ConfigApplicatif;
-extern LoRa_Var Data_LoRa;
 extern float Contrainte_List [];
 
 // DHT22 => 3V3/DHT_SENSOR/GND

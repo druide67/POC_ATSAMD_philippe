@@ -355,36 +355,9 @@ typedef struct
 
 
 
-
-
-
-// ===== STRUCTURES DE CONFIGURATION =====
-typedef struct 
-{
-    uint16_t version;
-    uint8_t adresseRTC;
-    uint8_t adresseOLED;
-    uint8_t adresseEEPROM;
-    uint8_t reserve[5];
-} nonConfigMateriel_t;
-
-typedef struct 
-{
-    uint16_t redLedDuration;
-    uint16_t greenLedDuration;
-    uint16_t blueLedDuration;        
-    uint16_t builtinLedDuration;
-    uint16_t wakeupIntervalPayload;
-    uint16_t interval1Sec;
-    uint8_t reserve[8];
-} nonConfigApplicatif_t;
-
-
+// ===== STRUCTURES DE DONNEES =====
 typedef struct   
 {
-  uint8_t rucher_ID;  // 0:non affecté, 1: Fleurs, 2: Acacia, 3: Tilleul, 4: Chataignier
-                      // 5: Sapin 6: Jachère 7: Forêt  8: Phacélie 9: Pommes 
-  char    RucherName [20];      // Localisation Rucher (saisir direct ou liste
   float   DHT_Temp;         // Temp DHT en °C    xx,x  Float
   float   DHT_Hum;          // Hum DHT en %      xx,x  Float
   float   Brightness;       // %Lum en LUX      xxxxx  uint16_t
@@ -392,46 +365,12 @@ typedef struct
   float   Solar_Voltage;    // Tension BAT en V     xx,xx  Float (uint16_t)
   float   HX711Weight[4];    // masse 4 Ruche  en kg xxx,xx (précision affich. 10g)
   float   ProcessorTemp;    // temp µC, conservé en backup DHT22 
-} LoRa_Var;   // Data_LoRa. devient Payload
+} HiveSensor_Data_t;   // LoRa_Data devient HiveSensor_Data 
+// pour LoRaWAN (limite ~51 octets en SF12)
 
-// Config  Générale
-typedef struct     // regroupe tous les paramètres de EEPROM
-{
-  uint8_t Balance_ID;           // ID Rucher           xx  uint8_t
-  char    RucherName [20];      // Localisation Rucher (saisir direct ou liste + "autre")
-} ConfigBalanceSW;
 
-/*
-// Config Hardware
-typedef struct     // regroupe tous les paramètres de EEPROM
-{
-  uint8_t HX711Clk_0;           // HX711#0 parameters
-  uint8_t HX711Dta_0;
-  float   HX711ZeroValue_0;
-  float   HX711Scaling_0;
-  float   HX711Cor_Temp_0;
-  uint8_t HX711Clk_1;           // HX711#1 parameters
-  uint8_t HX711Dta_1;
-  float   HX711ZeroValue_1;
-  float   HX711Scaling_1;
-  float   HX711Cor_Temp_1;
-  uint8_t HX711Clk_2;           // HX711#2 parameters
-  uint8_t HX711Dta_2;
-  float   HX711ZeroValue_2;
-  float   HX711Scaling_2;
-  float   HX711Cor_Temp_2;
-  uint8_t HX711Clk_3;           // HX711#3 parameters
-  uint8_t HX711Dta_3;
-  float   HX711ZeroValue_3;
-  float   HX711Scaling_3;
-  float   HX711Cor_Temp_3;
-  float   LDRBrightnessScale;   // 
-  float   VSolScale;            //  
-  float   VBatScale;
-} ConfigBalanceHW;
-*/
-
-// Définition structure: ConfigMateriel_t
+// ===== STRUCTURES DE CONFIGURATION =====
+// Définition structure: config.materiel_t
 typedef struct 
 {
   uint16_t version;       // version matérielle : 3 = PCB2
@@ -487,7 +426,7 @@ typedef struct
 } ConfigMateriel_t;
 
 
-// Définition structure: ConfigApplicatif_t;
+// Définition structure: config.applicatif_t;
 typedef struct 
 {
     uint16_t version;  // version logicielle
@@ -508,15 +447,17 @@ typedef struct
   uint8_t OLEDRefreshPeriod;  // INTERVAL_1SEC 1000 
 } ConfigApplicatif_t;
 
+// Config Générale
 typedef struct 
 {
-    ConfigMateriel_t materiel;
-    ConfigApplicatif_t applicatif;
-    uint16_t checksum;
+  uint16_t magicNumber;         // Nombre magique pour validation
+  ConfigApplicatif_t applicatif;
+  ConfigMateriel_t materiel;
+  uint16_t checksum;
 } ConfigGenerale_t;
 
 
-
+/*
 // exemples struct et union
 // dans Mesures.cpp
 struct nombre
@@ -529,3 +470,4 @@ struct nombre
     double f;
   } u;
 };
+*/

@@ -127,46 +127,50 @@ getHWEUI(Module_ID_HWEUI);     // get the Hardware DevEUI ex: "0004A30B0020300A"
 sprintf(serialbuf,"Init_2483()/getHWEUI Module_ID_HWEUI: %s",Module_ID_HWEUI ); 
 debugSerial.println(serialbuf);
 */
+newgetHWEUI(&config.materiel.DevEUI[0]);     // get the Hardware DevEUI ex: "0004A30B0020300A"   uint8_t HWEUI [20];
 
-newgetHWEUI(&ConfigMateriel.DevEUI[0]);     // get the Hardware DevEUI ex: "0004A30B0020300A"   uint8_t HWEUI [20];
-
-debugSerial.print("Init_2483()/newgetHWEUI &ConfigMateriel.DevEUI[0]:"); 
-printByteArray(ConfigMateriel.DevEUI, 16);
+//debugSerial.print("Init_2483()/newgetHWEUI &config.materiel.DevEUI[0]:"); 
+//printByteArray(config.materiel.DevEUI, 16);
 
 //OLEDDebugDisplay(OLEDbuf);
 //debugSerial.println("------------------------------------------------------------------");
 
   char Module_ID[17];
-  convertToHexString(ConfigMateriel.DevEUI, Module_ID, 8);
-debugSerial.println(Module_ID);
+  convertToHexString(config.materiel.DevEUI, Module_ID, 8);
+
+//debugSerial.println(Module_ID);
  
-  for (ConfigMateriel.Num_Carte=0;ConfigMateriel.Num_Carte< MAX_HWEUI_List; ConfigMateriel.Num_Carte++)
+  for (config.materiel.Num_Carte=0;config.materiel.Num_Carte< MAX_HWEUI_List; config.materiel.Num_Carte++)
   { 
-    if (strncmp(HWEUI_List[ConfigMateriel.Num_Carte],Module_ID,16)==0)   // égalité des 2 
+    if (strncmp(HWEUI_List[config.materiel.Num_Carte],Module_ID,16)==0)   // égalité des 2 
     {
 // INITIALISER LES IDENTIFIANTS OTAA de LoRa + Contrôle
-  memcpy(ConfigMateriel.DevEUI, SN2483_List[ConfigMateriel.Num_Carte], sizeof(SN2483_List[ConfigMateriel.Num_Carte]));
+  memcpy(config.materiel.DevEUI, SN2483_List[config.materiel.Num_Carte], sizeof(SN2483_List[config.materiel.Num_Carte]));
 
 // Init AppEUI
-      memcpy(ConfigApplicatif.AppEUI, AppEUI_List[ConfigMateriel.Num_Carte],10);
+      memcpy(config.applicatif.AppEUI, AppEUI_List[config.materiel.Num_Carte],10);
 // Init AppKey
-      memcpy(ConfigApplicatif.AppKey, AppKey_List[ConfigMateriel.Num_Carte],18);
+      memcpy(config.applicatif.AppKey, AppKey_List[config.materiel.Num_Carte],18);
        break;  // sortie du for() quand trouvé egalité.... pas terrible!!!	
 	  }
  //debugSerial.println("HWEUI non trouvé");
   } 
 
-// ConfigMateriel.Noeud_LoRa = ConfigMateriel.Num_Carte;  // par défaut, fonction Module_ID
-  
-  return((ConfigMateriel.Num_Carte == MAX_HWEUI_List) ? 0 : ConfigMateriel.Num_Carte); 
+// config.materiel.Noeud_LoRa = config.materiel.Num_Carte;  // par défaut, fonction Module_ID
+
+      if (config.materiel.Num_Carte)
+      {
+        debugSerial.print(" execution Init_2483(), done with card : ");
+        debugSerial.println(config.materiel.Num_Carte);
+        OLEDDebugDisplay("2483A    Initialized");
+      }
+      else
+      {
+        debugSerial.println(" NO 2483 present.");
+        OLEDDebugDisplay("2483A   Failed");
+      }
+  return((config.materiel.Num_Carte == MAX_HWEUI_List) ? 0 : config.materiel.Num_Carte); 
 }
-
-
-
-
-
-
-
 
 
 
@@ -187,14 +191,6 @@ debugSerial.print(" car. lus: "); debugSerial.println(Module_ID);
 // testée OK le 12/02/2020
 
 
-
-
-
-
-
-
-
-
 // ---------------------------------------------------------------------------*
 // Gets and stores the LoRa module's HWEUI                              
 // ---------------------------------------------------------------------------*
@@ -208,8 +204,8 @@ void newgetHWEUI(uint8_t *AppEUI)
   len = loraSerial.readBytesUntil(0x20, localModule_ID, 16); 
 
 // envoi sur moniteur RS résultat getHWEUI()
-debugSerial.print("newgetHWEUI(): ");  debugSerial.print(len);
-debugSerial.print(" car. lus: "); debugSerial.print(localModule_ID);debugSerial.println(" dans localModule_ID  ");
+//debugSerial.print("newgetHWEUI(): ");  debugSerial.print(len);
+//debugSerial.print(" car. lus: "); debugSerial.print(localModule_ID);debugSerial.println(" dans localModule_ID  ");
 
  convertByteArray(localModule_ID, AppEUI, 16);
 }
@@ -226,40 +222,16 @@ bool setupLoRa()
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // ---------------------------------------------------------------------------*
 // connexion au reseau
 //  in : 
 //  out : 1 OK, 0 Echec                             
 // ---------------------------------------------------------------------------*
 bool setupLoRaOTAA()
-{ if (LoRaBee.initOTA(loraSerial, ConfigMateriel.DevEUI, ConfigApplicatif.AppEUI, ConfigApplicatif.AppKey, true))
+{ if (LoRaBee.initOTA(loraSerial, config.materiel.DevEUI, config.applicatif.AppEUI, config.applicatif.AppKey, true))
   {
     debugSerial.println("setupLoRaOTAA(), Network connection successfull");
-    LoRaBee.setSpreadingFactor(ConfigApplicatif.SpreadingFactor); // 7, 9 et 12 echec freudeneck
+    LoRaBee.setSpreadingFactor(config.applicatif.SpreadingFactor); // 7, 9 et 12 echec freudeneck
     return(1);
   }
   else  // ordre des lignes changé le 07/04/25, 
@@ -286,35 +258,35 @@ void buildLoraPayload(void)
 
 debugSerial.println("buildLoraPayload, datas:");
   
-  payload[indice++] = Data_LoRa.rucher_ID;
-//debugSerial.println(Data_LoRa.rucher_ID);
+  payload[indice++] = config.applicatif.RucherID;
+//debugSerial.println(config.applicatif.RucherID);
 
-  int temperature = (int)(Data_LoRa.DHT_Temp * 100); // We multiple the values below because we then divide them on AllThingsTalk and don't need to send floats which use more data
+  int temperature = (int)(HiveSensor_Data.DHT_Temp * 100); // We multiple the values below because we then divide them on AllThingsTalk and don't need to send floats which use more data
   payload[indice++] = ((uint8_t*)&temperature)[0];          // Temperature: Least significant byte first, little endian
   payload[indice++] = ((uint8_t*)&temperature)[1];
 //debugSerial.println(temperature);
   
-  int humidity = (int)Data_LoRa.DHT_Hum * 100;
+  int humidity = (int)HiveSensor_Data.DHT_Hum * 100;
   payload[indice++] = ((uint8_t*)&humidity)[0]; // Humidity
   payload[indice++] = ((uint8_t*)&humidity)[1];
 //debugSerial.println(humidity);
 
-  sprintf(serialbuf,"Rucher: %d  [RucherName: %s] temp: %d, Hum.: %d",Data_LoRa.rucher_ID, Data_LoRa.RucherName, temperature, humidity);
+  sprintf(serialbuf,"Rucher: %d  [RucherName: %s] temp: %d, Hum.: %d",config.applicatif.RucherID, config.applicatif.RucherName, temperature, humidity);
   debugSerial.println(serialbuf);
   
-  int Brightness = (int)Data_LoRa.Brightness;
+  int Brightness = (int)HiveSensor_Data.Brightness;
   payload[indice++] = ((uint8_t*)&Brightness)[0]; // Brightness
   payload[indice++] = ((uint8_t*)&Brightness)[1];
 //debugSerial.println(Brightness);
     
   // tension moyenne des 10 dernières lectures
-  int VBat = (int)(Data_LoRa.Bat_Voltage * 100); // We multiple the values below because we then divide them on AllThingsTalk and don't need to send floats which use more data
+  int VBat = (int)(HiveSensor_Data.Bat_Voltage * 100); // We multiple the values below because we then divide them on AllThingsTalk and don't need to send floats which use more data
   payload[indice++] = ((uint8_t*)&VBat)[0];  // Battery Voltage
   payload[indice++] = ((uint8_t*)&VBat)[1];
 //debugSerial.print(VBat);
   
   // tension moyenne des 10 dernières lectures
-  int VSol = (int)(Data_LoRa.Solar_Voltage * 100); // multiple then divide: don't need to send floats
+  int VSol = (int)(HiveSensor_Data.Solar_Voltage * 100); // multiple then divide: don't need to send floats
   payload[indice++] = ((uint8_t*)&VSol)[0];  // Solar Panel Voltage
   payload[indice++] = ((uint8_t*)&VSol)[1];
 //debugSerial.println(VSol);
@@ -326,7 +298,7 @@ debugSerial.println("buildLoraPayload, datas:");
   for (i = 0; i < 4; i++) 
   {
 //debugSerial.print(i);  debugSerial.print("/");debugSerial.println(indice);
-    int Masse = Data_LoRa.HX711Weight[i] *100; //(int)(Data_LoRa.HX711Weight[i]// 100); 
+    int Masse = HiveSensor_Data.HX711Weight[i] *100; //(int)(Data_LoRa.HX711Weight[i]// 100); 
     payload[indice++] = ((uint8_t*)&Masse)[0];	// Hive1 to 4 Weight
     payload[indice++] = ((uint8_t*)&Masse)[1];
 //debugSerial.println(Masse);
@@ -365,45 +337,47 @@ void sendLoRaPayload(uint8_t *Datas,uint8_t len)
 debugSerialPrintLoraPayload(Datas,len);
 debugSerial.println("appel LoRaBee.send");
 
+debugSerial.println(F("---------------------------------------- Sending Payload ------------------------"));
+
   switch (LoRaBee.send(1,Datas,len))
   {
     case NoError:
-      debugSerial.println("\nSuccessful transmission in Send_LoRa_Mess().");
+      debugSerial.println("Successful transmission in Send_LoRa_Mess().");
       break;
     case NoResponse:
-      debugSerial.println("\nThere was no response from the device in Send_LoRa_Mess().");
+      debugSerial.println("There was no response from the device in Send_LoRa_Mess().");
       break;
     case Timeout:
-      debugSerial.println("\nConnection timed-out in Send_LoRa_Mess(). Check your serial connection to the device! Sleeping for 20sec.");
+      debugSerial.println("Connection timed-out in Send_LoRa_Mess(). Check your serial connection to the device! Sleeping for 20sec.");
       delay(20000);
       break;
     case PayloadSizeError:
-      debugSerial.println("\nThe size of the payload is greater than allowed in Send_LoRa_Mess(). Transmission failed!");
+      debugSerial.println("The size of the payload is greater than allowed in Send_LoRa_Mess(). Transmission failed!");
     break;
     case InternalError:
-      debugSerial.print("\nOh No! This shouldn't happen in Send_LoRa_Mess(). Something is really wrong! The program will reset the RN module...");
+      debugSerial.print("Oh No! This shouldn't happen in Send_LoRa_Mess(). Something is really wrong! The program will reset the RN module...");
       setupLoRa();
       // renvoyer MESSAGE
    LoRaBee.send(1,Datas, len);
     break;
     case Busy:
-      debugSerial.println("\nThe device is busy in Send_LoRa_Mess(). Sleeping for 10 extra seconds.");
+      debugSerial.println("The device is busy in Send_LoRa_Mess(). Sleeping for 10 extra seconds.");
       delay(10000);
       break;
     case NetworkFatalError:
-      debugSerial.println("\nThere is a non-recoverable error with the network connection in Send_LoRa_Mess(). The program will reset the RN module...");
+      debugSerial.println("There is a non-recoverable error with the network connection in Send_LoRa_Mess(). The program will reset the RN module...");
       setupLoRa();
        // renvoyer MESSAGE
    LoRaBee.send(1,Datas, len);
        break;
     case NotConnected:
-      debugSerial.print("\nThe device is not connected to the network in Send_LoRa_Mess(). The program will reset the RN module...");
+      debugSerial.print("The device is not connected to the network in Send_LoRa_Mess(). The program will reset the RN module...");
       setupLoRa();
       // renvoyer MESSAGE
   LoRaBee.send(1,Datas, len);
       break;
     case NoAcknowledgment:
-      debugSerial.print("\nThere was no acknowledgment sent back! in Send_LoRa_Mess()");
+      debugSerial.print("There was no acknowledgment sent back! in Send_LoRa_Mess()");
       break;
     default:
       break;
@@ -411,7 +385,7 @@ debugSerial.println("appel LoRaBee.send");
 }
 
 
-
+/*
 // ---------------------------------------------------------------------------*
 // INITIALISE LA CHAINE TEXTE A ENVOYER                   
 // ---------------------------------------------------------------------------*
@@ -422,19 +396,19 @@ String Build_Lora_String(String dataGrafana)
     dataGrafana +=serialbuf; 
     
 // température DHT
-    sprintf(serialbuf, "%5.1f",Data_LoRa.DHT_Temp);
+    sprintf(serialbuf, "%5.1f",HiveSensor_Data.DHT_Temp);
     dataGrafana +=serialbuf;  
-/*
+
 // température Peson
-    sprintf(serialbuf,"%5.1f",Temp_Peson(2));        // DHT_Hum); sp
-    dataGrafana +=serialbuf; 
-*/
+//    sprintf(serialbuf,"%5.1f",Temp_Peson(2));        // DHT_Hum); sp
+//    dataGrafana +=serialbuf; 
+
 // Luminance LDR
-    sprintf(serialbuf, "%5.1f",Data_LoRa.Brightness);        // DHT_Hum);sp
-    dataGrafana +=serialbuf;//Data_LoRa.Brightness;  
+    sprintf(serialbuf, "%5.1f",HiveSensor_Data.Brightness);        // DHT_Hum);sp
+    dataGrafana +=serialbuf;//HiveSensor_Data.Brightness;  
  
 // Tension BAT
-   sprintf(serialbuf, "%5.2f",Data_LoRa.Bat_Voltage);  // 2 fois???
+   sprintf(serialbuf, "%5.2f",HiveSensor_Data.Bat_Voltage);  // 2 fois???
     dataGrafana +=serialbuf; 
 // MASSE A
    sprintf(serialbuf, "%5.2f",Poids_Peson(4));   // au lieu de 1
@@ -450,13 +424,13 @@ String Build_Lora_String(String dataGrafana)
    dataGrafana +=serialbuf; 
    
 // MASSE D   peson 2 brut
-   sprintf(serialbuf,"%5.2f",Contrainte_List [1]); //Data_LoRa.HX711Weight_4);   
+   sprintf(serialbuf,"%5.2f",Contrainte_List [1]); //HiveSensor_Data.HX711Weight_4);   
 
-   sprintf(serialbuf,"%5.2f",Data_LoRa.Bat_Voltage); // 2 fois???
+   sprintf(serialbuf,"%5.2f",HiveSensor_Data.Bat_Voltage); // 2 fois???
     dataGrafana +=serialbuf;  
 
 // tension panneau solaire
-   sprintf(serialbuf, "%5.2f",Data_LoRa.Solar_Voltage);
+   sprintf(serialbuf, "%5.2f",HiveSensor_Data.Solar_Voltage);
     dataGrafana +=serialbuf; 
 
 // remplace pour débug
@@ -467,7 +441,6 @@ String Build_Lora_String(String dataGrafana)
 return(dataGrafana);
 //return(" 3 17.0 99.0 72.7 4.0813.5453.24 8.02 4.08 3.30");  // 47 car
 }
-
 
 
 // ---------------------------------------------------------------------------*
@@ -485,20 +458,20 @@ String Build_CSV_String(String dataString)
     dataString +=serialbuf; 
     
 // température DHT
-    sprintf(serialbuf,"%5.2f;",Data_LoRa.DHT_Temp);
+    sprintf(serialbuf,"%5.2f;",HiveSensor_Data.DHT_Temp);
     dataString +=serialbuf; 
-/*    
+    
 // température Peson
-    sprintf(serialbuf,"%5.2f;",Temp_Peson(2));        // DHT_Hum); sp
-    dataString +=serialbuf;
-*/
+//    sprintf(serialbuf,"%5.2f;",Temp_Peson(2));        // DHT_Hum); sp
+//    dataString +=serialbuf;
+
     
 // Luminance LDR
-    sprintf(serialbuf, "%5.1f;",Data_LoRa.Brightness);        // DHT_Hum);sp
-    dataString +=serialbuf; //Data_LoRa.Brightness; 
+    sprintf(serialbuf, "%5.1f;",HiveSensor_Data.Brightness);        // DHT_Hum);sp
+    dataString +=serialbuf; //HiveSensor_Data.Brightness; 
  
 // Tension BAT
-   sprintf(serialbuf, "%5.2f;",Data_LoRa.Bat_Voltage);  // 2 fois???
+   sprintf(serialbuf, "%5.2f;",HiveSensor_Data.Bat_Voltage);  // 2 fois???
    dataString +=serialbuf;
 
 // MASSE A
@@ -518,7 +491,7 @@ String Build_CSV_String(String dataString)
    dataString +=serialbuf;
 
 // tension panneau solaire
-   sprintf(serialbuf,"%5.2f;",Data_LoRa.Solar_Voltage);
+   sprintf(serialbuf,"%5.2f;",HiveSensor_Data.Solar_Voltage);
    dataString +=serialbuf;
 
 // remplace pour débug
@@ -528,10 +501,11 @@ String Build_CSV_String(String dataString)
 return(dataString);
 }
 
+
 // ---------------------------------------------------------------------------*
 //                               
 // ---------------------------------------------------------------------------*
-void Send_DATA_LoRa()
+void no_Send_DATA_LoRa()
 {
   static char Num_Mess=0;
   uint8_t lum=0;
@@ -539,63 +513,6 @@ void Send_DATA_LoRa()
 //String Local_LoRa_Buffer="";
   String dataString = "";
   String dataGrafana = "";
-
-/*
-// pourquoi pas dans un struct.h (mis en commentaire!)?????
-typedef struct   // Mess2
-{
-  char rucher_ID[2];       // ID Rucher         xx  1
-  char readingDHT_T[5];    // Temp DHT en °C   xx,xx 2 
-  char readingDHT_H[5];    // Hum DHT en %      xx,x
-  char readingL[5];        // %Lum en LUX      xxxxx
-  char readingBat[5];      // Tension BAT en V     x,xxx
-  char reading_M1[5];      // masse Ruche 1 en kg xx,xx
-  char reading_M2[5];      // masse Ruche 2 en kg xx,xx
-  char reading_M3[5];      // masse Ruche 3 en kg xx,xx
-  char reading_M4[5];      // masse Ruche 4 en kg xx,xx
- // char readingT[5];        // temp µC, ne sera pas conservé xx.xx
-} LoRa_VarText; 
-
-LoRa_VarText LoRa_Dwata;
-*/
- 
-/*
-// INITIALISE LA STRUCTURE A ENVOYER
-Data_LoRa.rucher_ID = 67;   // compris entre 0 et 99
-Data_LoRa.DHT_Temp = 25;
-Data_LoRa.DHT_Hum = 04;
-Data_LoRa.Brightness = 91;
-Data_LoRa.Bat_Voltage = 3,69;
-Data_LoRa.Solar_Voltage = 4.69;
-Data_LoRa.temp_1=111;
-Data_LoRa.HX711Weight_1 = 12.34;
-Data_LoRa.temp_2=222;
-Data_LoRa.HX711Weight_2 = 23.45;
-Data_LoRa.temp_3=333;
-Data_LoRa.HX711Weight_3 = 34.56;
-Data_LoRa.temp_4=444;
-Data_LoRa.HX711Weight_4 = 45.67;
-
-Data_LoRa.ProcessorTemp=21,18;   // temp µC, ne sera pas conservé 
-
-
-  read_DHT(dht); // initialise : Data_LoRa.DHT_Temp et Data_LoRa.DHT_Hum
-  Data_LoRa.Brightness = getLuminance();
-//  Data_LoRa.Lux = ???();
-  Data_LoRa.ProcessorTemp = getTemperature(); // lecture Temp en String
-  Data_LoRa.Solar_Voltage=getVSolMoy();
-  Data_LoRa.Bat_Voltage=getVBatMoy();
-  Data_LoRa.temp_2 = get_DS();
-#ifdef WEIGHT_YES
-  Data_LoRa.HX711Weight_1 = GetPoids(1); // à ranger dans Structure
-  Data_LoRa.HX711Weight_2 = GetPoids(2); // à ranger dans Structure
-  Data_LoRa.HX711Weight_3 = GetPoids(3); // à ranger dans Structure
-  Data_LoRa.HX711Weight_4 = GetPoids(4); // à ranger dans Structure
-#endif // WEIGHT_YES
-*/
-
-// ENVOI LA STRUCTURE ou temporairement sa version lisible par l'humain...
-
 
 dataGrafana=Build_Lora_String(dataGrafana);
 dataString=Build_CSV_String(dataString);
@@ -612,7 +529,7 @@ char chardata[256]="";
   sendLoRaPayload((uint8_t *)chardata,47);
 }
 
-/*
+
 // ---------------------------------------------------------------------------*
 //                               
 // ---------------------------------------------------------------------------*

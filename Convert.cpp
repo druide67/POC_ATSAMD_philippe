@@ -507,10 +507,10 @@ void TestConvert(void)
   debugSerial.print("Chaine hexa source: ");
   debugSerial.println(hexString3);
   
-  if (hexStringToByteArray(hexString3, ConfigMateriel.DevEUI, 9))
+  if (hexStringToByteArray(hexString3, config.materiel.DevEUI, 9))
   {
     debugSerial.println("Resultat de la conversion:");
-    printByteArray(ConfigMateriel.DevEUI, 8);
+    printByteArray(config.materiel.DevEUI, 8);
   }
   
   // ===== TEST 4 : Adresse MAC (12 caractères hexa = 6 octets) =====
