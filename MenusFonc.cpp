@@ -77,10 +77,6 @@
 // ------------------------------- m0_Demarrage ------------------------------
 // ---------------------------------------------------------------------------*
 // "Page INFOS     (P)"
-
-//    █▀█ █▀█ █▀▀ █▀▀ ▀█▀ █▀█ █▀▀ █▀█ █▀▀ █▀▀ █ █ █▀▀ ▀█▀
-//    █▀▀ █▀█ █ █ █▀▀  █  █ █ █▀▀ █ █ ▀▀█ ▀▀█  █  ▀▀█  █
-//    ▀   ▀ ▀ ▀▀▀ ▀▀▀ ▀▀▀ ▀ ▀ ▀   ▀▀▀ ▀▀▀ ▀▀▀  ▀  ▀▀▀  ▀
 void m0_0E_PageInfosSyst()
 {
   debugSerial.println("CONFIG. SYSTEME - Ecran INFOS demandé");
@@ -185,14 +181,11 @@ void m01_0F_GetDateDone()   // appel dans Handle.cpp en fonction de saisieActive
 
   sprintf(serialbuf, "mise à la date DS3231 %d/%d/%d", annee, mois, jour);
   debugSerial.println(serialbuf);
-  copyDS3231TimeToMicro(1);
-  synchronizeDS3231TimeToMicro();
+  DS3231copyTimeToMicro(1);
+  DS3231synchronizeTimeToMicro();
 
-  // utile ?????????????
-  debugSerial.println("Reprogramme IRQ2");
-  DS3231setRTCAlarm2(); // Reprogrammer prochaine alarme dans n min
-
-
+//  debugSerial.println("Reprogramme IRQ2");
+//  DS3231setRTCAlarm2(); // Reprogrammer prochaine alarme dans n min
   // Activer la liste de démarrage quand fin saisie Date : void finalizeDateInput(char* outputDate)
 
   backMenu();
@@ -236,13 +229,9 @@ void m01_1F_GetTimeDone()   // appel dans Handle.cpp en fonction de saisieActive
   // mise à date modifiée du µc
   systemTime = rtc.now();
 
-  //   rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
-
-  //  systemTime = rtc.now();
-  //  rtc.adjust(DateTime(systemTime.year()-2000, systemTime.month(), systemTime.day(), hour, minute, second));
   debugSerial.println("mise à l'heure DS3231");
-  copyDS3231TimeToMicro(1);
-  synchronizeDS3231TimeToMicro();
+  DS3231copyTimeToMicro(1);
+  DS3231synchronizeTimeToMicro();
 
 
 //debugSerial.println("Reprogramme IRQ2");
@@ -310,13 +299,9 @@ void m01_4F_readConfig()
   debugSerial.println("m01_5F_readConfig()");
 
   //
-
-
-readConfigFromEEPROM();
-
-dumpConfigToJSON();
-  
-
+EPR_24C32readConfig();
+EPR_24C32DumpConfigToJSON();
+ 
   // Si pas fonction_Done();
   // Activer la liste de démarrage quand fin saisie
   backMenu();
@@ -332,8 +317,8 @@ void m01_5F_writeConfig()
 {
   debugSerial.println("Appel d'une Fonction: m01_5F_writeConfig()");
 
-saveConfigToEEPROM();
-dumpConfigToJSON();
+EPR_24C32saveConfig();
+EPR_24C32DumpConfigToJSON();
 
   // Si pas fonction_Done();
   // Activer la liste de démarrage quand fin saisie
@@ -343,7 +328,6 @@ dumpConfigToJSON();
 void non_m01_5F_writeConfigDone()   // appel dans Handle.cpp en fonction de saisieActive
 {
   debugSerial.println("Appel d'une Fonction: m01_5F_writeConfigDone()");
-
   backMenu(); // supprimer dans pas Done
 }
 
@@ -368,18 +352,17 @@ void non_m01_5F_writeConfigDone()   // appel dans Handle.cpp en fonction de sais
 // "Page INFOS     (P)"
 void m02_0E_PageInfosLoRa()
 {
+ saisieActive = 20; // pour désactivation Refresh en sortie
+  
   debugSerial.println("CONFIG. LoRa - Ecran INFOS demandé");
-  //PageInfosLoRaRefresh = true;
-  LoRaScreenRefreshTime = true;
-  LoraScreenRefreshNextPayload = true;
-
   OLEDdisplayInfoScreenLoRa();
+  LoRaScreenRefreshTime = true;   // active rafraichissement date/heure
+  LoraScreenRefreshNextPayload = true;  // active rafraichissement heure payload
 }
 
 
 void m02_0E_PageInfosLoRaDone()    // appel dans Handle.cpp en fonction de saisieActive
 {
-  //  PageInfosLoRaRefresh = false;
   LoRaScreenRefreshTime = false;
   LoraScreenRefreshNextPayload = false;
 }
@@ -599,7 +582,6 @@ void m03_0F_CalibVBat() //
 { static char number[9];
 
   saisieActive = 30; // pour identifier variable saisie lors de l'affectation
-
   debugSerial.print("Appel d'une Fonction: m03_0F_CalibVBat()");
   sprintf(number, "%f", config.materiel.VBatScale);
 
@@ -618,6 +600,7 @@ void m03_0F_CalibVBat() //
   // ligne 6:
   // ligne 7: OLEDDrawText(1, 7, 0, "+/- Char VALIDE: OK"); ou timeout // Instructions fixes
   InfoVBatScreenRefresh = true;             // active rafraichissement des mesures de Vlum
+  InfoVBatScreenRefreshTime = true;
 }
 
 
@@ -625,7 +608,8 @@ void m03_0F_CalibVBat() //
 void m03_0F_CalibVBatDone()                        // appel de Handle.cpp
 { static char number[9] = ""; // Buffer pour le numérique
 
-  InfoVSolScreenRefresh = false;           // desactive rafraichissement de Vlum
+  InfoVBatScreenRefresh = false;           // desactive rafraichissement de Vlum
+  InfoVBatScreenRefreshTime = false;
   debugSerial.print("Appel d'une Fonction: ");
   debugSerial.println("m03_0F_CalibVBatDone()");
   finalizeNumInput(number); // Récupérer saisie finale
@@ -664,6 +648,7 @@ void m03_1F_CalibVSol()  //
   // ligne 6:
   // ligne 7: OLEDDrawText(1, 7, 0, "+/- Char VALIDE: OK"); ou timeout // Instructions fixes
   InfoVSolScreenRefresh = true;             // active rafraichissement des mesures de Vlum
+  InfoVSolScreenRefreshTime = true;
 }
 
 
@@ -672,6 +657,7 @@ void m03_1F_CalibVSolDone()                        // appel de Handle.cpp
 { static char number[9] = ""; // Buffer pour le numérique
 
   InfoVSolScreenRefresh = false;           // desactive rafraichissement de Vlum
+  InfoVSolScreenRefreshTime = false;
   debugSerial.print("Appel d'une Fonction: ");
   debugSerial.println("m03_1F_CalibVSolDone()");
   finalizeNumInput(number); // Récupérer saisie finale
@@ -708,6 +694,7 @@ void m03_2F_CalibVLum()   //
   // ligne 6:
   // ligne 7: OLEDDrawText(1, 7, 0, "+/- Char VALIDE: OK"); ou timeout // Instructions fixes
   InfoVLumScreenRefresh = true;             // active rafraichissement des mesures de Vlum
+InfoVLumScreenRefreshTime = true; 
 }
 
 // Sauvegarde de config.materiel.Noeud_LoRa
@@ -715,6 +702,7 @@ void m03_2F_CalibVLumDone()                        // appel de Handle.cpp
 { static char number[9] = ""; // Buffer pour le numérique
 
   InfoVLumScreenRefresh = false;           // desactive rafraichissement de Vlum
+  InfoVLumScreenRefreshTime = false; 
   debugSerial.print("Appel d'une Fonction: ");
   debugSerial.println("m03_2F_CalibVLumDone()");
   finalizeNumInput(number); // Récupérer saisie finale
@@ -751,49 +739,65 @@ void m03_4M_PopMenu()  // retour menu000Demarrage
 // ----------------------------- menu04_CalibBalances --------------------
 // ---------------------------------------------------------------------------*
 
-
+// Affichage rafraichi du poids des balances
 //  "info.  Balances(F)",      //   Page info Balances
 void m04_0F_InfoBal(void)    //
 {
-  //  saisieActive=40;  // pas de saisie de variable à affecter, sans objet
-
-  // attention activer ScreenRefreshed
-  // ne donne pas ce que j'attends... analyse:
-  // passe à false tous les bool de refresh
-  //ScreenRefreshed = true;          // active rafraichissement en général
+  saisieActive=40;                 // appel desactivation screenRefresh
   InfoBalScreenRefreshTime = true; // active rafraichissement time/date
+  if (Peson[config.materiel.Num_Carte][0]) 
+    InfoBalScreenRefreshBal_1 = true; // Active rafraichissement Balance 1 
+  if (Peson[config.materiel.Num_Carte][1]) 
+    InfoBalScreenRefreshBal_2 = true; // Active rafraichissement Balance 2
+  if (Peson[config.materiel.Num_Carte][2]) 
+    InfoBalScreenRefreshBal_3 = true; // Active rafraichissement Balance 3
+  if (Peson[config.materiel.Num_Carte][3]) 
+    InfoBalScreenRefreshBal_4 = true; // Active rafraichissement Balance 4
+
   OLEDdisplayInfoBal();
   OLEDDrawText(1, 7, 0, "VALIDE pour retour");
   //  backMenu(); // Relance la navigation menu après saisie  ou timeout
 }
 
 
-// trouver ou appeler
-void m04_0F_InfoBalDone()     // appel dans Handle.cpp en fonction de saisieActive
+// Appelé dans Handle.cpp en fonction de saisieActive
+// Désactive rafraichissement dynamique des poids
+void m04_0F_InfoBalDone()     // 
 {
   InfoBalScreenRefreshTime = false; // desactive rafraichissement time/date
+  InfoBalScreenRefreshBal_1 = false; // desactive rafraichissement Balance 1
+  InfoBalScreenRefreshBal_2 = false; // desactive rafraichissement Balance 2
+  InfoBalScreenRefreshBal_3 = false; // desactive rafraichissement Balance 3
+  InfoBalScreenRefreshBal_4 = false; // desactive rafraichissement Balance 4
   backMenu(); // Relance la navigation menu après saisie  ou timeout
 }
 
+void m04_1F_PoidsTare()
+{ static char number[6]; // 0..99999
 
-// "Poids  Balances(F)"   // Affichage rafraichi du poids des balances
-void m04_1F_PoidsBal(void)   //
-{
-  //  saisieActive=41;  // pas de saisie de variable à affecter, sans objet
-  ScreenRefreshed = true;         // active rafraichissement en général
-  WeightScreenRefreshTime = true;   // active rafraichissement date/heure
-  WeightScreenRefreshWeights = true;  // active rafraichissement poids
-  OLEDdisplayWeightBal();
-  // backMenu(); // Relance la navigation menu après saisie  ou timeout
+  saisieActive = 41; // pour identifier variable saisie lors de l'affectation
+
+  debugSerial.print("Appel d'une Fonction: m04_1F_PoidsTare()");
+  sprintf(number, "%d", config.materiel.poidsTare);
+  debugSerial.println(config.materiel.poidsTare);
+  debugSerial.println(number);
+  startNumInput("- MASSE DE LA TARE -", number, 6, false, false, 0, 99000);
 }
 
-void m04_1F_PoidsBalDone()   // appel dans Handle.cpp en fonction de saisieActive
-{
-  ScreenRefreshed = false;         // désactive rafraichissement en général
-  WeightScreenRefreshTime = false;   // désactive rafraichissement date/heure
-  WeightScreenRefreshWeights = false;  // désactive rafraichissement poids
-  backMenu(); // Relance la navigation menu après saisie  ou timeout
+void m04_1F_PoidsTareDone()
+{ static char number[9] = ""; // Buffer pour le numérique
+
+  debugSerial.print("Appel d'une Fonction: ");
+  debugSerial.println("m04_1F_PoidsTareDone()");
+  finalizeNumInput(number); // Récupérer saisie finale
+  debugSerial.print("Nouveau nombre: ");
+  debugSerial.println(number);
+  config.materiel.poidsTare = atoi(number);
+  debugSerial.print("Nombre memorisé: ");
+  debugSerial.println(config.materiel.poidsTare);
+  backMenu();  
 }
+
 
 void m04_nM_CalibBal_bal()    // utiliser la var gloale bal
 {

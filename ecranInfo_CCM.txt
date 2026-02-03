@@ -1,0 +1,69 @@
+ Poids_Peson(0) = GetPoids(1,1);  // valeur brute
+
+à mettre dans wakeuppayload
+
+
+void debugSerialDisplayScaledSensorState(int num)
+
+float pesonTare  = Jauge[Peson[config.materiel.Num_Carte][num]][0];  // correction pour avoir valeur balance sans charge.
+float pesonScale = Jauge[Peson[config.materiel.Num_Carte][num]][1];  // Mise à l'Echelle de pesonValue vers peson Poids
+float pesonValue = Poids_Peson(num) - pesonTare;           // valeur à convertir
+float pesonPoids = pesonValue / pesonScale;                // poids correspondant
+float pesee;                                               // 
+  //  Poids_List [num] = pesee*(1-Jauge[Peson[carte][num]][3]*(Jauge[Peson[carte][num]][2]/temp));
+  Contrainte_List [num] = pesee; // *(1-Jauge[Peson[carte][num]][3]*(Jauge[Peson[carte][num]][2]/temp));
+  // (peson-tare)/echelle
+  pesee = BalPoids(num);   // ( pesee - Jauge[Peson[config.materiel.Num_Carte][num]][0] ) / Jauge[Peson[Ruche.Num_Carte][num]][1] / 1000; 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+affichage ecran (exemple  info Lora)
+
+lancé par demande du menu dans processMenuSelection() 
+  avec position (currentMenu->menuList == m02_ConfigLoRa) vrai et selectedIndex == 0 sois selection de "INFOS LoRa     (P)"
+
+ appel de m02_0E_PageInfosLoRa();   // APPEL D'UN AFFICHAGE D'ECRAN 
+ 
+ 
+	 
+Appeler l'écran : 
+	OLEDdisplayInfoScreenxxx() qui :
+		active infoScreenState = INFO_SCREEN_ACTIVE
+		placer le fond													
+Si dynamique, Active les flags de rafraichissement: dans void OLEDRefreshDisplay(void)
+		LoRaScreenRefreshTime = true;
+		LoraScreenRefreshNextPayload = true;						
+												
+													
+A chaque seconde les données dynamiques sont rafraichies.
+=> La machine à états du clavier reste en scrutation :  sortie par _VALIDE ou _CANCELED
+  
+  
+   
+ 
+Pour les saisie de variables et/ou ecrans dynamiques (screenRefresh):   initialiser   saisieActive = xx;
+
+
+si sortie par _VALIDE
+Dans xxxxDone 
+		appeler finalizeXXXInput pour que: résultat de la saisie => varible destination (recalcul Checksum!)
+		desactiver le screenRefresh
+		backMenu();		
+		
+sortie par _CANCELED
+Arreter les affichages si   => implique peut être de séparer :
+		desactiver le screenRefresh
+		backMenu();		

@@ -13,6 +13,53 @@
 //                              |___/        
 // ---------------------------------------------------------------------------*
 
+Divers:
+Set_Scale_Bal() dans mesure.cpp non appelé
+
+GrammesPesée = calcul poids en grammes depuis #defines
+
+
+poidsBal_g(0..3)
+
+Activer les refrech dans les ecrans concernés
+
+Le rafraichissement des pages d'info est traité dans: OLEDRefreshDisplay(void)
+appelé dans main() apres traitements seconde
+pour : 
+
+// écran InfoSysteme
+          InfoScreenRefreshTime = false; 
+
+          
+  InfoBalScreenRefreshTime = false; // desactive rafraichissement time/date  
+  InfoBalScreenRefreshBal_1 = false; // desactive rafraichissement Balance 1
+  InfoBalScreenRefreshBal_2 = false; // desactive rafraichissement Balance 2
+  InfoBalScreenRefreshBal_3 = false; // desactive rafraichissement Balance 3
+  InfoBalScreenRefreshBal_4 = false; // desactive rafraichissement Balance 4
+
+
+m02_0E_PageInfosLoRa()
+  LoRaScreenRefreshTime 
+  LoraScreenRefreshNextPayload  
+
+m03_0F_CalibVBat() 
+ InfoVBatScreenRefresh             // active rafraichissement des mesures ana
+ InfoVBatScreenRefreshTime
+
+m03_1F_CalibVSol()  //
+  InfoVSolScreenRefresh 
+  InfoVSolScreenRefreshTime
+
+m03_2F_CalibVLum()   //
+  InfoVLumScreenRefresh 
+  InfoVLumScreenRefreshTime
+
+
+
+
+
+
+
 
 // ---------------------------------------------------------------------------*
 

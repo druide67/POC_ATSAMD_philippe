@@ -391,9 +391,11 @@ m04_0F_InfoBal();
       case 1: 
       {
 bal = 4;    
-sprintf(serialbuf,"m04_1F_PoidsBal() demandé"); 
+sprintf(serialbuf,"m04_1F_PoidsTare() demandé a developper"); 
 debugSerial.println(serialbuf); 
-m04_1F_PoidsBal();
+//m04_1F_poidsBal_kg();
+//  remplacé par   "Poids  Tare    (F)",  // m04_1F_PoidsTare()  (chiffre entre 0 et 100000)
+        
         break;
       }
       case 2:  

@@ -18,7 +18,7 @@
 // Port Série Debug ----- initialisation ----- infos projet -----
 // ---------------------------------------------------------------------------*
 // ---------------------------------------------------------------------------*
-void initDebugSerial(void)
+void SETUPinitDebugSerial(void)
 {
     debugSerial.begin(DEBUG_BAUD);
     while ((!debugSerial) && (millis() < SERIAL_TIMEOUT)) {}
@@ -31,7 +31,7 @@ void initDebugSerial(void)
 // Port Série LoRa ------------ initialisation -------------------------------*
 // ---------------------------------------------------------------------------*
 // ---------------------------------------------------------------------------*
-void initLoRaSerial(void)
+void SETUPinitLoRaSerial(void)
 {
   loraSerial.begin(LoRaBee.getDefaultBaudRate());
   LoRaBee.setDiag(debugSerial); // to use debug remove //DEBUG inside library
@@ -47,7 +47,7 @@ void initLoRaSerial(void)
 // @param void
 // @return void
 // ---------------------------------------------------------------------------*
-void softReset() 
+void SETUPsoftReset() 
 {
   NVIC_SystemReset();
 // Le code ne continue jamais après cette ligne
@@ -190,7 +190,7 @@ debugSerial.println("Test sending LoRa testPayload (7) (Restart)...");
 // INIT DHT22 ---- INIT DHT22 ---- INIT DHT22 ---- INIT DHT22 ---- 
 // ---------------------------------------------------------------------------*
 // ---------------------------------------------------------------------------*
-void DHTInit(void)
+void SETUPDHTInit(void)
 {
 debugSerial.println("--------------------------------- SETUP - INIT DHT22 ---------------------------------");
   dht.begin(); // temperature
@@ -204,10 +204,10 @@ OLEDDebugDisplay("DHT22   Initialized");
 // @param void
 // @return void
 // ---------------------------------------------------------------------------
-// exemple appel: setStructDefaultValues();
-void setStructDefaultValues()
+// exemple appel: SETUPSetStructDefaultValues();
+void SETUPSetStructDefaultValues()
 {
-  debugSerial.println("////////////////////////////// setStructDefaultValues() ////////////////////////////////////");  
+  debugSerial.println("////////////////////////////// SETUPSetStructDefaultValues() ////////////////////////////////////");  
 
 // ---------------------------------------------------------------------------
 // ========================= Configuration Applicatif ========================
@@ -221,7 +221,7 @@ void setStructDefaultValues()
   config.applicatif.builtinLedDuration = BUILTIN_LED_DURATION;;
   
 // Paramètres Rucher
-  config.applicatif.RucherID = 11;
+  config.applicatif.RucherID = 0; 
   strcpy(config.applicatif.RucherName, "Rucher Test       *"); // 19 car max
 
 //debugSerial.println("init2483A()"); 
@@ -242,6 +242,8 @@ void setStructDefaultValues()
   config.materiel.adresseRTC = DS3231_ADDRESS;
   config.materiel.adresseOLED = OLED_ADDRESS;
   config.materiel.adresseEEPROM = EEPROM_ADDRESS;
+  config.materiel.poidsTare = TARE;              // valeur de la tare en grammes
+
 
 //Conditionner que pas déjà lu  
   
@@ -310,10 +312,10 @@ void setStructDefaultValues()
 // Initialisation magicNumber
   config.magicNumber = CONFIG_MAGIC_NUMBER;  
 // Calcul et stockage du checksum
-  config.checksum = calculateChecksum(&config);
+  config.checksum = EPR_24C32calcChecksum(&config);
 
 debugSerial.println(F("Config par defaut initialisee"));
-// dumpConfigToJSON();
-debugSerial.println("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ setStructDefaultValues() \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");  
+// EPR_24C32DumpConfigToJSON();
+debugSerial.println("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ SETUPSetStructDefaultValues() \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");  
 debugSerial.print("config.materiel.Num_Carte <= "); debugSerial.println(config.materiel.Num_Carte);  // OK
 }

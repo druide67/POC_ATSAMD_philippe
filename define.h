@@ -32,11 +32,11 @@
 #define GREEN_LED_DURATION      100   // Durée d'allumage LED verte 300 ms
 #define BLUE_LED_DURATION       100   // Durée d'allumage LED bleue 300 ms
 #define BUILTIN_LED_DURATION    100   // Durée d'allumage LED builtin 100 ms
-#define WAKEUP_INTERVAL_PAYLOAD 5     // Intervalle de réveil en minutes 
+#define WAKEUP_INTERVAL_PAYLOAD 2     // Intervalle de réveil en minutes 
 #define INTERVAL_1SEC           1000  // Intervalle 1 seconde en ms
 #define DEFAULT_SF              12    // Spread Factor par defaut
 #define TIMEOUT_SAISIE          20000    // Timeout saisies écrans (ms)
-
+//#define REFRESHSCREEN           1000
 
 // I2C Addresses
 #define DS3231_ADDRESS 0x68   // Adresse RTC Module DS3231
@@ -67,18 +67,13 @@
 // defines pour raccourcir et clarifier les instructions
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // noms courts et explicites, parametrer (num: 0..3) par Macro
-#define Poids_Peson(num)      HiveSensor_Data.HX711Weight[num]   //  Data_LoRa de type LoRa_Var (ligne 38)
-//#define Temp_Peson(num)       HiveSensor_Data.Temp_Peson[num]
-#define Tare_Peson(num)       Jauge[Peson[config.materiel.Num_Carte][num]][0]
-#define Echelle_Peson(num)    Jauge[Peson[config.materiel.Num_Carte][num]][1]
-//#define BalPoids(num)  (Contrainte_List[num]-Jauge[Peson[config.materiel.Num_Carte][num]][0])/Jauge[Peson[config.materiel.Num_Carte][num]][1]/1000) //retourne float
-#define BalPoids(num) (Contrainte_List[num]-Tare_Peson(num))/Echelle_Peson(num)/1000 //retourne float
+#define poidsBal_g(num)   HiveSensor_Data.HX711Weight[num]         // g 
+#define poidsBal_kg(num)  (Contrainte_List[num]-pesonTare(num))/pesonScale(num)/1000 // kg
 
-// ?? attention step(num) entre TareTemp et la correespondance
-//         1..4                    0..3
-#define TareTemp(num)   Jauge[Peson[config.materiel.Num_Carte][num]][2]  // Ruche de type HW_equipement (ligne 21)
-#define CompTemp(num)   Jauge[Peson[config.materiel.Num_Carte][num]][3]
-// passer de 0..3 dans l'appelant: fait
+#define pesonTare(num)    Jauge[Peson[config.materiel.Num_Carte][num]][0]
+#define pesonScale(num)   Jauge[Peson[config.materiel.Num_Carte][num]][1]
+#define TareTemp(num)     Jauge[Peson[config.materiel.Num_Carte][num]][2]  
+#define CompTemp(num)     Jauge[Peson[config.materiel.Num_Carte][num]][3]
 
 
 #define EXPLORER
@@ -156,8 +151,6 @@
 
 
 // ===== OLED CONFIGURATION =====
-
-
 //#define OLED096  // Sélection du type d'écran
 #define OLED130  // Sélection du type d'écran
 //#define OLED154  // Sélection du type d'écran
@@ -224,6 +217,8 @@
 #define HX711_BSENSOR_DOUT  6
 #define HX711_CSENSOR_DOUT  8
 #define HX711_DSENSOR_DOUT  10
+#define debugSerialGetPoids  // decommenter pour les messages debugSerial
+#define TARE  1071         //  56200 // Bloc de 56.2 kg
 
 // ---------------------------------------------------------------------------*
 // DHTxx Temperature and Humidity sensors            DTHT22 CONFIGURATION ====*

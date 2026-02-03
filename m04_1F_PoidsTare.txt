@@ -1,0 +1,16 @@
+.Touche pressée: KEY_5
+15:35:26.329 -> Selection validee: 1 - Poids  Tare    (F)
+15:35:26.329 -> OLEDDisplayMessageL8() => Selection validee
+15:35:26.842 -> default dans isListInputActive()/saisieActive/default, pourquoi ???????????????????
+15:35:26.842 -> Item final selectionne [1]: Poids  Tare    (F)
+15:35:26.842 ->  Mode selectionne: 1 - Depth: 2 - Val: - CALIB. BALANCE # -
+15:35:26.842 -> azerty: Poids  Tare    (F)
+15:35:26.842 -> Mode selectionne: 1 - Depth: 2 - Val: - CALIB. BALANCE # -
+15:35:26.842 -> Poids  Tare    (F)
+15:35:26.842 -> Chaine validée : - CALIB. BALANCE # -
+15:35:26.888 -> 
+15:35:26.888 -> debugSerialPrintMenuStruct(): currentMenuDepth 2 / title  - CALIB. BALANCE # - / menuSize 7 /selectedIndex 0
+15:35:26.888 -> processMenuSelection 1
+15:35:26.888 -> m04_1F_PoidsTare() demandé a developper
+15:35:26.888 -> !!!else!!! : 146950 GestionEnCours from handleProgrammingModea: 0
+15:35:26.888 -> KKKKKKKKK

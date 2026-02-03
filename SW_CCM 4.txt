@@ -1,0 +1,29 @@
+Fonctionnement de handleProgrammingMode(void) appelé dans loop()
+
+traite differentes actions :
+ 
+switchToProgrammingMode : passage Exploitation vers Programmation
+wakeupPayload : Envoi LoRa si défini (en cours de tests, silencieux sinon, risque fort de blocage des machines à état)
+isListInputActive : 
+
+isInfoScreenActive : 
+	infoScreenState_t state = processInfoScreen(); // processInfoScreen() appellée dans loop, traite les actions clavier
+				Valid, flag INFO_SCREEN_CLOSED et repositionnement dans les menus pour sortie "ecran info"
+	teste state : sortie?			
+														
+
+sisaisie   _COMPLETED: execute  HandleSaisieActive();  // pas infoscreen
+
+
+
+isNumInputActive
+isStringInputActive
+isHexInputActive
+isTimeInputActive
+isDateInputActive
+isEmailInputActive
+isIPInputActive
+autre :  ne devrait pas arriver : Affiche KKKKKKK dans terminal Série
+
+Les differentes valeurs de  state:
+ xx_IDLE inactif; xx_ACTIVE en cours ; xx_Completed ; xx_CANCELED abandonné TMT ;xx_CLOSED fermé

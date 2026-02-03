@@ -295,20 +295,14 @@ void debugSerialPrint2digits(int number)
 // ---------------------------------------------------------------------------*
 void debugSerialPrintLoraPayload(uint8_t *payload, uint8_t len)
 { int i;
-/*
-13:58:16.925 -> hexPayload: 00AC266300000000000000000000000000000
-13:58:16.925 -> hexPayload: 3030333033333330333333333333333033333 len : 19
-*/
-    for (i = 0; i < len; i++) 
-    {
-        sprintf(&hexPayload[i * 2], "%02X", payload[i]);  
-    }
-    hexPayload[hexPayloadSize - 1] = '\0';
-    
-    debugSerial.print("hexPayload: "); 
-    debugSerial.print(hexPayload);
-    debugSerial.print(" len : "); 
-    debugSerial.println(len);
+ char localSerialbuf[40];
+
+return;
+ 
+  for (i = 0; i < len; i++)
+    sprintf(&hexPayload[i * 2], "%02X", payload[i]);  
+sprintf(localSerialbuf, "hexPayload: %38s len : %d", hexPayload, len);  
+debugSerial.println(localSerialbuf);
 }
 
 // ---------------------------------------------------------------------------*
@@ -317,7 +311,7 @@ void debugSerialPrintLoraPayload(uint8_t *payload, uint8_t len)
 // @param len Longueur des données
 // @return void
 // ---------------------------------------------------------------------------*
-void debugSerialPrintHEXA(char *txt, char len)
+void non_appele_debugSerialPrintHEXA(char *txt, char len)
 { int i;
   char buf[256];
     
@@ -337,6 +331,10 @@ void debugSerialPrintHEXA(char *txt, char len)
 
 
 // ---------------------------------------------------------------------------*
+// @brief Affiche l'heure de la prochaine IRQ sur le port série
+// @param nextPayload Horodatage programmé de l'IRQ
+// @param IRQ Num de l'IRQ
+// @return void
 // ---------------------------------------------------------------------------*
 void debugSerialPrintNextAlarm(DateTime nextPayload, int IRQ)  
 {   
@@ -453,33 +451,26 @@ void debugSerialPrintSystemInfo(void)
 }
 
 
+
+
+// debugSerial.println("xxx()\debugSerialDisplayScaledSensorState():");  // tracage d'appel
 void debugSerialDisplayScaledSensorState(int num)     // num 0 .. 3
 { 
-  float temp = ((analogRead(TEMP_SENSOR) * 3300.0 / 1023.0) - 500.0) / 10.0; // Lecture temp µC  
+  return;
+
+  float temp = HiveSensor_Data.DHT_Temp;((analogRead(TEMP_SENSOR) * 3300.0 / 1023.0) - 500.0) / 10.0; // Lecture temp µC  
             // put the ADC in sleep mode
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // temp : utiliser DHT22 si existe sinon temperature interne µC
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// Rappel:
-// #define Poids_Peson(num)      Data_LoRa.HX711Weight[num]   //  Data_LoRa de type LoRa_Var (ligne 38)
-// #define Tare_Peson(num)       Jauge[Peson[config.materiel.Num_Carte][num]][0]
-// #define Echelle_Peson(num)    Jauge[Peson[config.materiel.Num_Carte][num]][1]
-// #define BalPoids(num) (Contrainte_List[num]-Tare_Peson(num))/Echelle_Peson(num)/1000 //retourne float
-// float GetPoids(int num)  // ?????   
-// lecture brute => poids en gr
-float pesonTare  = Jauge[Peson[config.materiel.Num_Carte][num]][0];  // correction pour avoir valeur balance sans charge.
-float pesonScale = Jauge[Peson[config.materiel.Num_Carte][num]][1];  // Mise à l'Echelle de pesonValue vers peson Poids
-float pesonValue = Poids_Peson(num) - pesonTare;           // valeur à convertir
-float pesonPoids = pesonValue / pesonScale;                // poids correspondant
-float pesee;                                               // 
-  //  Poids_List [num] = pesee*(1-Jauge[Peson[carte][num]][3]*(Jauge[Peson[carte][num]][2]/temp));
-  Contrainte_List [num] = pesee; // *(1-Jauge[Peson[carte][num]][3]*(Jauge[Peson[carte][num]][2]/temp));
-  // (peson-tare)/echelle
-  pesee = BalPoids(num);   // ( pesee - Jauge[Peson[config.materiel.Num_Carte][num]][0] ) / Jauge[Peson[Ruche.Num_Carte][num]][1] / 1000; 
- 
+
+float toto = /*Contrainte_List [num] =*/ (abs(scale.read_average(20)));
+float pesonValue = toto - pesonTare(num) ;           // valeur à convertir
+float pesonPoids = pesonValue /  pesonScale(num);              // poids correspondant
 // /* 
-  sprintf(serialbuf,"temp %5.2f, lu %5.2f, tare %5.2f, echelle %5.2f,  tare en moins %5.2f, poids %5.2f ",
-          temp,Poids_Peson(num) , pesonTare, pesonScale,  pesonValue, pesonPoids  );
+//TATA temp 16.90, poids calculé 2452.81, tare 191016.00, echelle 114.96,  tare en moins -188563.19, poids -1640.25 
+  sprintf(serialbuf,"TATA  Poids structure %5.2f, jauge %.0f, tare %.0f, echelle %5.2f,  tare en moins %.0f, poids %5.2f ",
+          poidsBal_g(num) , toto, pesonTare(num), pesonScale(num),  pesonValue, pesonPoids);
   debugSerial.println(serialbuf);
 // */
 debugSerial.print(F("--------------------------------- Fin calcule Poids ------------------"));

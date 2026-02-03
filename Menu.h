@@ -116,8 +116,8 @@ const char* m033_Reserve[] = {
 
 #define M04_ITEM 7 // Maintenir dans Define.h
 const char* m04_CalibBalances[] = {
-  "info.  Balances(F)",  // m04_0F_InfoBal()  Page info Balances 
-  "Poids  Balances(F)",  // m04_1F_PoidsBal() Affichage rafraichi du poids des balances
+  "info.  Balances(F)",  // m04_0F_InfoBal() Affichage rafraichi du poids des balances
+  "Poids  Tare    (F)",  // m04_1F_PoidsTare()  (chiffre entre 0 et 100000)
   "Calib. Bal #1  (F)",  // m04_2F_CalibBal_1()
   "Calib. Bal #2  (F)",  // m04_nM_CalibBal_bal()
   "Calib. Bal #3  (F)",  // m04_nM_CalibBal_bal()
@@ -129,9 +129,9 @@ const char* m04_CalibBalances[] = {
 #define M04x_ITEM 4 // Maintenir dans Define.h
 const char* m04x_CalibBal[] = {
 //  "Num. Balance    (S)",  // m04x_0F_numBalx()
-  "Tare Balance    (F)",    // m04x_1F_tareBalx()
-  "Echelle Balance (F)",    // m04x_2F_echBalx()
-  "Comp. Temp.     (F)",    // m04x_3F_tempBalx()
+  "Tare Balance    (F)",    // m04x_1F_tareBalx(); enregistre la tare et temperature
+  "Echelle Balance (F)",    // m04x_2F_echBalx(); calcule la mise à l'echelle
+  "Saisie Comp. Temp. ",    // m04x_3F_tempBalx(); saisie d'un coefficient de correction
   "RET   popMenu (m04)"     // PopMenu()
 };
 

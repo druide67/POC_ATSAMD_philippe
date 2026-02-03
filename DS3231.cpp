@@ -163,7 +163,7 @@ void DS3231setRTCAlarm2(void)
 // @param Aucun
 // @return void
 // ---------------------------------------------------------------------------*
-void clearRTCAlarms(void) 
+void DS3231clearRTCAlarms(void) 
 {
   rtc.clearAlarm(1);
   rtc.clearAlarm(2);
@@ -227,7 +227,7 @@ void DS3231CompleteReset()
 // @param Aucun
 // @return void
 // ---------------------------------------------------------------------------*
-void synchronizeDS3231TimeToMicro(void)
+void DS3231synchronizeTimeToMicro(void)
 {
   debugSerial.println("=== SYNCHRONISATION DS3231 -> MICRO ===");
     
@@ -256,7 +256,7 @@ void synchronizeDS3231TimeToMicro(void)
 // @param forcer True pour forcer la copie même si les heures sont proches
 // @return void
 // ---------------------------------------------------------------------------*
-void copyDS3231TimeToMicro(bool forcer)
+void DS3231copyTimeToMicro(bool forcer)
 { char localOLEDbuf[21] = "12345678901234567890";
   static unsigned long derniereCopie = 0;
   const unsigned long INTERVALLE_COPIE_MS = 60000; // 1 minute
@@ -325,10 +325,10 @@ void copyDS3231TimeToMicro(bool forcer)
 // @param Aucun
 // @return void
 // ---------------------------------------------------------------------------*
-void forcerSynchronisationDS3231(void)
+void DS3231forcerSynchronisation(void)
 {
     debugSerial.println("=== SYNCHRONISATION FORCEE ===");
-    copyDS3231TimeToMicro(true);
+    DS3231copyTimeToMicro(true);
     
     // Vérification après synchronisation
     delay(100);

@@ -39,27 +39,11 @@
 // =====  PROGRAMME =====
 // ===== SETUP =====
 void setup() 
-{  int z=0;
-
-// INITIALISE LA STRUCTURE A ENVOYER
-config.applicatif.RucherID = 67;   // compris entre 0 et 99
-sprintf(config.applicatif.RucherName,"LPCZ");
-HiveSensor_Data.DHT_Temp = 25;
-HiveSensor_Data.DHT_Hum = 69;
-HiveSensor_Data.Brightness = 91;
-HiveSensor_Data.Bat_Voltage = 3.69;
-HiveSensor_Data.Solar_Voltage = 4.69;
-HiveSensor_Data.HX711Weight[0] = 12.34; // 
-HiveSensor_Data.HX711Weight[1] = 23.45;
-HiveSensor_Data.HX711Weight[2] = 34.56;
-HiveSensor_Data.HX711Weight[3] = 45.67;
-HiveSensor_Data.ProcessorTemp = 21.18;   // temp µC, ne sera pas conservé 
-
-  // Initialisation de debugSerial et envoi infos compil.
-  initDebugSerial(); 
+{ // Initialisation de debugSerial et envoi infos compil.
+  SETUPinitDebugSerial(); 
 
   // Initialisation de LoraSerial
-  initLoRaSerial();
+  SETUPinitLoRaSerial();
 
   // Initialisation des LEDs
   initLEDs();
@@ -90,7 +74,7 @@ display.ssd1306_command(129);    // Column end address (128 + 2 - 1)
 debugSerial.println(F("-------------------------------- SETUP - Fin OLED et avant-----------------------"));
 
   // Initialisation configuration
-  initConfig();     // appel loadConfigFromEEPROM();
+  initConfig();     // appel EPR_24C32loadConfig();
   OLEDDebugDisplay("initConfig OK");
 delay(1000);
 
@@ -101,9 +85,9 @@ debugSerial.println(F("-------------------------------- SETUP - Fin initConfig()
 // initialiser par lecture EEPROM I2C
 
 
-setStructDefaultValues();
+SETUPSetStructDefaultValues();
 
-debugSerial.println(F("-------------------------------- SETUP - Fin setStructDefaultValues() -----------"));
+debugSerial.println(F("-------------------------------- SETUP - Fin SETUPSetStructDefaultValues() -----------"));
 
   sprintf(OLEDbuf,"ID: %s",config.materiel.DevEUI);
   OLEDDebugDisplay(OLEDbuf);
@@ -113,42 +97,37 @@ debugSerial.println(F("-------------------------------- SETUP - Fin setStructDef
 // config balance connue 10 lecture + moyenne
 // poids peson doit être de 0 à 3 et GetPoids de 1..4 confirmé 06/06/2025
 
-  if (Peson[config.materiel.Num_Carte][z])  // Z = 0
-  {
-    Poids_Peson(z) = GetPoids(z+1,10);
-    sprintf(OLEDbuf,"getWeight %d Done",z);
-debugSerialDisplayScaledSensorState(z);    //Affichage détaillé des paramètres à l'init:     
-    OLEDDebugDisplay(OLEDbuf);
-  }
-  else 
-  {
-    sprintf(OLEDbuf,"Peson %d: NONE ",z);
-   OLEDDebugDisplay(OLEDbuf);
-  }
-
-debugSerial.println(F("-------------------------------- SETUP - Fin GetPoids(0) ------------------------"));
-
+debugSerial.println(F("-------------------------------- SETUP - GetPoids -------------------------------"));
 // poids peson doit être de 0 à 3 et GetPoids de 1..4 confirmé 06/06/2025
 
-///*
-  for ( z=1;z<4;z++)                                 // Z  .. 3
-  {
+  for ( int z=0;z<4;z++)                                 // Z  .. 3
+  {     
     if (Peson[config.materiel.Num_Carte][z])
-    {
-      Poids_Peson(z) = GetPoids(z+1,10);
-      sprintf(OLEDbuf,"getWeight %d Done",z);
-debugSerialDisplayScaledSensorState(z);    //Affichage détaillé des paramètres à l'init:     
-      OLEDDebugDisplay(OLEDbuf);
+    {  
+       HiveSensor_Data.HX711Weight[z] = (GetPoids(z+1,10) - pesonTare(z))/pesonScale(z);   // GrammesPesée
+       snprintf(OLEDbuf, 21,"Bal. %d: %10.0f g",z,HiveSensor_Data.HX711Weight[z]);
+       OLEDDebugDisplay(OLEDbuf);
+/*
+debugSerial.print("SETUP float - ");       
+debugSerial.println(OLEDbuf);     
+
+       snprintf(OLEDbuf, 21,"Bal. %d: %d g",z,(uint8_t)HiveSensor_Data.HX711Weight[z]);  
+debugSerial.print("SETUP uint - ");       
+debugSerial.println(OLEDbuf);    
+
+       snprintf(OLEDbuf, 21,"Bal. %d: %d g",z,(int8_t)HiveSensor_Data.HX711Weight[z]);  
+debugSerial.print("SETUP int - ");       
+debugSerial.println(OLEDbuf);     
+  */     
     }
     else 
     {
-      sprintf(OLEDbuf,"Peson %d: NONE ",z);
+      sprintf(OLEDbuf,"Bal. %d: NONE ",z);
      OLEDDebugDisplay(OLEDbuf);
     }
   }
-//*/
 
-debugSerial.println(F("----------------------------------- SETUP - Fin GetPoids(1 .. 3) ----------------"));
+debugSerial.println(F("----------------------------------- SETUP - Fin GetPoids(0 .. 3) ----------------"));
   
   initLoRa();
 
@@ -201,16 +180,14 @@ debugSerial.println(RTC_INTERRUPT_PIN);
   LowPower.attachInterruptWakeup(RTC_INTERRUPT_PIN, onRTCAlarm, FALLING);
 debugSerial.println("Initialisation terminee");
 
-//  forcerSynchronisationDS3231();
+//  DS3231forcerSynchronisation();
 debugSerial.println("Mise à l'heure");
 
 debugSerial.println(F("-------------------------------- SETUP - Fin irq DS3231 -------------------------"));
  
   dht.begin();
-  if  (!read_DHT(dht))  // 
+  if  (!read_DHT(dht))  // initialise HiveSensor_Data.DHT_Hum et HiveSensor_Data.DHT_Temp
   {
-//  sprintf(serialbuf,"Humidité : %.2f %%\nTemperature : %.2f °C",Data_LoRa.DHT_Hum,Data_LoRa.DHT_Temp);
-//  debugSerial.println(serialbuf); 
     OLEDDebugDisplay("DHT Done");
     debugSerial.println("DHT Done");
   }
@@ -222,7 +199,7 @@ debugSerial.println(F("-------------------------------- SETUP - Fin irq DS3231 -
 
 debugSerial.println(F("-------------------------------- SETUP - Fin DHT --------------------------------"));
 
-  for ( z=0;z<10;z++)
+  for ( int z=0;z<10;z++)
   {
     HiveSensor_Data.Bat_Voltage=getVBatMoy();   // calcul moyenne de 10 lectures
     HiveSensor_Data.Solar_Voltage=getVSolMoy();   // calcul moyenne de 10 lectures
@@ -269,12 +246,18 @@ void loop()
 // ---------------------------------------------------------------------------*
     if (wakeup1Sec) 
     {  
+      wakeup1Sec = false; 
+// attention     if (wakeup1Sec)   retseté plus bas!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      
       config.applicatif.redLedDuration = 100;  // Clignotement Rouge = 100 ms
       LEDStartRed();                           //Clignotement 100ms
 //debugSerial.println("BlinkRED");   
-      wakeup1Sec = false;  
+// FIN Gestion Clignotement LED non bloquant 
+    
+// Gestion des affichages de pages rafraichies    
+// FIN Gestion des affichages de pages rafraichies        
+    
     }  
-// FIN Gestion Clignotement LED non bloquant
   } 
   else                          // OK, validé, BlueLED modeProgrammation
   {
@@ -308,7 +291,7 @@ debugSerial.print("3");   // 333333333333333333333333333
 // ---------------------------------------------------------------------------*
 // ISR1 => Lecture Cyclique des paramètres répartis à chaque seconde
 // ---------------------------------------------------------------------------*
-  if (wakeup1Sec) // && !modeExploitation)            // màj heure, blink LED
+  if (wakeup1Sec) // && !modeExploitation)            // màj heure, 
   {    
     loopWDT  = millis();
 //#ifdef __SerialDebugPoc     
@@ -345,25 +328,33 @@ debugSerial.print("3");   // 333333333333333333333333333
 */              HiveSensor_Data.Solar_Voltage=getVSolMoy();
                break;
      case 3 :
-//debugSerial.println("Case3");
+//debugSerial.println("Case3"); 
+// logPeson = true;
               if (Peson[config.materiel.Num_Carte][0])
-                Poids_Peson(0) = GetPoids(1,1);
+                poidsBal_g(0) = GetPoids(1,1);
 // afficher poids bal(1) sur fenêtre OLEDdisplayWeightBal(void)
+logPeson = false;
               break;
      case 4 :
-//debugSerial.println("Case4");
+//debugSerial.println("Case4"); 
+//logPeson = true;
               if (Peson[config.materiel.Num_Carte][1])
-                Poids_Peson(1) = GetPoids(2,1);
+                poidsBal_g(1) = GetPoids(2,1);
+logPeson = false;
               break;
      case 5 :
 //debugSerial.println("Case5");
+//logPeson = true;
               if (Peson[config.materiel.Num_Carte][2])
-                Poids_Peson(2) = GetPoids(3,1);
+                poidsBal_g(2) = GetPoids(3,1);
+logPeson = false;
               break;
      case 6 :
 //debugSerial.println("Case6");
+//logPeson = true;
               if (Peson[config.materiel.Num_Carte][0])
-                Poids_Peson(3) = GetPoids(4,1);
+                poidsBal_g(3) = GetPoids(4,1);
+logPeson = false;
               break;
      case 7 :
 //debugSerial.println("Case7");

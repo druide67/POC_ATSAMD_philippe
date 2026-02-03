@@ -33,7 +33,7 @@ debugSerial.println(loopWDT);
    loopWDT  = millis();
 debugSerial.println(loopWDT);
     
-//    softReset();
+//    SETUPsoftReset();
 // Reset immédiat du microcontrôleur, le code ne continue jamais après cette ligne
 //trouver autre chose que MORT
   }

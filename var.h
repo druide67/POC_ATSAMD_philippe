@@ -32,7 +32,7 @@ bool DEBUG_WAKEUP_PAYLOAD = true;      // Activer IRQ2 réveil payload
 //bool DEBUG_LOW_POWER = true;         // Activer/désactiver basse consommation
 bool DEBUG_LOW_POWER = false;        // Activer/désactiver basse consommation
 
-unsigned long loopWDT = 0;
+unsigned long loopWDT = 0;      // detailler
 
 
 // ===== VARIABLES GLOBALES =====
@@ -87,7 +87,7 @@ ipInputContext_t ipInputCtx = {IP_INPUT_IDLE, 0, 0xFF, "192.168.001.001", "", fa
 infoScreenState_t infoScreenState = INFO_SCREEN_IDLE;
 
 
-bool ScreenRefreshed = false;  // info generale de maj ecran info pour desactiver dans Handle.cpp
+//bool ScreenRefreshed = false;  // info generale de maj ecran info pour desactiver dans Handle.cpp
 
 // Système
 bool InfoScreenRefreshTime = false;         // rafraichissement heure ecran Info
@@ -97,8 +97,11 @@ bool LoRaScreenRefreshTime = false;         // rafraichissement heure ecran LoRa
 bool LoraScreenRefreshNextPayload = false;
 // Balances
 bool InfoBalScreenRefreshTime = false;      // rafraichissement heure ecran Balances
-bool WeightScreenRefreshTime = false;
-bool WeightScreenRefreshWeights = false;
+bool InfoBalScreenRefreshBal_1 = false;     // desactive rafraichissement Balance 1
+bool InfoBalScreenRefreshBal_2 = false;     // desactive rafraichissement Balance 2
+bool InfoBalScreenRefreshBal_3 = false;     // desactive rafraichissement Balance 3
+bool InfoBalScreenRefreshBal_4 = false;     // desactive rafraichissement Balance 4
+
 // Analogiques
 bool InfoVBatScreenRefreshTime = false;     // rafraichissement heure ecran VBAT
 bool InfoVBatScreenRefresh = false;         // rafraichissement mesures ecran VBAT
@@ -164,13 +167,14 @@ HiveSensor_Data_t HiveSensor_Data;  // nommer en payload !!!! existe: uint8_t pa
 
 // Variables debug
 bool COM_DebugSerial = true;
+bool logPeson = false;
 
 // Variable RN2483A et LoRa
 
 uint8_t payloadSize = PAYLOADSIZE; // 27
 uint8_t payload[PAYLOADSIZE];
 
-int hexPayloadSize = HEXPAYLOADSIZE; // 45 characters counting from 0 + 2 for termination. 23 bytes is required by Kineis. Padding needs to be done if the payload is smaller.
+int hexPayloadSize = HEXPAYLOADSIZE; // 38 characters counting from 0 + 2 for termination. 23 bytes is required by Kineis. Padding needs to be done if the payload is smaller.
 char hexPayload[HEXPAYLOADSIZE];
 
 // liste des ID LoRa 
@@ -236,7 +240,7 @@ float Jauge[22][4] = {                // Tare , Echelle , TareTemp , CompTemp
       {21000,22000,20,0},     // J03 évolution valeurs en négatif. tester sur bornier
       {31000,32000,20,0},     // J04
       {41000,42000,20,0},     // J05
-      {68971,19.56,19.7,0},     // J06  BAL_A  200kg  le 19/03/2021
+      {8000,0.19,19.7,0},     // J06  BAL_A  200kg  le 19/03/2021                     // new
       {61000,62000,20,0},     // J07MS 200kg
       {64003,21.19,20,0},     // J08SL proto1 SLB 200kg (OK à 5 et 50kg)
       {140680,19.39,20,0},    // J09MS proto1 SL 200kg (OK à 5 et 50kg)
@@ -244,23 +248,15 @@ float Jauge[22][4] = {                // Tare , Echelle , TareTemp , CompTemp
       {4798647,1053.71,20,0}, // J11 2kg
       {179568,1056.40,20,0},  // J12 2kg
       {20369,19.93,20,-2},   // J13MS proto1 Master 200kg (53kg ok 5kg => 3.12!!!)
-      {53753,21.425,17.1,-1},    // J14 warré 200kg
+ {120895,103286.1433,20,1},    // J14 2/20 kg                                   new
       {139983,20.46,17.1,0.048341},    // J15SFX proto1 SLC 200kg (OK à 5 et 50kg)
-      {123199.65,103.59,20,1},    // J16 proto1  20kg (OK à 1 et 5kg)
-      {123199.65,103.59,20,2},    // J17 a refaire
+      {-4031212 ,1117,20,1},    // J16 proto1  2kg (OK à 1 et 5kg)                        new 
+ {150625,104371.5144,20,1},    // J17 2/20 kg 
       {34134.50,103.77,20,0},    // J18 proto1  20kg (OK à 1 et 5kg)
-      {7929.70,97.49,20,0},    // J19 proto1  20kg (OK à 1 et 5kg) + DHT22
+//      {7929.70,97.49,20,0},    // J19 proto1  20kg (OK à 1 et 5kg) + DHT22
+ {191991,109204.6332,20,1},    // J19 proto1  20kg (OK à 1 et 5kg) + DHT22               new
       {22005.70,97.49,20,0},    // J20
-      {1,2,20,3}                // J21
-    };
-
-// paramètres et données des dispositif de pesée A,B,C,D
-// Clk_PIN, Dta_PIN, Poids
-int balance [4][2] = {    // défini en DUR!!!!!!!!!!!!!
-      {HX711_ASENSOR_DOUT, HX711_SENSOR_SCK},   // PoidsA = -999}, // -999, Affiche "N/A"
-      {HX711_BSENSOR_DOUT, HX711_SENSOR_SCK},   // PoidsB = -999}, // -999, Affiche "N/A"
-      {HX711_CSENSOR_DOUT, HX711_SENSOR_SCK},   // PoidsC = -999}, // -999, Affiche "N/A"
-      {HX711_DSENSOR_DOUT, HX711_SENSOR_SCK}    // PoidsD = -999}  // -999, Affiche "N/A"
+ {-21641,106727.5847,20,1}                // J21   2/20 kg                                            new
     };
 
 
@@ -269,7 +265,7 @@ int Peson [10][4] = {
       {0,0,0,0},    // Module LoRa pas Lu; pas de Peson
       {0,0,0,17},    // 0004A30B0020300A carte 1 HS; sur Carte PROTO2 en service le 05/03/2021
       {13,8,9,0}, //15},    // 0004A30B0024BF45 carte 2; en service le 10/05/2020
-      {0,16,0,0},    // 0004A30B00EEEE01 Carte PROTO1 mis en service Loess le 08/03/2021
+      {6,16,0,0},    // 0004A30B00EEEE01 Carte PROTO1 mis en service Loess le 08/03/2021
       {0,18,0,0},    // 0004A30B00EEA5D5
       {19,21,14,17},  // 0004A30B00F547C
       {6,0,0,0},
@@ -337,7 +333,9 @@ typedef struct
 */
 
 // n'est ce pas en doublon avec Data_LoRa.HX711Weight[num]
-float Contrainte_List [4] = {
+// non car Data_LoRa.HX711Weight = poids en g
+// et Contrainte_List [4] = valeur jauge
+float Contrainte_List[4] = {
          -999,  // pas de balance, Affiche "N/A"
          -999,  // pas de balance, Affiche "N/A"
          -999,  // pas de balance, Affiche "N/A"
@@ -472,7 +470,7 @@ extern infoScreenState_t infoScreenState;
 extern bool PvageInfosLoRaRefresh;
 extern bool PvageInfosSystRefresh;
 
-extern bool ScreenRefreshed;  // info generale de maj ecran info pour desactiver dans Handle.cpp
+//extern bool ScreenRefreshed;  // info generale de maj ecran info pour desactiver dans Handle.cpp
 
 // Système
 extern bool InfoScreenRefreshTime;
@@ -482,8 +480,12 @@ extern bool LoRaScreenRefreshTime;
 extern bool LoraScreenRefreshNextPayload;
 // Balances
 extern bool InfoBalScreenRefreshTime;
-extern bool WeightScreenRefreshTime;
-extern bool WeightScreenRefreshWeights;
+extern bool InfoBalScreenRefreshBal_1;     // desactive rafraichissement Balance 1
+extern bool InfoBalScreenRefreshBal_2;     // desactive rafraichissement Balance 2
+extern bool InfoBalScreenRefreshBal_3;     // desactive rafraichissement Balance 3
+extern bool InfoBalScreenRefreshBal_4;     // desactive rafraichissement Balance 4
+
+
 // Analogiques
 extern bool InfoVBatScreenRefreshTime;
 extern bool InfoVBatScreenRefresh;
@@ -534,17 +536,14 @@ extern HiveSensor_Data_t HiveSensor_Data;
 
 // Variables debug
 extern bool COM_DebugSerial;
-
+extern bool logPeson;
 // Variable définitions RUCHE
 // jauges de contrainte de J01 à J15
 extern int bal;   // Numéro de balance selectionnée dans m04_CalibBalances[]
 extern float Jauge[][4];           // Tare , Echelle , TareTemp , CompTemp
 // paramètres et données des dispositif de pesée A,B,C,D
 // Clk_PIN, Dta_PIN, Poids
-extern int balance [][2];
 extern int Peson [][4];
-
-
 extern float Contrainte_List [];
 
 // DHT22 => 3V3/DHT_SENSOR/GND

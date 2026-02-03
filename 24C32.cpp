@@ -36,8 +36,8 @@
 // @param data Octet à écrire
 // @return void
 // ---------------------------------------------------------------------------
-// exemple appel: writeEEPROMByte(0x0000, 0xAA);
-void writeEEPROMByte(uint16_t address, uint8_t data)
+// exemple appel: EPR_24C32writeByte(0x0000, 0xAA);
+void EPR_24C32writeByte(uint16_t address, uint8_t data)
 {
   Wire.beginTransmission(EEPROM_ADDRESS);
   Wire.write((uint8_t)(address >> 8));    // MSB de l'adresse
@@ -52,8 +52,8 @@ void writeEEPROMByte(uint16_t address, uint8_t data)
 // @param address Adresse mémoire (0x0000 à 0x0FFF pour 4Ko)
 // @return Octet lu depuis l'EEPROM
 // ---------------------------------------------------------------------------
-// exemple appel: uint8_t val = readEEPROMByte(0x0000);
-uint8_t readEEPROMByte(uint16_t address)
+// exemple appel: uint8_t val = EPR_24C32readByte(0x0000);
+uint8_t EPR_24C32readByte(uint16_t address)
 {
   Wire.beginTransmission(EEPROM_ADDRESS);
   Wire.write((uint8_t)(address >> 8));    // MSB de l'adresse
@@ -75,12 +75,12 @@ uint8_t readEEPROMByte(uint16_t address)
 // @param length Nombre d'octets à écrire
 // @return void
 // ---------------------------------------------------------------------------
-// exemple appel: writeEEPROMBlock(0x0000, (uint8_t*)&config, sizeof(config));
-void writeEEPROMBlock(uint16_t address, uint8_t* data, uint16_t length)
+// exemple appel: EPR_24C32writeBlock(0x0000, (uint8_t*)&config, sizeof(config));
+void EPR_24C32writeBlock(uint16_t address, uint8_t* data, uint16_t length)
 {
   for (uint16_t i = 0; i < length; i++)
   {
-    writeEEPROMByte(address + i, data[i]);
+    EPR_24C32writeByte(address + i, data[i]);
   }
 }
 
@@ -91,12 +91,12 @@ void writeEEPROMBlock(uint16_t address, uint8_t* data, uint16_t length)
 // @param length Nombre d'octets à lire
 // @return void
 // ---------------------------------------------------------------------------
-// exemple appel: readEEPROMBlock(0x0000, (uint8_t*)&config, sizeof(config));
-void readEEPROMBlock(uint16_t address, uint8_t* data, uint16_t length)
+// exemple appel: EPR_24C32readBlock(0x0000, (uint8_t*)&config, sizeof(config));
+void EPR_24C32readBlock(uint16_t address, uint8_t* data, uint16_t length)
 {
   for (uint16_t i = 0; i < length; i++)
   {
-    data[i] = readEEPROMByte(address + i);
+    data[i] = EPR_24C32readByte(address + i);
   }
 }
 
@@ -108,16 +108,25 @@ void readEEPROMBlock(uint16_t address, uint8_t* data, uint16_t length)
 // @brief Calcule le checksum de la configuration (CRC16)
 // @param cfg Pointeur vers la structure de configuration
 // @return Valeur du checksum calculé (uint16_t)
+/* 
+typedef struct 
+{
+  uint16_t magicNumber;         // Nombre magique pour validation
+  ConfigApplicatif_t applicatif;
+  ConfigMateriel_t materiel;
+  uint16_t checksum;
+} ConfigGenerale_t;
+*/
 // ---------------------------------------------------------------------------
-// exemple appel: uint16_t crc = calculateChecksum(&config);
-uint16_t calculateChecksum(ConfigGenerale_t* cfg)
+// exemple appel: uint16_t crc = EPR_24C32calcChecksum(&config);
+uint16_t EPR_24C32calcChecksum(ConfigGenerale_t* cfg)
 {
   uint16_t crc = 0xFFFF;
   uint8_t* data = (uint8_t*)cfg;
   // Calcul sur toute la structure sauf le champ checksum lui-même
   uint16_t length = sizeof(ConfigGenerale_t) - sizeof(uint16_t);
   
-  for (uint16_t i = 0; i < length; i++)
+  for (uint16_t i = 0; i < length; i++)  // sans 
   {
     crc ^= data[i];
     for (uint8_t j = 0; j < 8; j++)
@@ -132,11 +141,13 @@ uint16_t calculateChecksum(ConfigGenerale_t* cfg)
       }
     }
   }
+/**/  
 // Affichage du checksum
-debugSerial.print(F("\n********************** calculateChecksum() *********************** Checksum calcule: 0x"));
-debugSerial.println(crc, HEX);
-debugSerial.print(F("Checksum en structure: 0x"));
+debugSerial.print(F("\n********************** EPR_24C32calcChecksum() ==>> calculé: 0x"));
+debugSerial.print(crc, HEX);
+debugSerial.print(F(" en structure: 0x"));
 debugSerial.println(config.checksum, HEX);
+/**/
    return crc;
 }
 
@@ -144,66 +155,51 @@ debugSerial.println(config.checksum, HEX);
 // ===== FONCTIONS DE GESTION CONFIGURATION =====
 // ---------------------------------------------------------------------------
 
-// ---------------------------------------------------------------------------
-// @brief Initialise la configuration avec des valeurs par défaut
-// @param void
-// @return void
-// ---------------------------------------------------------------------------
-// exemple appel: initDefaultConfig();
-void finitDefaultConfig(void)
-{
-  debugSerial.println(F("NON Initialisation config par defaut..."));
 
-  setStructDefaultValues();
-
-  debugSerial.println(F("NON Config par defaut initialisee"));
-}
 
 // ---------------------------------------------------------------------------
 // @brief Charge la configuration depuis l'EEPROM avec validation
 // @param void
 // @return void
 // ---------------------------------------------------------------------------
-// exemple appel: loadConfigFromEEPROM();
-void loadConfigFromEEPROM(void)
+// exemple appel: EPR_24C32loadConfig();
+void EPR_24C32loadConfig(void)
 {
   // Lecture de la configuration
-  readConfigFromEEPROM();                           // lecture et copie des 176 octets de l'eeprom dans structure
-debugSerial.println(F("FIN : readConfigFromEEPROM()"));
-
+  EPR_24C32readConfig();                           // lecture et copie des 176 octets de l'eeprom dans structure
+//debugSerial.println(F("FIN : EPR_24C32readConfig()"));
+EPR_24C32DumpConfigToJSON(); 
   // Vérification du nombre magique
   if (config.magicNumber != CONFIG_MAGIC_NUMBER)
   {
-    debugSerial.print(F("ERREUR: Magic number invalide!"));
-    debugSerial.print(F(" Attendu: 0x"));
+    debugSerial.print(F("ERREUR: Magic number invalide! Attendu: 0x"));
     debugSerial.print(CONFIG_MAGIC_NUMBER, HEX);
     debugSerial.print(F(" / Lu: 0x"));
     debugSerial.print(config.magicNumber, HEX);
     debugSerial.println(F(" => Chargement config par defaut..."));
     //initDefaultConfig();
-    setStructDefaultValues();
-    debugSerial.println(F("FIN : setStructDefaultValues() cas erreur CONFIG_MAGIC_NUMBER"));
-    saveConfigToEEPROM();
-dumpConfigToJSON();    
+    SETUPSetStructDefaultValues();
+    debugSerial.println(F("FIN : SETUPSetStructDefaultValues() cas erreur CONFIG_MAGIC_NUMBER"));
+    EPR_24C32saveConfig();
+EPR_24C32DumpConfigToJSON();    
     return;
   }
 
   // Calcul et vérification du checksum
-  uint16_t calculatedChecksum = calculateChecksum(&config);
+  uint16_t calculatedChecksum = EPR_24C32calcChecksum(&config);
 debugSerial.println(calculatedChecksum, HEX);
   if (calculatedChecksum != config.checksum)
   {
-    debugSerial.print(F("ERREUR: Checksum invalide!"));
-    debugSerial.print(F(" Attendu: 0x"));
+    debugSerial.print(F("ERREUR: Checksum invalide! Attendu: 0x"));
     debugSerial.print(config.checksum, HEX);
     debugSerial.print(F(" / Calcule: 0x"));
     debugSerial.print(calculatedChecksum, HEX);
     debugSerial.println(F(" => Chargement config par defaut..."));
     //initDefaultConfig();
-    setStructDefaultValues();
-debugSerial.println(F("FIN : setStructDefaultValues() cas erreur chksum"));
-    saveConfigToEEPROM();
-dumpConfigToJSON();    
+    SETUPSetStructDefaultValues();
+debugSerial.println(F("FIN : SETUPSetStructDefaultValues() cas erreur chksum"));
+    EPR_24C32saveConfig();
+EPR_24C32DumpConfigToJSON();    
     return;
   }
   
@@ -215,7 +211,7 @@ dumpConfigToJSON();
   debugSerial.print(F("Checksum: 0x"));
   debugSerial.println(config.checksum, HEX);
 
-dumpConfigToJSON();
+EPR_24C32DumpConfigToJSON();
 
 
   debugSerial.println("______________________________________________________________________________________________________________________");
@@ -228,11 +224,11 @@ dumpConfigToJSON();
 // @param void
 // @return void
 // ---------------------------------------------------------------------------
-// exemple appel: readConfigFromEEPROM();
-void readConfigFromEEPROM(void)
+// exemple appel: EPR_24C32readConfig();
+void EPR_24C32readConfig(void)
 {
   debugSerial.println(F("Lecture EEPROM..."));
-  readEEPROMBlock(CONFIG_EEPROM_START, (uint8_t*)&config, sizeof(ConfigGenerale_t));
+  EPR_24C32readBlock(CONFIG_EEPROM_START, (uint8_t*)&config, sizeof(ConfigGenerale_t));
   debugSerial.print(F("Octets lus: "));
   debugSerial.println(sizeof(ConfigGenerale_t));
 }
@@ -246,8 +242,8 @@ void readConfigFromEEPROM(void)
 // @param void
 // @return void
 // ---------------------------------------------------------------------------
-// exemple appel: saveConfigToEEPROM();
-void saveConfigToEEPROM(void)
+// exemple appel: EPR_24C32saveConfig();
+void EPR_24C32saveConfig(void)
 {
   debugSerial.println(F("Sauvegarde config en EEPROM..."));
   
@@ -255,13 +251,13 @@ void saveConfigToEEPROM(void)
   config.magicNumber = CONFIG_MAGIC_NUMBER;
   
   // Recalculer le checksum avant sauvegarde
-  config.checksum = calculateChecksum(&config);
+  config.checksum = EPR_24C32calcChecksum(&config);
   
   debugSerial.print(F("Checksum calcule: 0x"));
   debugSerial.println(config.checksum, HEX);
   
   // Écriture en EEPROM
-  writeEEPROMBlock(CONFIG_EEPROM_START, (uint8_t*)&config, sizeof(ConfigGenerale_t));
+  EPR_24C32writeBlock(CONFIG_EEPROM_START, (uint8_t*)&config, sizeof(ConfigGenerale_t));
   
   debugSerial.print(F("Octets ecrits: "));
   debugSerial.println(sizeof(ConfigGenerale_t));
@@ -278,8 +274,8 @@ void saveConfigToEEPROM(void)
 // @param length Nombre d'octets à afficher
 // @return void
 // ---------------------------------------------------------------------------
-// exemple appel: printByteArrayJSON(config.materiel.DevEUI, 8);
-void printByteArrayJSON(uint8_t* array, uint8_t length)
+// exemple appel: EPR_24C32printJSON(config.materiel.DevEUI, 8);
+void EPR_24C32printJSON(uint8_t* array, uint8_t length)
 {
   debugSerial.print("\"");
   for (uint8_t i = 0; i < length; i++)
@@ -298,8 +294,8 @@ void printByteArrayJSON(uint8_t* array, uint8_t length)
 // @param void
 // @return void
 // ---------------------------------------------------------------------------
-// exemple appel: dumpConfigToJSON();
-void dumpConfigToJSON(void)
+// exemple appel: EPR_24C32DumpConfigToJSON();
+void EPR_24C32DumpConfigToJSON(void)
 {
   debugSerial.println(F("{"));
   debugSerial.println(F("  \"configuration\": {"));
@@ -313,10 +309,10 @@ void dumpConfigToJSON(void)
   debugSerial.print(config.checksum, HEX);
   debugSerial.println(F("\","));
   debugSerial.print(F("      \"checksumCalcule\": \"0x"));
-  debugSerial.print(calculateChecksum(&config), HEX);
+  debugSerial.print(EPR_24C32calcChecksum(&config), HEX);
   debugSerial.println(F("\","));
   debugSerial.print(F("      \"checksumValide\": "));
-  debugSerial.print((calculateChecksum(&config) == config.checksum) ? "true" : "false");
+  debugSerial.print((EPR_24C32calcChecksum(&config) == config.checksum) ? "true" : "false");
   debugSerial.println(F(","));
   debugSerial.print(F("      \"tailleStructure\": "));
   debugSerial.println(sizeof(ConfigGenerale_t));
@@ -356,10 +352,10 @@ void dumpConfigToJSON(void)
   // LoRa
   debugSerial.println(F("      \"lora\": {"));
   debugSerial.print(F("        \"appEUI\": "));
-  printByteArrayJSON(config.applicatif.AppEUI, 8);
+  EPR_24C32printJSON(config.applicatif.AppEUI, 8);
   debugSerial.println(F(","));
   debugSerial.print(F("        \"appKey\": "));
-  printByteArrayJSON(config.applicatif.AppKey, 16);
+  EPR_24C32printJSON(config.applicatif.AppKey, 16);
   debugSerial.println(F(","));
   debugSerial.print(F("        \"spreadingFactor\": "));
   debugSerial.print(config.applicatif.SpreadingFactor);
@@ -388,16 +384,18 @@ void dumpConfigToJSON(void)
   debugSerial.println(F("\","));
   debugSerial.print(F("        \"eeprom\": \"0x"));
   debugSerial.print(config.materiel.adresseEEPROM, HEX);
-  debugSerial.println(F("\""));
+  debugSerial.println(F("\",")); 
+  debugSerial.print(F("        \"poidsTare\": "));
+  debugSerial.println(config.materiel.poidsTare);
   debugSerial.println(F("      },"));
-  
+
   // Identification
   debugSerial.println(F("      \"identification\": {"));
   debugSerial.print(F("        \"numCarte\": "));
   debugSerial.print(config.materiel.Num_Carte);
   debugSerial.println(F(","));
   debugSerial.print(F("        \"devEUI\": "));
-  printByteArrayJSON(config.materiel.DevEUI, 8);
+  EPR_24C32printJSON(config.materiel.DevEUI, 8);
   debugSerial.println();
   debugSerial.println(F("      },"));
   
@@ -555,6 +553,8 @@ void non_setDefaultConfig(void)
   config.materiel.adresseRTC = DS3231_ADDRESS;    // Adresse RTC Module DS3231
   config.materiel.adresseOLED = OLED_ADDRESS;     // Adresse écran OLED
   config.materiel.adresseEEPROM = EEPROM_ADDRESS; // Adresse EEPROM Module DS3231
+  config.materiel.poidsTare = TARE;              // valeur de la tare en grammes
+
    
   config.applicatif.redLedDuration = RED_LED_DURATION;
   config.applicatif.greenLedDuration = GREEN_LED_DURATION;
@@ -563,7 +563,7 @@ void non_setDefaultConfig(void)
   config.applicatif.SendingPeriod = WAKEUP_INTERVAL_PAYLOAD;    // mieux: wakeupIntervalPayload
   config.applicatif.OLEDRefreshPeriod = INTERVAL_1SEC;               //
     
-  config.checksum = calculateChecksum(&config);
+  config.checksum = EPR_24C32calcChecksum(&config);
 }
 
 
@@ -575,7 +575,7 @@ void non_setDefaultConfig(void)
 void initConfig(void) 
 {
   debugSerial.println("Début lecture configuration EEPROM");
-  loadConfigFromEEPROM();
+  EPR_24C32loadConfig();
   debugSerial.println("Lecture configuration EEPROM executée");
 }
 
@@ -587,7 +587,7 @@ void initConfig(void)
 // @param Aucun
 // @return void
 // ---------------------------------------------------------------------------*
-void loadConfigFromEEPROM(void) 
+void EPR_24C32loadConfig(void) 
 {
   // Simulation de lecture EEPROM - à implémenter avec bibliothèque I2C EEPROM
   setDefaultConfig();
@@ -598,9 +598,9 @@ void loadConfigFromEEPROM(void)
 // @param Aucun
 // @return void
 // ---------------------------------------------------------------------------*
-void saveConfigToEEPROM(void) 
+void EPR_24C32saveConfig(void) 
 {
-  config.checksum = calculateChecksum(&config);
+  config.checksum = EPR_24C32calcChecksum(&config);
   // Simulation de sauvegarde EEPROM - à implémenter avec bibliothèque I2C EEPROM
   debugSerial.println("Configuration sauvegardée");
 }
@@ -610,7 +610,7 @@ void saveConfigToEEPROM(void)
 // @param cfg Pointeur vers la configuration
 // @return uint16_t Checksum calculé
 // ---------------------------------------------------------------------------*
-uint16_t calculateChecksum(ConfigGenerale_t* cfg) 
+uint16_t EPR_24C32calcChecksum(ConfigGenerale_t* cfg) 
 {
   uint16_t sum = 0;
   uint8_t* data = (uint8_t*)cfg;

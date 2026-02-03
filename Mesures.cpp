@@ -34,37 +34,15 @@
 
 // ILS avec anti rebond : 47k en Pull Up et 100nf // ILS
 
-/*
-   typedef struct
-  {
-  uint8_t rucher_ID;        // ID Rucher           xx  uint8_t
-  float   DHT_Temp;         // Temp DHT en °C    xx,x  Float
-  float   DHT_Hum;          // Hum DHT en %      xx,x  Float
-  float   Brightness;       // %Lum en LUX      xxxxx  uint16_t
-  float   Bat_Voltage;      // Tension BAT en V     xx,xx  Float (uint16_t)
-  float   Solar_Voltage;    // Tension BAT en V     xx,xx  Float (uint16_t)
-  float   HX711Weight_1;    // masse Ruche 1 en kg xxx,xx (précision affich. 10g)
-  float   temp_1;           // température peson 1 en °C xx,xx  Float
-  float   HX711Weight_2;    // masse Ruche 2 en kg xx,xx
-  float   temp_2;           // masse Ruche 1 en kg xx,xx  Float
-  float   HX711Weight_3;    // masse Ruche 3 en kg xx,xx
-  float   temp_3;           // masse Ruche 1 en kg xx,xx  Float
-  float   HX711Weight_4;    // masse Ruche 4 en kg xx,xx
-  float   temp_4;           // masse Ruche 1 en kg xx,xx  Float
-//  float   VSol[11];
-//  float   VBat[11];
-  float   Lux;              // temp µC, ne sera pas conservé
-  float   ProcessorTemp;    // temp µC, ne sera pas conservé
-  } LoRa_Var;
-
-
-*/
 
 // ---------------------------------------------------------------------------*
 //       indices des macros de 0 à 3 ou de 1 à 4????? manque de cohérence!           
 // ---------------------------------------------------------------------------*
 void take_All_Measure()  // durée de la proc?
 {
+
+// ici coder les mesures pour envoi payload
+
 
 /*       
   if  (!read_DHT(dht))  // 
@@ -89,51 +67,32 @@ void take_All_Measure()  // durée de la proc?
 
 //#ifdef WEIGHT_YES
 
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// poids peson doit être de 0 à 3 et GetPoids de 1..4 confirmé 06/06/2025
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// rappel : #define Poids_Peson(num)      Data_LoRa.HX711Weight[num] 
-// rappel : #define Temp_Peson(num)       Data_LoRa.Temp_Peson[num]
-// rappel : #define Tare_Peson(num)       Jauge[Peson[Ruche.Num_Carte][num]][0]
-// rappel : #define Echelle_Peson(num)    Jauge[Peson[Ruche.Num_Carte][num]][1]
-//#define BalPoids(num)  (Contrainte_List[num]-Jauge[Peson[Ruche.Num_Carte][num]][0])/Jauge[Peson[Ruche.Num_Carte][num]][1]/1000) //retourne float
-// rappel : #define BalPoids(num) (Contrainte_List[num]-Tare_Peson(num))/Echelle_Peson(num)/1000 //retourne float
-// ?? attention step(num) entre TareTemp et la correespondance
-//         1..4                    0..3
-// rappel : #define TareTemp(num)   Jauge[Peson[Ruche.Num_Carte][num]][2]  // Ruche de type HW_equipement (ligne 21)
-// rappel : #define CompTemp(num)   Jauge[Peson[Ruche.Num_Carte][num]][3]
-
-  Poids_Peson(0) = GetPoids(1,1); 
-  Poids_Peson(1) = GetPoids(2,1); // à ranger dans Structure
-  Poids_Peson(2) = GetPoids(3,1); // à ranger dans Structure
-  Poids_Peson(3) = GetPoids(4,1); // à ranger dans Structure
-/* 
 // compensation de 2 vers 4 pour validation règle de correction
 static float oldpoids2=0;
 
-Poids_Peson(2) = Poids_Peson(2)-0.5 - (Temp_Peson(2)-TareTemp(2))*CompTemp(2); // decalé de 500g
+poidsBal_g(2) = poidsBal_g(2)-0.5 - (Temp_Peson(2)-TareTemp(2))*CompTemp(2); // decalé de 500g
 if (oldpoids2 ==0)
-  oldpoids2 = Poids_Peson(2);
-  float delta = abs(Poids_Peson(2)-oldpoids2);
-  sprintf(serialbuf, "%6.3f",Poids_Peson(2) );
+  oldpoids2 = poidsBal_g(2);
+  float delta = abs(poidsBal_g(2)-oldpoids2);
+  sprintf(serialbuf, "%6.3f",poidsBal_g(2) );
 debugSerial.println(serialbuf); 
   sprintf(serialbuf, "%6.3f",oldpoids2);
 debugSerial.println(serialbuf); 
   sprintf(serialbuf, "%6.3f",delta);
 debugSerial.println(serialbuf); 
   if ( delta < 0.1) // moyennage si variation inf à 100g
-    Poids_Peson(2)=(oldpoids2 + Poids_Peson(2)) / 2;  // moyenné sur moyenne(2points) + nlle mesure.
-  sprintf(serialbuf, "%6.3f",Poids_Peson(2) );
+    poidsBal_g(2)=(oldpoids2 + poidsBal_g(2)) / 2;  // moyenné sur moyenne(2points) + nlle mesure.
+  sprintf(serialbuf, "%6.3f",poidsBal_g(2) );
 debugSerial.println(serialbuf); 
-  oldpoids2 = Poids_Peson(2);  // memorise poids
-  Poids_Peson(3) = Poids_Peson(1) - (Temp_Peson(1)-TareTemp(1))*CompTemp(1); 
+  oldpoids2 = poidsBal_g(2);  // memorise poids
+  poidsBal_g(3) = poidsBal_g(1) - (Temp_Peson(1)-TareTemp(1))*CompTemp(1); 
 //#endif // WEIGHT_YES
 */
-//debugSerial.println("Take_All_Measure");
+debugSerial.println("Take_All_Measure est vide et ne mesure rien!!!!!!!!!!!!!!!!!!!!!");
 debugSerial.println(" Temp  Hum   Vs   Vb    P1     P2     P3     P4   tare1 comp1  lum");
 sprintf(serialbuf, "%04.2f %04.2f %04.2f %04.2f %06.2f %06.2f %06.2f %06.2f %04.2f %04.2f   %04.2f",
                  HiveSensor_Data.DHT_Temp,HiveSensor_Data.DHT_Hum,HiveSensor_Data.Solar_Voltage,HiveSensor_Data.Bat_Voltage,
-                 Poids_Peson(0),Poids_Peson(1),Poids_Peson(2),Poids_Peson(3),TareTemp(1),CompTemp(1),HiveSensor_Data.Brightness);
+                 poidsBal_g(0),poidsBal_g(1),poidsBal_g(2),poidsBal_g(3),TareTemp(1),CompTemp(1),HiveSensor_Data.Brightness);
 debugSerial.println(serialbuf); 
 }
 
@@ -153,35 +112,63 @@ debugSerial.println(serialbuf);
 // out :  coefficient de mise à l'echelle                          
 // ---------------------------------------------------------------------------*
 float Set_Scale_Bal(char num, float poids_en_grammes)    // N° de jauges des balances 1 à 4
-{ float pesee, valAVid, Echelle, valEnCharge;
+{ float pesee, valAVide, Echelle, valEnCharge;
+
+
+
+// /!\ attention tout est à refaire pas ecran dédié
+
+// 1 faire tare à vide (VALIDE action ou ABANDON 30s) => m04x_1F_tareBalx(); enregistre la tare et temperature
+// 2 entrer valeur de tare => m04_1F_PoidsTare()  (chiffre entre 0 et 100000)
+// 3 Faire mise à l'echelle (VALIDE action ou ABANDON 30s) => m04x_2F_echBalx(); calcule la mise à l'echelle
+
+
 
  // num--;
   debugSerial.print("Bal. num : "); debugSerial.print((int)num);
   debugSerial.print(" Peson : J"); debugSerial.println(Peson[config.materiel.Num_Carte][num]);
 
   // marche plus nouvelle version!
-  scale.begin(balance[num][0], balance[num][1]); // DOUT, SCK
-  valAVid = abs(scale.read_average(20));                   // sans charge
-  debugSerial.print("Val a vide : "); debugSerial.println(valAVid);
+
+switch (num)      // est sencé être fait
+{
+  case 0 : scale.begin(config.materiel.HX711Dta_0, config.materiel.HX711Clk_0); // DOUT, SCK
+           break;
+  case 1 : scale.begin(config.materiel.HX711Dta_1, config.materiel.HX711Clk_1); // DOUT, SCK
+           break;
+  case 2 : scale.begin(config.materiel.HX711Dta_2, config.materiel.HX711Clk_2); // DOUT, SCK
+           break;
+  case 3 : scale.begin(config.materiel.HX711Dta_3, config.materiel.HX711Clk_3); // DOUT, SCK
+           break;
+  default : // WTF
+           break;         
+}
+// scale.begin(balance[num][0], balance[num][1]); // DOUT, SCK
+// passer par menu tare et utiliser 
+   valAVide = abs(scale.read_average(20));                   // sans charge
+  debugSerial.print("Val a vide : "); debugSerial.println(valAVide);
   //valeur à saisir ou en //metre !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   debugSerial.println("poser poids xxxxxg (15s)");
   delay(15000);
 
   //  pesee = scale.get_units(HX711_NbLect);
   valEnCharge = abs(scale.read_average(20));              // en charge
-  debugSerial.print("val en chargeue : "); debugSerial.println(valEnCharge);
-  Echelle = (valEnCharge - valAVid) / poids_en_grammes;  //
+  debugSerial.print("val en charge : "); debugSerial.println(valEnCharge);
+  Echelle = (valEnCharge - valAVide) / poids_en_grammes;  //
   debugSerial.println("Mise à echelle faite");
   debugSerial.print("Echelle : "); debugSerial.println(Echelle);
   debugSerial.print("poids calculé : ");
   Contrainte_List [num] = (abs(scale.read_average(20)));
-  debugSerial.println((Contrainte_List [num] - valAVid ) / Echelle);
+  debugSerial.println((Contrainte_List [num] - valAVide) / Echelle);
 
   scale.power_down();              // put the ADC in sleep mode
 
-  Jauge[Peson[config.materiel.Num_Carte][num]][0] = valAVid; // tera
-  Jauge[Peson[config.materiel.Num_Carte][num]][1] = Echelle; // scale 
-  return ((Contrainte_List [num] - valAVid ) / Echelle);
+//  pesonTare(num) = valAVide; // tare
+//  pesonScale(num) = Echelle; // scale 
+
+  return ((Contrainte_List [num] - valAVide) / Echelle);
+//  #define poidsBal_kg(num)  (Contrainte_List[num]-pesonTare(num))/pesonScale(num)/1000 // kg
+
 }
 
 // lancer 10 x au setup.
@@ -198,88 +185,84 @@ float Set_Scale_Bal(char num, float poids_en_grammes)    // N° de jauges des ba
 //    Tsc : Temperature of scale (put the sensor close to the scale)
 //
 //
-// #define debugSerialGetPoids  // decommenter pour les messages debugSerial
 // ---------------------------------------------------------------------------*
-float GetPoids(int num,int sample)    // N° de jauges des balances 1 à 4
-{ int i;
+float GetPoids(int numJauge,int sample)    // N° de jauges des balances 1 à 4
+{ int i;                                   // setup sample = 10, 1 sinon 
   static long readSample[4][11] = {{0,0,0,0,0,0,0,0,0,0,0},
                                    {0,0,0,0,0,0,0,0,0,0,0}, 
                                    {0,0,0,0,0,0,0,0,0,0,0}, 
                                    {0,0,0,0,0,0,0,0,0,0,0}}; // 10 lect. [0..9]; moyenne dans [10]
   static int numSample[4] = {0,0,0,0};
 
-  num--;
-  if (!Peson[config.materiel.Num_Carte][num])             // pas de balance connectée
-  {
-#ifdef debugSerialGetPoids    
-  debugSerial.println(" Peson : N/A");
-#endif
+  numJauge--;  
+  
+  if (!Peson[config.materiel.Num_Carte][numJauge])             // pas de balance connectée
     return (0); // pas de jauge déclarée        // sortie code retour 0
+ 
+// Initialisation du HX711 => faire fonction, appele 2 fois (setscale())
+  switch (numJauge)      
+  {
+    case 0 : scale.begin(config.materiel.HX711Dta_0, config.materiel.HX711Clk_0); // DOUT, SCK
+             break;
+    case 1 : scale.begin(config.materiel.HX711Dta_1, config.materiel.HX711Clk_1); // DOUT, SCK
+             break;
+    case 2 : scale.begin(config.materiel.HX711Dta_2, config.materiel.HX711Clk_2); // DOUT, SCK
+             break;
+    case 3 : scale.begin(config.materiel.HX711Dta_3, config.materiel.HX711Clk_3); // DOUT, SCK
+             break;
+    default : // WTF
+             break;         
   }
-// Initialisation du HX711
-  scale.begin(balance[num][0], balance[num][1]); // DOUT, SCK
 
   if (scale.wait_ready_timeout(1000))           // lecture HX711 OK
   {
-    for (i=0; i<sample; i++)
+    for (i=0; i<sample; i++)          // Lecture du Nb echantillon prévu
     { 
-      readSample[num][numSample[num]] = scale.read();
-      numSample[num]++;
-      if (numSample[num] == 10)
-        numSample[num] = 0;
+      readSample[numJauge][numSample[numJauge]] = scale.read();
+      numSample[numJauge]++;
+      if (numSample[numJauge] == 10)
+        numSample[numJauge] = 0;
 delay (10);
     }
   }
-/*
-#ifdef debugSerialGetPoids
-    sprintf(serialbuf," Bal. num: %d,  Peson num : %d reading: %d , sample %d",
-            num+1,Peson[Ruche.Num_Carte][num],readSample[num][numSample[num]],numSample[num]); 
-    debugSerial.println(serialbuf);
-//    sprintf(serialbuf," Bal. num: %d,  Peson num : %d",num+1,Peson[Ruche.Num_Carte][num]); 
-//    debugSerial.println(serialbuf);
-  sprintf(serialbuf," HX711 reading: %d , sample %d", readSample[num][i], i);
-  debugSerial.println(serialbuf);
+
+
+#define debugSerialGetPoids
+#ifdef debugSerialGetPoids  
+    if (logPeson)
+    {
+      sprintf(serialbuf," Jauge num: %d,  Peson num : %d reading: %d , sample %d, ",
+              numJauge+1,Peson[config.materiel.Num_Carte][numJauge],readSample[numJauge][numSample[numJauge]],numSample[numJauge]); 
+      debugSerial.println(serialbuf);
+    }
 #endif 
-*/
- #ifdef debugSerialGetPoids
-  else 
-  {
-    debugSerial.println("HX711 not found.");
-  }
-#endif 
- 
+
  scale.power_down();  
 
-// recalcul de la moyenne
-  readSample[num][10] = 0;
+// recalcul de la moyenne                                         
+  readSample[numJauge][10] = 0;
   for (i=0; i<10; i++)
-  {
-    readSample[num][10] += readSample[num][i];
+    readSample[numJauge][10] += readSample[numJauge][i];
+  readSample[numJauge][10] = readSample[numJauge][10]/10;  
+  Contrainte_List[numJauge]=readSample[numJauge][10];   // Moyenne valeur balance(numJauge) en cours
+
+
+// mémorisation poids correspondant
+HiveSensor_Data.HX711Weight[numJauge] = (readSample[numJauge][10] - pesonTare(numJauge))
+                                         /  pesonScale(numJauge);
+
 #ifdef debugSerialGetPoids
-  sprintf(serialbuf," %d ", readSample[num][i]);
-  debugSerial.print(serialbuf);
-#endif     
-  }  
-  readSample[num][10] = readSample[num][10]/10;  
-#ifdef debugSerialGetPoids
-  sprintf(serialbuf," M %d ", readSample[num][10]);
+//08:53:06.019 ->  tatata HX711 average: 304681 , poids 989           sort dans grafana 333g????
+//08:53:06.019 -> GetPoids()2\debugSerialDisplayScaledSensorState():
+
+  sprintf(serialbuf," tatata HX711 average: %d , poids %.0f", readSample[numJauge][10],HiveSensor_Data.HX711Weight[numJauge]); 
   debugSerial.println(serialbuf);
-#endif     
-
-
-// Data_LoRa.HX711Weight[num]=(float)readSample[num][10];  utiliser le return de la fonction.
-
-#ifdef debugSerialGetPoids
-//  sprintf(serialbuf," HX711 average: %d  %4.1f", readSample[num][10],Data_LoRa.HX711Weight[num]);
-//  debugSerial.println(serialbuf);
 #endif 
 
-#ifdef debugSerialGetPoids
- // debugSerial.print(" poids : "); debugSerial.println(pesee);
-#endif  
+debugSerial.println("GetPoids()2\\debugSerialDisplayScaledSensorState():");
+//debugSerialDisplayScaledSensorState(numJauge);     // num 0 .. 3
 
-// Il est preferable de memoriser en structure la donnée la moins traitées possible.
-return(readSample[num][10]);   // valeur du peson brute moyennée sur les 10 dernières mesures
+   return(readSample[numJauge][10]);   // valeur du peson brute moyennée sur les 10 dernières mesures
 }
 
 

@@ -156,7 +156,7 @@ debugSerial.println("");
 }
 
 // ---------------------------------------------------------------------------*
-// @brief Traite la sélection dans la liste (à appeler dans loop)
+// @brief Traite la sélection dans la liste, appelé dans loop\handleProgrammingMode
 // @param void
 // @return listInputState_t État actuel de la sélection
 // ---------------------------------------------------------------------------*
@@ -541,6 +541,7 @@ void startNumInput(const char* title, const char* initialNum, uint8_t maxLen, bo
 {
   if (numInputCtx.state != NUM_INPUT_IDLE)
   {
+  debugSerial.println("Saisie déjà en cours");
     return; // Saisie déjà en cours
   }
   
@@ -911,7 +912,7 @@ void updateNumDisplayOffset(void)
 }
 
 
-// @brief Traite la saisie numérique - à appeler dans loop()
+// @brief Traite la saisie numérique, appelé dans loop\handleProgrammingMode
 // @param void
 // @return numInputState_t État actuel de la saisie (IDLE, ACTIVE, COMPLETED, CANCELLED)
  // ---------------------------------------------------------------------------*
@@ -1352,7 +1353,7 @@ void refreshStringDisplay(void)
 }
 
 
-// @brief Traite la saisie alphanumérique - à appeler dans loop()
+// @brief Traite la saisie alphanumérique, appelé dans loop\handleProgrammingMode
 // @param void
 // @return stringInputState_t État actuel de la saisie (IDLE, ACTIVE, COMPLETED, CANCELLED)
  // ---------------------------------------------------------------------------*
@@ -1702,7 +1703,7 @@ void updateHexInputCursorBlink(void)
 }
 
 // ---------------------------------------------------------------------------*
-// @brief Traite la saisie hexadécimale (à appeler dans loop)
+// @brief Traite la saisie hexadécimale, appelé dans loop\handleProgrammingMode
 // @param void
 // @return hexInputState_t État actuel de la saisie
 // ---------------------------------------------------------------------------*
@@ -2140,7 +2141,7 @@ void updateHexDisplayOffset(void)
 }
 
 // ---------------------------------------------------------------------------*
-// @brief Traite la saisie hexadécimale (à appeler dans loop)
+// @brief Traite la saisie hexadécimale, appelé dans loop\handleProgrammingMode
 // @param void
 // @return État actuel de la saisie
 // ---------------------------------------------------------------------------*
@@ -2509,7 +2510,7 @@ void startTimeInput(const char* title, const char* initialTime)
 }
 
 // ---------------------------------------------------------------------------*
-// @brief Traite la saisie d'heure (à appeler dans loop)
+// @brief Traite la saisie d'heure, appelé dans loop\handleProgrammingMode 
 // @param void
 // @return État actuel de la saisie
 // ---------------------------------------------------------------------------*
@@ -2959,7 +2960,7 @@ void startDateInput(const char* title, const char* initialDate)
 }
 
 // ---------------------------------------------------------------------------*
-// @brief Traite la saisie de date (à appeler dans loop)
+// @brief Traite la saisie de date, appelé dans loop\handleProgrammingMode
 // @param void
 // @return État actuel de la saisie
 // ---------------------------------------------------------------------------*
@@ -3571,7 +3572,7 @@ void startIPInput(const char* initialIP)
 }
 
 // ---------------------------------------------------------------------------*
-// @brief Traite la saisie IP (à appeler dans loop)
+// @brief Traite la saisie IP, appelé dans loop\handleProgrammingMode
 // @param void
 // @return État actuel de la saisie
 // ---------------------------------------------------------------------------*
@@ -4017,7 +4018,7 @@ void updateEmailDisplayOffset(void)
 }
 
 // ---------------------------------------------------------------------------*
-// @brief Traite la saisie email (à appeler dans loop)
+// @brief Traite la saisie email, appelé dans loop\handleProgrammingMode
 // @param void
 // @return État actuel de la saisie
 // ---------------------------------------------------------------------------*

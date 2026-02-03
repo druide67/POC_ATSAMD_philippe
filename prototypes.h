@@ -17,11 +17,11 @@
 // ===== PROTOTYPES DE FONCTIONS =====
 
 // ===== PROTOTYPES DE FONCTIONS DE SETUP.CPP=====
-void initDebugSerial(void);
-void initLoRaSerial(void);
-void softReset(void);
-void DHTInit(void);
-void setStructDefaultValues(void);
+void SETUPinitDebugSerial(void);
+void SETUPinitLoRaSerial(void);
+void SETUPsoftReset(void);
+void SETUPDHTInit(void);
+void SETUPSetStructDefaultValues(void);
 
 
 // ===== PROTOTYPES DE FONCTIONS DE POC_ATSAMD.INO=====
@@ -32,11 +32,11 @@ void initRTC(void);                       // Initialise le module RTC DS3231
 //DateTime getSystemTime(void);             // Retourne l'heure système actuelle
 void DS3231setRTCAlarm1(void);                  // Configure alarme 1 du RTC
 void DS3231setRTCAlarm2(void);                  // Configure alarme 2 du RTC
-void clearRTCAlarms(void);                // Efface les alarmes du RTC
-void testConnexionDS3231(void);           // Affiche heure et status Alarmes sur SerialDebug
-void forcerSynchronisationDS3231(void);   //  Forcer une synchronisation immédiate
-void synchronizeDS3231TimeToMicro(void);  // Synchro. heure µcontrôleur avec DS3231
-void copyDS3231TimeToMicro(bool forcer);  // Copie heure DS3231 vers µcontrôleur avec option de forçage
+void DS3231clearRTCAlarms(void);                // Efface les alarmes du RTC
+void DS3231testConnexion(void);           // Affiche heure et status Alarmes sur SerialDebug
+void DS3231forcerSynchronisation(void);   //  Forcer une synchronisation immédiate
+void DS3231synchronizeTimeToMicro(void);  // Synchro. heure µcontrôleur avec DS3231
+void DS3231copyTimeToMicro(bool forcer);  // Copie heure DS3231 vers µcontrôleur avec option de forçage
 void DS3231hardReset(void); 
 void DS3231CompleteReset(void);
 
@@ -46,19 +46,19 @@ void DS3231CompleteReset(void);
 //void setDefaultConfig(void);
 void initConfig(void);
 
-// ===== PROTOTYPES DE FONCTIONS EEPROM =====
-void loadConfigFromEEPROM(void);
-void readConfigFromEEPROM(void);
-void saveConfigToEEPROM(void);
-uint16_t calculateChecksum(ConfigGenerale_t* cfg);
-void writeEEPROMByte(uint16_t address, uint8_t data);
-uint8_t readEEPROMByte(uint16_t address);
-void writeEEPROMBlock(uint16_t address, uint8_t* data, uint16_t length);
-void readEEPROMBlock(uint16_t address, uint8_t* data, uint16_t length);
-// void initDefaultConfig(void);  remplacé par  : setStructDefaultValues()
+// ===== PROTOTYPES DE FONCTIONS EEPROM - 24C32 =====
+void EPR_24C32loadConfig(void);
+void EPR_24C32readConfig(void);
+void EPR_24C32saveConfig(void);
+uint16_t EPR_24C32calcChecksum(ConfigGenerale_t* cfg);
+void EPR_24C32writeByte(uint16_t address, uint8_t data);
+uint8_t EPR_24C32readByte(uint16_t address);
+void EPR_24C32writeBlock(uint16_t address, uint8_t* data, uint16_t length);
+void EPR_24C32readBlock(uint16_t address, uint8_t* data, uint16_t length);
+// void initDefaultConfig(void);  remplacé par  : SETUPSetStructDefaultValues()
 // Dump pour contôles
-void dumpConfigToJSON(void);
-void printByteArrayJSON(uint8_t* array, uint8_t length);
+void EPR_24C32DumpConfigToJSON(void);
+void EPR_24C32printJSON(uint8_t* array, uint8_t length);
 
 
 
@@ -155,14 +155,17 @@ void m033_4(void);
 
 void m04_nM_CalibBal_bal(void); // appel menu calib#bal des paramètre
 
+void m04_0F_InfoBal(void);          // existe
+void m04_0F_InfoBalDone(void);   
+void m04_1F_PoidsTare(void);        // existe
+void m04_1F_PoidsTareDone(void);    // existe
 void m04_2F_CalibBal_1(void); // appel menu calib#1 des paramètre
 void m04_1F_CalibBal_2(void); // appel menu calib#2 des paramètre
 void m04_2F_CalibBal_3(void); // appel menu calib#3 des paramètre
 void m04_3F_CalibBal_4(void); // appel menu calib#4 des paramètre
-void m04_0F_InfoBal(void);    // 
-void m04_0F_InfoBalDone(void);   
-void m04_1F_PoidsBal(void);   //
-void m04_1F_PoidsBalDone(void);
+
+
+//void m04_1F_poidsBal_kgDone(void);
 
 // ---------------------------------------------------------------------------*
 // Appels du menu m04x => appel écrans de calibrations
@@ -413,6 +416,7 @@ void OLEDRefreshDisplay(void);
 void OLEDRefreshlum(uint8_t ligne, uint8_t colonne);
 void OLEDRefreshVlum(uint8_t ligne, uint8_t colonne);
 void setCursorAdjusted(int16_t x, int16_t y);
+void OLEDDisabelAllRefresh(void);
 
 //void OLEDDisplaySystemInfo(void);  // voir si pas remplacée par suivante.
 void OLEDdisplayInfoScreenSyst(void);
@@ -505,7 +509,7 @@ char read_DHT(DHT dht);
 void take_All_Measure(void);
 // HX711
 float Set_Scale_Bal(char num, float poids_en_grammes);    // N° de jauges des balances 1 à 4
-float GetPoids(int num,int sample);    // N° de jauges des balances 1 à 4
+float GetPoids(int numJauge,int sample);    // N° de jauges des balances 1 à 4
 
 // µC
 float getTemperature(void);

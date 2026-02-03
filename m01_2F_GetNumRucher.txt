@@ -1,0 +1,20 @@
+15:34:20.966 -> Touche pressée: KEY_5
+15:34:20.966 -> Selection validee: 2 - NUM. RUCHER    (S)
+15:34:20.966 -> OLEDDisplayMessageL8() => Selection validee
+15:34:21.478 -> default dans isListInputActive()/saisieActive/default, pourquoi ???????????????????
+15:34:21.478 -> Item final selectionne [2]: NUM. RUCHER    (S)
+15:34:21.478 ->  Mode selectionne: 2 - Depth: 2 - Val: -- CONFIG Systeme --
+15:34:21.478 -> azerty: NUM. RUCHER    (S)
+15:34:21.478 -> Mode selectionne: 2 - Depth: 2 - Val: -- CONFIG Systeme --
+15:34:21.478 -> NUM. RUCHER    (S)
+15:34:21.478 -> Chaine validée : -- CONFIG Systeme --
+15:34:21.478 -> 
+15:34:21.478 -> debugSerialPrintMenuStruct(): currentMenuDepth 2 / title  -- CONFIG Systeme -- / menuSize 7 /selectedIndex 0
+15:34:21.478 -> processMenuSelection 2
+15:34:21.478 -> m01_2F_GetNumRucher demandé
+15:34:21.478 -> Appel d'une Fonction: m01_2F_GetNumRucher()0
+15:34:21.478 -> 0
+15:34:21.478 -> Saisie numerique demarree
+15:34:21.478 -> OLEDDisplayMessageL8() => Saisissez nombre    
+15:34:21.993 -> Number WDT : 82076 GestionEnCours from handleProgrammingModea: 100
+15:34:21.993 -> NNNNNNNNNNNNN

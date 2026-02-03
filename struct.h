@@ -377,6 +377,7 @@ typedef struct
   uint8_t adresseRTC;     // DS3231_ADDRESS 0x68
   uint8_t adresseOLED;    //
   uint8_t adresseEEPROM;  // EEPROM_ADDRESS 0x57
+  uint16_t poidsTare;        // valeur de la tare en grammes
 
   uint8_t Num_Carte;  // Numéro de carte fct° de SN RN2482
   uint8_t DevEUI[9];         // ID RN2483: 0x0004A30B00EEEE01
@@ -443,8 +444,8 @@ typedef struct
   uint8_t AppKey [17];        // AppKEY: // 5048494C495050454C4F564542454553 - PHILIPPELOVEBEES
 // {0x50, 0x48, 0x49, 0x4C, 0x49, 0x50, 0x50, 0x45, 0x4C, 0x4F, 0x56, 0x45, 0x42, 0x45, 0x45, 0x53} 
   uint8_t SpreadingFactor;    // 7, 9 et 12 echec freudeneck
-  uint8_t SendingPeriod;      // WAKEUP_INTERVAL_PAYLOAD 5
-  uint8_t OLEDRefreshPeriod;  // INTERVAL_1SEC 1000 
+  uint16_t SendingPeriod;      // WAKEUP_INTERVAL_PAYLOAD 5  MAX 255min = env 4h
+  uint16_t OLEDRefreshPeriod;  // INTERVAL_1SEC 1000 
 } ConfigApplicatif_t;
 
 // Config Générale

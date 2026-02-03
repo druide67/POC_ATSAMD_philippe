@@ -17,32 +17,6 @@
 // RSSI entre 0 et -110 SF7, en dessous limite spread factor 12
 //
 // ---------------------------------------------------------------------------*
-// Datas PROTO 1 envoyées le: 10/05/2020 10:41:03
-//
-//  Source:   devEUI : 0004A30B0024BF45              (=> carte 2 = ID Rucher)
-//            deviceId : urn:lo:nsid:lora:0004A30B0024BF45 
-//
-//  2032       => 2         // 0  ID Rucher           xx
-//  2032312e31 => 21.1      // 2  Temp DHT en °C      xx,xx
-//  2035392e33 => 59.3      // 7  Hum DHT en %        xx,xX
-//  2039342e39 => 94.9      // 12 %Lum en LUX         xxxxx
-//  20302e3030 => 0.00      // 17 Tension BAT en V    x,xxx (pas de batterie)
-//  33312e3139 => 31.19     // 22 masse Ruche 1 en kg xx,xx
-//  33312e3939 => 31.99     // 27 masse Ruche 2 en kg xx,xx
-//  31372e3036 => 17.06     // 32 masse Ruche 3 en kg xx,xx   
-//  31382e3437 => 18.47     // 37 masse Ruche 4 en kg xx,xx
-//  20332e3337 => 3.37???   // 42 Tension Solaire     x,xxx (Pas de panneau)
-//  PB à diagnostiquer sur carte => pas de charge Batterie
-//
-//    Rssi,   Snr,   Esp,        Sf
-//    -103    2      -105.12     9
-//
-// Gateway: 10
-// Lat/Lon: 48.57322,7.655769 
-// ---------------------------------------------------------------------------*
-
-
-// RN 2483 freq par défaut 868.1 868.3 et 868.5 data rate 0 à 5; 30% duty cycle
 
 //#define NO_Tx
 
@@ -259,7 +233,7 @@ debugSerial.print("getHWEUI(): ");  debugSerial.print(len);debugSerial.println("
 //debugSerial.print(" car. lus: "); debugSerial.print(localModule_ID);debugSerial.println(" dans localModule_ID  ");
 
 
-fconvertByteArray("0004A30B00EEEE01", DevEUI, 16);  // 0004A30B00EEEE01000EEC0000000000
+// wtf fconvertByteArray("0004A30B00EEEE01", DevEUI, 16);  // 0004A30B00EEEE01000EEC0000000000
  
   fconvertByteArray(localModule_ID, DevEUI, 16);  // 0004A30B00EEA5D5 => 
   
@@ -316,7 +290,7 @@ uint8_t AppKey[16];
     debugSerial.println("setupLoRaOTAA(), Network connection failed!");
     debugSerialPrintLoRaStatus();
 //debugSerial.println(F("---------------------------------------- RN2483A - Dump Config ----------------------------"));
-//dumpConfigToJSON();   
+//EPR_24C32DumpConfigToJSON();   
     return(0);
   }
 }
@@ -326,11 +300,48 @@ uint8_t AppKey[16];
 // faire: 
 // in : pointeur Payload , Ptr Struct datas
 // out : -
-// #define PAYLOADSIZE 27
+// #define PAYLOADSIZE     19
+// #define HEXPAYLOADSIZE  38
 // int payloadSize = PAYLOADSIZE; 
 // byte payload[PAYLOADSIZE];
-//  => hexPayload sera envoyé???? est ce bien juste?
-// à quoi correspond payload ????
+//  => hexPayload sera envoyé
+// à quoi correspond payload : 38 Caractères HEX
+/*
+  payload[indice++] = config.applicatif.RucherID;
+
+  payload[indice++] = ((uint8_t*)&temperature)[0];    // Temperature: Least significant byte first, little endian
+  payload[indice++] = ((uint8_t*)&temperature)[1];
+
+  payload[indice++] = ((uint8_t*)&humidity)[0];       // Humidity
+  payload[indice++] = ((uint8_t*)&humidity)[1];
+
+  payload[indice++] = ((uint8_t*)&Brightness)[0];     // Brightness
+  payload[indice++] = ((uint8_t*)&Brightness)[1];
+
+  payload[indice++] = ((uint8_t*)&VBat)[0];           // Battery Voltage
+  payload[indice++] = ((uint8_t*)&VBat)[1];
+
+  payload[indice++] = ((uint8_t*)&VSol)[0];           // Solar Panel Voltage
+  payload[indice++] = ((uint8_t*)&VSol)[1];
+
+    payload[indice++] = ((uint8_t*)&Masse)[0];        // Hive1 Weight
+    payload[indice++] = ((uint8_t*)&Masse)[1];
+
+    payload[indice++] = ((uint8_t*)&Masse)[0];        // Hive2 Weight
+    payload[indice++] = ((uint8_t*)&Masse)[1];
+  
+    payload[indice++] = ((uint8_t*)&Masse)[0];        // Hive3 Weight
+    payload[indice++] = ((uint8_t*)&Masse)[1];
+   
+    payload[indice++] = ((uint8_t*)&Masse)[0];        // Hive4 Weight
+    payload[indice++] = ((uint8_t*)&Masse)[1];
+
+soit: 
+0b be05 c012 0000 3a01 0000 fce7 30ca 6cc6 b875
+0B 2206 C012 0000 3901 2A00 04C8 1CF7 2468 B86 =>37 car HEX ?????
+*/
+
+// En LoRaWAN, la convention par défaut est little-endian.  
 // ---------------------------------------------------------------------------*
 void buildLoraPayload(void)
 { int indice = 0, i;
@@ -341,12 +352,12 @@ debugSerial.println("buildLoraPayload, datas:");
 //debugSerial.println(config.applicatif.RucherID);
 
   int temperature = (int)(HiveSensor_Data.DHT_Temp * 100); // We multiple the values below because we then divide them on AllThingsTalk and don't need to send floats which use more data
-  payload[indice++] = ((uint8_t*)&temperature)[0];          // Temperature: Least significant byte first, little endian
+  payload[indice++] = ((uint8_t*)&temperature)[0];   // Temperature: Least significant byte first, little endian
   payload[indice++] = ((uint8_t*)&temperature)[1];
 //debugSerial.println(temperature);
   
   int humidity = (int)HiveSensor_Data.DHT_Hum * 100;
-  payload[indice++] = ((uint8_t*)&humidity)[0]; // Humidity
+  payload[indice++] = ((uint8_t*)&humidity)[0];       // Humidity
   payload[indice++] = ((uint8_t*)&humidity)[1];
 //debugSerial.println(humidity);
 
@@ -354,38 +365,52 @@ debugSerial.println("buildLoraPayload, datas:");
   debugSerial.println(serialbuf);
   
   int Brightness = (int)HiveSensor_Data.Brightness;
-  payload[indice++] = ((uint8_t*)&Brightness)[0]; // Brightness
+  payload[indice++] = ((uint8_t*)&Brightness)[0];     // Brightness
   payload[indice++] = ((uint8_t*)&Brightness)[1];
 //debugSerial.println(Brightness);
     
   // tension moyenne des 10 dernières lectures
   int VBat = (int)(HiveSensor_Data.Bat_Voltage * 100); // We multiple the values below because we then divide them on AllThingsTalk and don't need to send floats which use more data
-  payload[indice++] = ((uint8_t*)&VBat)[0];  // Battery Voltage
+  payload[indice++] = ((uint8_t*)&VBat)[0];           // Battery Voltage
   payload[indice++] = ((uint8_t*)&VBat)[1];
 //debugSerial.print(VBat);
   
   // tension moyenne des 10 dernières lectures
   int VSol = (int)(HiveSensor_Data.Solar_Voltage * 100); // multiple then divide: don't need to send floats
-  payload[indice++] = ((uint8_t*)&VSol)[0];  // Solar Panel Voltage
+  payload[indice++] = ((uint8_t*)&VSol)[0];           // Solar Panel Voltage
   payload[indice++] = ((uint8_t*)&VSol)[1];
 //debugSerial.println(VSol);
 
   sprintf(serialbuf,"Lum:    %d Vbat: %d,  Vsol: %d",Brightness, VBat, VSol);
   debugSerial.println(serialbuf);
- 
+
+// constructioon PayLoad des 4 pesées
+
+ int Masse=0;
 
   for (i = 0; i < 4; i++) 
   {
 //debugSerial.print(i);  debugSerial.print("/");debugSerial.println(indice);
-    int Masse = HiveSensor_Data.HX711Weight[i] *100; //(int)(Data_LoRa.HX711Weight[i]// 100); 
-    payload[indice++] = ((uint8_t*)&Masse)[0];	// Hive1 to 4 Weight
-    payload[indice++] = ((uint8_t*)&Masse)[1];
-//debugSerial.println(Masse);
+//HiveSensor_Data.HX711Weight[i] = HiveSensor_Data.HX711Weight[i] * 100;
 
-  sprintf(serialbuf,"Masse%d: %d / ",i, Masse);
+
+
+
+
+    
+    Masse = (int)roundf(HiveSensor_Data.HX711Weight[i] * 100.0f); //(int)(Data_LoRa.HX711Weight[i]// 100); 
+ memcpy(&payload[indice], &Masse, sizeof(Masse));
+//    payload[indice++] = ((uint8_t*)&Masse)[0];	      // Hive1 to 4 Weight
+ //   payload[indice++] = ((uint8_t*)&Masse)[1];
+//debugSerial.println(Masse);
+indice+=2;
+  sprintf(serialbuf,"Masse%d: %f / ",i,HiveSensor_Data.HX711Weight[i] *100); // Masse);
   debugSerial.print(serialbuf);
+
+//debugSerialDisplayScaledSensorState(i);   // num 0 .. 3
+  
   }
-debugSerial.println("");
+debugSerial.println(" => Build HEX Payload");
   
 //debugSerial.print("final i/payload[indice]"); debugSerial.print(i);  debugSerial.print("/");
 //debugSerial.println(indice);
@@ -393,19 +418,24 @@ debugSerial.println("");
 // c'est quoi la suite?
 // rappel : char hexPayload[]
 
-  for (i = 0; i < payloadSize; i++) 
+  for (i = 0; i <= payloadSize; i++) // PAYLOADSIZE  19 / HEXPAYLOADSIZE  38
   {
-    sprintf(&hexPayload[i * 2], "%02X.", payload[i]);  // pourquoi le . dans "%02X."
-  }
+    sprintf(&hexPayload[i * 2], "%02X", payload[i]);  
+  }  
 // remplissage Payload de '7'                 // 7 car visible, mettre 0 quand validé
-  for (i = payloadSize * 2; i < hexPayloadSize; i++) // complete si size HEXPAYLOAD > size Payload*2
-  {
-    hexPayload[i] = '7'; // Pad with leading zeros to reach the required nn bytes
-  }
-  hexPayload[hexPayloadSize - 1] = '\0'; // Null terminate
+      for (i = payloadSize * 2; i <= hexPayloadSize; i++) // complete si size HEXPAYLOAD > size Payload*2
+      {
+        hexPayload[i] = '7'; // Pad with leading zeros to reach the required nn bytes
+      }
+  hexPayload[hexPayloadSize] = '\0';          // Null terminate
+  
 //debugSerial.print("final hexpayload[i]"); debugSerial.println(i); 
-debugSerial.print("(fin buildLoraPayload) hexPayload: "); debugSerial.println(hexPayload); // chaine de caractère HEXA de Payload
+debugSerial.print("(fin buildLoraPayload) hexPayload: "); 
+debugSerial.println(hexPayload);                 // chaine de caractère HEXA de Payload
 }
+
+                                                                                                            // verifier vs orange
+
 
 
 // ---------------------------------------------------------------------------*
@@ -416,7 +446,7 @@ void sendLoRaPayload(uint8_t *Datas,uint8_t len)
 debugSerialPrintLoraPayload(Datas,len);
 debugSerial.println("appel LoRaBee.send");
 //debugSerial.println(F("---------------------------------------- RN2483A - Dump Config ----------------------------"));
-  //dumpConfigToJSON();
+  //EPR_24C32DumpConfigToJSON();
 debugSerial.println(F("---------------------------------------- RN2483A - Sending Payload ------------------------"));
 
 
@@ -546,16 +576,16 @@ String Build_Lora_String(String dataGrafana)
    sprintf(serialbuf, "%5.2f",HiveSensor_Data.Bat_Voltage);  // 2 fois???
     dataGrafana +=serialbuf; 
 // MASSE A
-   sprintf(serialbuf, "%5.2f",Poids_Peson(4));   // au lieu de 1
+   sprintf(serialbuf, "%5.2f",poidsBal_g(4));   // au lieu de 1
     dataGrafana +=serialbuf; 
 
 
 // MASSE B
-   sprintf(serialbuf, "%5.2f",Poids_Peson(2));   
+   sprintf(serialbuf, "%5.2f",poidsBal_g(2));   
      dataGrafana +=serialbuf;  
      
 // MASSE C
-   sprintf(serialbuf, "%5.2f",Poids_Peson(3));  
+   sprintf(serialbuf, "%5.2f",poidsBal_g(3));  
    dataGrafana +=serialbuf; 
    
 // MASSE D   peson 2 brut
@@ -610,15 +640,15 @@ String Build_CSV_String(String dataString)
    dataString +=serialbuf;
 
 // MASSE A
-   sprintf(serialbuf, "%5.2f;",Poids_Peson(1));   
+   sprintf(serialbuf, "%5.2f;",poidsBal_g(1));   
    dataString +=serialbuf;
 
 // MASSE B
-   sprintf(serialbuf, "%5.2f;",Poids_Peson(2));   
+   sprintf(serialbuf, "%5.2f;",poidsBal_g(2));   
    dataString +=serialbuf;
 
 // MASSE C
-   sprintf(serialbuf, "%5.2f;",Poids_Peson(3));  
+   sprintf(serialbuf, "%5.2f;",poidsBal_g(3));  
    dataString +=serialbuf;  
 
 // MASSE D   peson 2 brut
