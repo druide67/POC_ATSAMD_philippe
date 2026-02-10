@@ -60,6 +60,7 @@ void setup()
 // scanI2C???
 
   // Initialisation OLED
+  debugOLEDDrawText = false;
   OLEDInit();
 
 /*
@@ -95,30 +96,26 @@ debugSerial.println(F("-------------------------------- SETUP - Fin SETUPSetStru
 
 
 // config balance connue 10 lecture + moyenne
-// poids peson doit être de 0 à 3 et GetPoids de 1..4 confirmé 06/06/2025
 
-debugSerial.println(F("-------------------------------- SETUP - GetPoids -------------------------------"));
-// poids peson doit être de 0 à 3 et GetPoids de 1..4 confirmé 06/06/2025
+debugSerial.println(F("-------------------------------- SETUP - GetStrainGaugeAverage -------------------------------"));
+
+
+
+
 
   for ( int z=0;z<4;z++)                                 // Z  .. 3
   {     
     if (Peson[config.materiel.Num_Carte][z])
     {  
-       HiveSensor_Data.HX711Weight[z] = (GetPoids(z+1,10) - pesonTare(z))/pesonScale(z);   // GrammesPesée
-       snprintf(OLEDbuf, 21,"Bal. %d: %10.0f g",z,HiveSensor_Data.HX711Weight[z]);
-       OLEDDebugDisplay(OLEDbuf);
-/*
-debugSerial.print("SETUP float - ");       
-debugSerial.println(OLEDbuf);     
 
-       snprintf(OLEDbuf, 21,"Bal. %d: %d g",z,(uint8_t)HiveSensor_Data.HX711Weight[z]);  
-debugSerial.print("SETUP uint - ");       
-debugSerial.println(OLEDbuf);    
+SETUPinitHX711WithWatchdog(z);
 
-       snprintf(OLEDbuf, 21,"Bal. %d: %d g",z,(int8_t)HiveSensor_Data.HX711Weight[z]);  
-debugSerial.print("SETUP int - ");       
-debugSerial.println(OLEDbuf);     
-  */     
+//#define poidsBal_kg(num)  abs((Contrainte_List[num]-pesonTare(num))/pesonScale(num)/1000) // kg
+      
+      Contrainte_List[z]=GetStrainGaugeAverage(z,10);
+      HiveSensor_Data.HX711Weight[z] = poidsBal_kg(z); //calculePoids(z);
+      snprintf(OLEDbuf, 21,"Bal. %c: %8.2f kg",z+65,poidsBal_kg(z));  //calculePoids(z));
+      OLEDDebugDisplay(OLEDbuf);
     }
     else 
     {
@@ -126,10 +123,22 @@ debugSerial.println(OLEDbuf);
      OLEDDebugDisplay(OLEDbuf);
     }
   }
+ 
+// INIT LoRa ---- INIT LoRa ---- INIT LoRa ---- INIT LoRa ---- INIT LoRa 
+debugSerial.println("--------------------------------- SETUP - INIT LoRa ---------------------------------");
+  if (initLoRa())
+  {
+debugSerial.println("Init LoRa done.");
+debugSerial.println("Test sending LoRa testPayload (7) (Restart)..."); 
+    sendLoRaPayload((uint8_t*)testPayload,7);
+    OLEDDebugDisplay("LoRa    Initialized");
+  }
+  else
+  {
+    OLEDDebugDisplay("LoRa Failed");  
+  }
+         OLEDDebugDisplay("2483A    Initialized");
 
-debugSerial.println(F("----------------------------------- SETUP - Fin GetPoids(0 .. 3) ----------------"));
-  
-  initLoRa();
 
 // void DS3231CompleteReset() si DS3231 out!
 
@@ -149,7 +158,6 @@ char localbuf[21] = "00:00:00    00/00/00";
           systemTime.day(), systemTime.month(), systemTime.year()-2000);
 debugSerial.println(localbuf);
 // Affiche heure µC
-
     OLEDDebugDisplay("Set Time OK");
   
 // Désactiver TOUTES les interruptions temporairement
@@ -208,10 +216,8 @@ debugSerial.println(F("-------------------------------- SETUP - Fin DHT --------
 debugSerial.println(F("-------------------------------- SETUP - Fin init tensions Moyennes Bat/Sol -----"));
 
   OLEDDebugDisplayReset();
-
-buildLoraPayload();
-sendLoRaPayload((uint8_t*)payload,sizeof(payload)); //19);   // hex
-setupDone = true;
+  buildLoraPayload();
+  sendLoRaPayload((uint8_t*)payload,sizeof(payload)); //19);   // hex
 debugSerial.println(F("-------------------------------- SETUP - Send Payload Done ----------------------"));
 
 // Activer les interruptions
@@ -256,7 +262,6 @@ void loop()
     
 // Gestion des affichages de pages rafraichies    
 // FIN Gestion des affichages de pages rafraichies        
-    
     }  
   } 
   else                          // OK, validé, BlueLED modeProgrammation
@@ -329,9 +334,12 @@ debugSerial.print("3");   // 333333333333333333333333333
                break;
      case 3 :
 //debugSerial.println("Case3"); 
-// logPeson = true;
+//logPeson = true;
               if (Peson[config.materiel.Num_Carte][0])
-                poidsBal_g(0) = GetPoids(1,1);
+              {
+                Contrainte_List[0] = GetStrainGaugeAverage(0,1);
+                HiveSensor_Data.HX711Weight[0] = calculePoids(0);
+              }
 // afficher poids bal(1) sur fenêtre OLEDdisplayWeightBal(void)
 logPeson = false;
               break;
@@ -339,21 +347,30 @@ logPeson = false;
 //debugSerial.println("Case4"); 
 //logPeson = true;
               if (Peson[config.materiel.Num_Carte][1])
-                poidsBal_g(1) = GetPoids(2,1);
+              {
+                Contrainte_List[1] = GetStrainGaugeAverage(1,1);
+                HiveSensor_Data.HX711Weight[1] = calculePoids(1);
+              }               
 logPeson = false;
               break;
      case 5 :
 //debugSerial.println("Case5");
 //logPeson = true;
               if (Peson[config.materiel.Num_Carte][2])
-                poidsBal_g(2) = GetPoids(3,1);
+              {
+                Contrainte_List[2] = GetStrainGaugeAverage(2,1);
+                HiveSensor_Data.HX711Weight[2] = calculePoids(2);
+              }               
 logPeson = false;
               break;
      case 6 :
 //debugSerial.println("Case6");
-//logPeson = true;
-              if (Peson[config.materiel.Num_Carte][0])
-                poidsBal_g(3) = GetPoids(4,1);
+logPeson = true;
+              if (Peson[config.materiel.Num_Carte][3])
+              {
+                Contrainte_List[3] = GetStrainGaugeAverage(3,1);
+                HiveSensor_Data.HX711Weight[3] = calculePoids(3);
+              }               
 logPeson = false;
               break;
      case 7 :
@@ -382,6 +399,37 @@ logPeson = false;
     LEDStartBlue();                           //Clignotement 100ms
 // FIN Gestion Clignotement LED non bloquant
 
+
+
+// mode rafraichissement rapide des balances
+// attention le scale.begin  dure > 400 ms
+// les 10 lectures 900 ms
+debugSerial.println("BalRap A");
+    if (InfoBalScreenRefreshBal_1)
+    {
+      Contrainte_List[0] = GetStrainGaugeFast(0);
+      HiveSensor_Data.HX711Weight[0] = calculePoids(0);
+    }
+debugSerial.println("BalRap B");   
+    if (InfoBalScreenRefreshBal_2)
+    {
+      Contrainte_List[1] = GetStrainGaugeFast(1);
+      HiveSensor_Data.HX711Weight[1] = calculePoids(1);
+    }   
+debugSerial.println("BalRap C");            
+    if (InfoBalScreenRefreshBal_3)
+    {
+      Contrainte_List[2] = GetStrainGaugeFast(2);
+      HiveSensor_Data.HX711Weight[2] = calculePoids(2);
+    }    
+debugSerial.println("BalRap D");               
+    if (InfoBalScreenRefreshBal_4)
+    {
+      Contrainte_List[3] = GetStrainGaugeFast(3);
+      HiveSensor_Data.HX711Weight[3] = calculePoids(3);
+    }  
+ 
+ 
 // ---------------------------------------------------------------------------*
 // Gestion rafraichissement écrans (System\INFOS, )
 // ---------------------------------------------------------------------------*

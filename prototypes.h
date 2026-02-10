@@ -21,6 +21,7 @@ void SETUPinitDebugSerial(void);
 void SETUPinitLoRaSerial(void);
 void SETUPsoftReset(void);
 void SETUPDHTInit(void);
+void SETUPinitHX711WithWatchdog(int);
 void SETUPSetStructDefaultValues(void);
 
 
@@ -396,7 +397,7 @@ void OLEDInit130(void);
 void OLEDInit154(void);
 void OLEDClear(void);
 void nonprintOLED(uint8_t ligne, uint8_t colonne, const char *message);
-void OLEDClearLine(uint8_t ligne);
+void non_OLEDClearLine(uint8_t ligne);
 void OLEDPrintChar(uint8_t ligne, uint8_t colonne, char c);
 void OLEDPrintVar(uint8_t ligne, uint8_t colonne, const void *valeur, char type);
 void OLEDPrintFormatted(uint8_t ligne, uint8_t colonne, const void *valeur, char type, const char *unite, int precision, char align);
@@ -473,7 +474,7 @@ uint8_t RN2483GetCardNumber(void);
 
 uint8_t init2483A(uint8_t *HWEUI); //   => dans setup.cpp
 uint8_t RN2483Init(uint8_t *HWEUI);
-void initLoRa(void);
+bool    initLoRa(void);
 //void getHWEUI(char *);      // Gets and stores the LoRa module's HWEUI   
 
 // tests en cours
@@ -509,7 +510,9 @@ char read_DHT(DHT dht);
 void take_All_Measure(void);
 // HX711
 float Set_Scale_Bal(char num, float poids_en_grammes);    // N° de jauges des balances 1 à 4
-float GetPoids(int numJauge,int sample);    // N° de jauges des balances 1 à 4
+float calculePoids(int numJauge);
+float GetStrainGaugeFast(int numJauge);
+float GetStrainGaugeAverage(int numJauge,int sample);    // N° de jauges des balances 0 à 3
 
 // µC
 float getTemperature(void);

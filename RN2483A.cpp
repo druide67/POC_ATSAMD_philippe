@@ -89,8 +89,7 @@ getHWEUI(config.materiel.DevEUI);     // get the Hardware DevEUI ex: "0004A30B00
       {
         debugSerial.print(" execution RN2483Init(), done with card : ");
         debugSerial.println(config.materiel.Num_Carte);
-        OLEDDebugDisplay("2483A    Initialized");
-      }
+       }
       else
       {
         debugSerial.println(" NO 2483 present.");
@@ -346,7 +345,7 @@ soit:
 void buildLoraPayload(void)
 { int indice = 0, i;
 
-debugSerial.println("buildLoraPayload, datas:");
+//debugSerial.println("buildLoraPayload, datas:");
   
   payload[indice++] = config.applicatif.RucherID;
 //debugSerial.println(config.applicatif.RucherID);
@@ -362,7 +361,7 @@ debugSerial.println("buildLoraPayload, datas:");
 //debugSerial.println(humidity);
 
   sprintf(serialbuf,"Rucher: %d  [RucherName: %s] temp: %d, Hum.: %d",config.applicatif.RucherID, config.applicatif.RucherName, temperature, humidity);
-  debugSerial.println(serialbuf);
+//  debugSerial.println(serialbuf);
   
   int Brightness = (int)HiveSensor_Data.Brightness;
   payload[indice++] = ((uint8_t*)&Brightness)[0];     // Brightness
@@ -382,7 +381,7 @@ debugSerial.println("buildLoraPayload, datas:");
 //debugSerial.println(VSol);
 
   sprintf(serialbuf,"Lum:    %d Vbat: %d,  Vsol: %d",Brightness, VBat, VSol);
-  debugSerial.println(serialbuf);
+//  debugSerial.println(serialbuf);
 
 // constructioon PayLoad des 4 pesées
 
@@ -390,27 +389,16 @@ debugSerial.println("buildLoraPayload, datas:");
 
   for (i = 0; i < 4; i++) 
   {
-//debugSerial.print(i);  debugSerial.print("/");debugSerial.println(indice);
-//HiveSensor_Data.HX711Weight[i] = HiveSensor_Data.HX711Weight[i] * 100;
+    Masse = (int)roundf(HiveSensor_Data.HX711Weight[i] * 100.0f); 
+    memcpy(&payload[indice], &Masse, sizeof(Masse));
+    indice+=2;
 
-
-
-
-
-    
-    Masse = (int)roundf(HiveSensor_Data.HX711Weight[i] * 100.0f); //(int)(Data_LoRa.HX711Weight[i]// 100); 
- memcpy(&payload[indice], &Masse, sizeof(Masse));
-//    payload[indice++] = ((uint8_t*)&Masse)[0];	      // Hive1 to 4 Weight
- //   payload[indice++] = ((uint8_t*)&Masse)[1];
-//debugSerial.println(Masse);
-indice+=2;
-  sprintf(serialbuf,"Masse%d: %f / ",i,HiveSensor_Data.HX711Weight[i] *100); // Masse);
-  debugSerial.print(serialbuf);
-
+//  sprintf(serialbuf,"Masse%d: %f / ",i,HiveSensor_Data.HX711Weight[i] *100); //
+//  debugSerial.print(serialbuf);
 //debugSerialDisplayScaledSensorState(i);   // num 0 .. 3
   
   }
-debugSerial.println(" => Build HEX Payload");
+//debugSerial.println(" => Build HEX Payload");
   
 //debugSerial.print("final i/payload[indice]"); debugSerial.print(i);  debugSerial.print("/");
 //debugSerial.println(indice);
@@ -430,7 +418,7 @@ debugSerial.println(" => Build HEX Payload");
   hexPayload[hexPayloadSize] = '\0';          // Null terminate
   
 //debugSerial.print("final hexpayload[i]"); debugSerial.println(i); 
-debugSerial.print("(fin buildLoraPayload) hexPayload: "); 
+debugSerial.print("hexPayload: "); 
 debugSerial.println(hexPayload);                 // chaine de caractère HEXA de Payload
 }
 
@@ -444,10 +432,10 @@ debugSerial.println(hexPayload);                 // chaine de caractère HEXA de
 void sendLoRaPayload(uint8_t *Datas,uint8_t len)
 { 
 debugSerialPrintLoraPayload(Datas,len);
-debugSerial.println("appel LoRaBee.send");
+// debugSerial.print("appel LoRaBee.send, ");
 //debugSerial.println(F("---------------------------------------- RN2483A - Dump Config ----------------------------"));
   //EPR_24C32DumpConfigToJSON();
-debugSerial.println(F("---------------------------------------- RN2483A - Sending Payload ------------------------"));
+//debugSerial.println(F("---------------------------------------- RN2483A - Sending Payload ------------------------"));
 
 
   switch (LoRaBee.send(1,Datas,len))

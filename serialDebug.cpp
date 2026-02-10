@@ -464,7 +464,7 @@ void debugSerialDisplayScaledSensorState(int num)     // num 0 .. 3
 // temp : utiliser DHT22 si existe sinon temperature interne µC
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-float toto = /*Contrainte_List [num] =*/ (abs(scale.read_average(20)));
+float toto = (abs(scale.read_average(20)));
 float pesonValue = toto - pesonTare(num) ;           // valeur à convertir
 float pesonPoids = pesonValue /  pesonScale(num);              // poids correspondant
 // /* 

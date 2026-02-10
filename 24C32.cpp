@@ -14,6 +14,7 @@
 // ---------------------------------------------------------------------------*
 #define __INIT_DONE
 #include "define.h"
+//#include <stddef.h>
 
 // ===========================================================================
 // PROJET: Gestion Configuration EEPROM - Balance Connectée
@@ -121,12 +122,18 @@ typedef struct
 // exemple appel: uint16_t crc = EPR_24C32calcChecksum(&config);
 uint16_t EPR_24C32calcChecksum(ConfigGenerale_t* cfg)
 {
+  
   uint16_t crc = 0xFFFF;
   uint8_t* data = (uint8_t*)cfg;
   // Calcul sur toute la structure sauf le champ checksum lui-même
+
   uint16_t length = sizeof(ConfigGenerale_t) - sizeof(uint16_t);
-  
-  for (uint16_t i = 0; i < length; i++)  // sans 
+
+
+// Claud
+  size_t checksumOffset = offsetof(ConfigGenerale_t, checksum);  // = 184
+  for (uint16_t i = 0; i < checksumOffset; i++)  // S'arrête AVANT le checksum
+//  for (uint16_t i = 0; i < 186 /*length*/; i++)  // 188 -2 =186  => 0 .. 185 
   {
     crc ^= data[i];
     for (uint8_t j = 0; j < 8; j++)
@@ -145,12 +152,15 @@ uint16_t EPR_24C32calcChecksum(ConfigGenerale_t* cfg)
 // Affichage du checksum
 debugSerial.print(F("\n********************** EPR_24C32calcChecksum() ==>> calculé: 0x"));
 debugSerial.print(crc, HEX);
+debugSerial.print(F(" taille chksum: "));
+debugSerial.print(length, DEC);
+
+
 debugSerial.print(F(" en structure: 0x"));
 debugSerial.println(config.checksum, HEX);
 /**/
    return crc;
 }
-
 // ---------------------------------------------------------------------------
 // ===== FONCTIONS DE GESTION CONFIGURATION =====
 // ---------------------------------------------------------------------------
@@ -166,9 +176,9 @@ debugSerial.println(config.checksum, HEX);
 void EPR_24C32loadConfig(void)
 {
   // Lecture de la configuration
-  EPR_24C32readConfig();                           // lecture et copie des 176 octets de l'eeprom dans structure
+  EPR_24C32readConfig();                           // lecture et copie des 188 octets de l'eeprom dans structure
 //debugSerial.println(F("FIN : EPR_24C32readConfig()"));
-EPR_24C32DumpConfigToJSON(); 
+//EPR_24C32DumpConfigToJSON(); 
   // Vérification du nombre magique
   if (config.magicNumber != CONFIG_MAGIC_NUMBER)
   {
@@ -177,7 +187,6 @@ EPR_24C32DumpConfigToJSON();
     debugSerial.print(F(" / Lu: 0x"));
     debugSerial.print(config.magicNumber, HEX);
     debugSerial.println(F(" => Chargement config par defaut..."));
-    //initDefaultConfig();
     SETUPSetStructDefaultValues();
     debugSerial.println(F("FIN : SETUPSetStructDefaultValues() cas erreur CONFIG_MAGIC_NUMBER"));
     EPR_24C32saveConfig();
@@ -187,6 +196,7 @@ EPR_24C32DumpConfigToJSON();
 
   // Calcul et vérification du checksum
   uint16_t calculatedChecksum = EPR_24C32calcChecksum(&config);
+ debugSerial.print("config lue, magic number OK,checksum calculé :");
 debugSerial.println(calculatedChecksum, HEX);
   if (calculatedChecksum != config.checksum)
   {
@@ -195,7 +205,6 @@ debugSerial.println(calculatedChecksum, HEX);
     debugSerial.print(F(" / Calcule: 0x"));
     debugSerial.print(calculatedChecksum, HEX);
     debugSerial.println(F(" => Chargement config par defaut..."));
-    //initDefaultConfig();
     SETUPSetStructDefaultValues();
 debugSerial.println(F("FIN : SETUPSetStructDefaultValues() cas erreur chksum"));
     EPR_24C32saveConfig();
@@ -203,17 +212,16 @@ EPR_24C32DumpConfigToJSON();
     return;
   }
   
-  debugSerial.println(F("Config chargee avec succes"));
-  debugSerial.print(F("Version materiel: "));
+  debugSerial.print(F("Config chargee avec succes, "));
+/*  debugSerial.print(F("Version materiel: "));
   debugSerial.println(config.materiel.version);
   debugSerial.print(F("Version applicatif: "));
   debugSerial.println(config.applicatif.version);
-  debugSerial.print(F("Checksum: 0x"));
+*/
+debugSerial.print(F("Checksum: 0x"));
   debugSerial.println(config.checksum, HEX);
 
-EPR_24C32DumpConfigToJSON();
-
-
+//EPR_24C32DumpConfigToJSON();
   debugSerial.println("______________________________________________________________________________________________________________________");
 
   
@@ -249,11 +257,11 @@ void EPR_24C32saveConfig(void)
   
   // S'assurer que le nombre magique est présent
   config.magicNumber = CONFIG_MAGIC_NUMBER;
-  
+ 
   // Recalculer le checksum avant sauvegarde
   config.checksum = EPR_24C32calcChecksum(&config);
   
-  debugSerial.print(F("Checksum calcule: 0x"));
+  debugSerial.print(F("EPR_24C32saveConfig()\Checksum calculé: 0x"));
   debugSerial.println(config.checksum, HEX);
   
   // Écriture en EEPROM

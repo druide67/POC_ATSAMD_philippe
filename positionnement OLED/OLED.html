@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>OLED 128×64 - Grille caractères</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    gap: 16px;
+    min-height: 100vh;
+  }
+  h1 { color: #00d4ff; font-size: 1.1em; letter-spacing: 2px; }
+
+  /* ---- Panneau de contrôle ---- */
+  .controls {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+    background: #16213e;
+    border: 1px solid #0f3460;
+    border-radius: 8px;
+    padding: 12px 20px;
+  }
+  .ctrl-group { display: flex; flex-direction: column; gap: 4px; }
+  .ctrl-group label { font-size: 0.7em; color: #00d4ff; text-transform: uppercase; }
+  .ctrl-group input[type=number] {
+    width: 70px; padding: 4px 6px;
+    background: #0f3460; border: 1px solid #00d4ff;
+    color: #fff; border-radius: 4px; font-family: monospace;
+  }
+  .ctrl-group input[type=range] { width: 120px; accent-color: #00d4ff; }
+  .toggle-btn {
+    padding: 6px 14px; background: #0f3460;
+    border: 1px solid #00d4ff; color: #00d4ff;
+    border-radius: 4px; cursor: pointer; font-size: 0.8em;
+    transition: all .2s;
+  }
+  .toggle-btn.active { background: #00d4ff; color: #000; }
+
+  /* ---- Canvas wrapper ---- */
+  .canvas-wrap {
+    position: relative;
+    border: 2px solid #00d4ff;
+    border-radius: 6px;
+    box-shadow: 0 0 20px rgba(0,212,255,0.3);
+  }
+  canvas { display: block; image-rendering: pixelated; }
+
+  /* ---- Info box ---- */
+  .info {
+    background: #16213e;
+    border: 1px solid #0f3460;
+    border-radius: 8px;
+    padding: 12px 20px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px 30px;
+    min-width: 520px;
+  }
+  .info-item { display: flex; flex-direction: column; gap: 2px; }
+  .info-item .lbl { font-size: 0.65em; color: #888; text-transform: uppercase; }
+  .info-item .val { font-size: 0.95em; color: #00ff88; font-weight: bold; }
+
+  /* ---- Code box ---- */
+  .codebox {
+    background: #0d1117;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.78em;
+    color: #c9d1d9;
+    min-width: 520px;
+    line-height: 1.7;
+  }
+  .codebox .kw  { color: #ff7b72; }
+  .codebox .fn  { color: #d2a8ff; }
+  .codebox .num { color: #79c0ff; }
+  .codebox .cmt { color: #8b949e; }
+  .codebox .str { color: #a5d6ff; }
+
+  .legend {
+    display: flex; gap: 20px; font-size: 0.72em; flex-wrap: wrap;
+    justify-content: center;
+  }
+  .leg-item { display: flex; align-items: center; gap: 6px; }
+  .leg-color { width: 16px; height: 16px; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<h1>⬛ OLED SH1106 — 128×64 px — Grille 6×8</h1>
+
+<div class="controls">
+  <div class="ctrl-group">
+    <label>Colonne (0–20)</label>
+    <input type="number" id="inCol" min="0" max="20" value="0">
+  </div>
+  <div class="ctrl-group">
+    <label>Ligne (0–7)</label>
+    <input type="number" id="inRow" min="0" max="7" value="0">
+  </div>
+  <div class="ctrl-group">
+    <label>Nb colonnes</label>
+    <input type="number" id="inNcar" min="1" max="21" value="1">
+  </div>
+  <div class="ctrl-group">
+    <label>Nb lignes</label>
+    <input type="number" id="inNrow" min="1" max="8" value="1">
+  </div>
+  <div class="ctrl-group">
+    <label>Zoom</label>
+    <input type="range" id="zoom" min="3" max="8" value="5">
+  </div>
+  <div style="display:flex;flex-direction:column;gap:6px;">
+    <button class="toggle-btn active" id="btnPixels">Pixels</button>
+    <button class="toggle-btn active" id="btnChars">Chars</button>
+  </div>
+</div>
+
+<div class="canvas-wrap">
+  <canvas id="oled"></canvas>
+</div>
+
+<div class="legend">
+  <div class="leg-item"><div class="leg-color" style="background:#00ff88;"></div>Cellule sélectionnée</div>
+  <div class="leg-item"><div class="leg-color" style="background:#004422;border:1px solid #00ff88"></div>fillRect zone</div>
+  <div class="leg-item"><div class="leg-color" style="background:#1a1a1a;border:1px solid #333"></div>Cellule char</div>
+  <div class="leg-item"><div class="leg-color" style="background:#002244;border:1px solid #0055aa"></div>Zone hover</div>
+</div>
+
+<div class="info">
+  <div class="info-item"><span class="lbl">Colonne char</span><span class="val" id="oCol">0</span></div>
+  <div class="info-item"><span class="lbl">Ligne char</span><span class="val" id="oRow">0</span></div>
+  <div class="info-item"><span class="lbl">Pixel X (TL)</span><span class="val" id="oPx">0</span></div>
+  <div class="info-item"><span class="lbl">Pixel Y (TL)</span><span class="val" id="oPy">0</span></div>
+  <div class="info-item"><span class="lbl">Pixel X souris</span><span class="val" id="oMx">-</span></div>
+  <div class="info-item"><span class="lbl">Pixel Y souris</span><span class="val" id="oMy">-</span></div>
+</div>
+
+<div class="codebox" id="codeBox">
+  <span class="cmt">// Sélectionnez une cellule pour voir le code</span>
+</div>
+
+<script>
+const COLS = 128, ROWS = 64;
+const CHAR_W = 6, CHAR_H = 8;
+const N_CHAR_COLS = Math.floor(COLS / CHAR_W); // 21
+const N_CHAR_ROWS = ROWS / CHAR_H;              // 8
+const COL_OFFSET = 0; // OLED_Col_Offset (0 pour SSD1306, 2 pour 2.42")
+
+const canvas = document.getElementById('oled');
+const ctx    = canvas.getContext('2d');
+
+let ZOOM     = 5;
+let selCol   = 0, selRow = 0, selNcar = 1, selNrow = 1;
+let hoverCol = -1, hoverRow = -1;
+let showPx   = true, showCh = true;
+
+// Inputs
+const inCol  = document.getElementById('inCol');
+const inRow  = document.getElementById('inRow');
+const inNcar = document.getElementById('inNcar');
+const inNrow = document.getElementById('inNrow');
+const zoomIn = document.getElementById('zoom');
+
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+function updateFromInputs() {
+  selCol  = clamp(parseInt(inCol.value)||0, 0, N_CHAR_COLS-1);
+  selRow  = clamp(parseInt(inRow.value)||0, 0, N_CHAR_ROWS-1);
+  selNcar = clamp(parseInt(inNcar.value)||1, 1, N_CHAR_COLS - selCol);
+  selNrow = clamp(parseInt(inNrow.value)||1, 1, N_CHAR_ROWS - selRow);
+  inCol.value  = selCol;
+  inRow.value  = selRow;
+  inNcar.value = selNcar;
+  inNrow.value = selNrow;
+  draw();
+  updateInfo();
+  updateCode();
+}
+
+[inCol, inRow, inNcar, inNrow].forEach(el => el.addEventListener('input', updateFromInputs));
+
+zoomIn.addEventListener('input', () => { ZOOM = parseInt(zoomIn.value); draw(); });
+
+// Toggle buttons
+function setupToggle(id, getter, setter) {
+  const btn = document.getElementById(id);
+  btn.addEventListener('click', () => {
+    setter(!getter());
+    btn.classList.toggle('active', getter());
+    draw();
+  });
+}
+setupToggle('btnPixels', ()=>showPx, v=>showPx=v);
+setupToggle('btnChars',  ()=>showCh, v=>showCh=v);
+
+// ---- Draw ----
+function draw() {
+  const W = COLS * ZOOM;
+  const H = ROWS * ZOOM;
+  canvas.width  = W;
+  canvas.height = H;
+  ctx.imageSmoothingEnabled = false;
+
+  // Fond OLED noir
+  ctx.fillStyle = '#050505';
+  ctx.fillRect(0,0,W,H);
+
+  // Grille pixels
+  if (showPx) {
+    ctx.strokeStyle = '#1a2a1a';
+    ctx.lineWidth = 0.5;
+    for (let x = 0; x <= COLS; x++) {
+      ctx.beginPath();
+      ctx.moveTo(x*ZOOM, 0);
+      ctx.lineTo(x*ZOOM, H);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= ROWS; y++) {
+      ctx.beginPath();
+      ctx.moveTo(0, y*ZOOM);
+      ctx.lineTo(W, y*ZOOM);
+      ctx.stroke();
+    }
+  }
+
+  // Grille caractères
+  if (showCh) {
+    ctx.strokeStyle = '#0a3a0a';
+    ctx.lineWidth = 1;
+    for (let c = 0; c <= N_CHAR_COLS; c++) {
+      ctx.beginPath();
+      ctx.moveTo(c*CHAR_W*ZOOM, 0);
+      ctx.lineTo(c*CHAR_W*ZOOM, H);
+      ctx.stroke();
+    }
+    for (let r = 0; r <= N_CHAR_ROWS; r++) {
+      ctx.beginPath();
+      ctx.moveTo(0, r*CHAR_H*ZOOM);
+      ctx.lineTo(W, r*CHAR_H*ZOOM);
+      ctx.stroke();
+    }
+  }
+
+  // Hover
+  if (hoverCol >= 0 && hoverRow >= 0) {
+    ctx.fillStyle = 'rgba(0,85,180,0.25)';
+    ctx.fillRect(hoverCol*CHAR_W*ZOOM, hoverRow*CHAR_H*ZOOM,
+                 CHAR_W*ZOOM, CHAR_H*ZOOM);
+  }
+
+  // Zone fillRect sélectionnée (fond)
+  ctx.fillStyle = 'rgba(0,80,40,0.45)';
+  ctx.fillRect(selCol*CHAR_W*ZOOM, selRow*CHAR_H*ZOOM,
+               selNcar*CHAR_W*ZOOM, selNrow*CHAR_H*ZOOM);
+
+  // Cellule origine (coin TL)
+  ctx.fillStyle = 'rgba(0,255,136,0.55)';
+  ctx.fillRect(selCol*CHAR_W*ZOOM, selRow*CHAR_H*ZOOM,
+               CHAR_W*ZOOM, CHAR_H*ZOOM);
+
+  // Bordure zone
+  ctx.strokeStyle = '#00ff88';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(selCol*CHAR_W*ZOOM+1, selRow*CHAR_H*ZOOM+1,
+                 selNcar*CHAR_W*ZOOM-2, selNrow*CHAR_H*ZOOM-2);
+
+  // Labels colonnes (en haut, tous les 5)
+  ctx.fillStyle = '#00d4ff';
+  ctx.font = `bold ${Math.max(7, ZOOM-1)}px monospace`;
+  ctx.textAlign = 'center';
+  for (let c = 0; c < N_CHAR_COLS; c++) {
+    const px = c * CHAR_W * ZOOM + (CHAR_W*ZOOM/2);
+    if (ZOOM >= 5 || c % 2 === 0)
+      ctx.fillText(c, px, CHAR_H*ZOOM - 1);
+  }
+
+  // Labels lignes (à gauche)
+  ctx.textAlign = 'left';
+  for (let r = 1; r < N_CHAR_ROWS; r++) {
+    const py = r * CHAR_H * ZOOM - 1;
+    ctx.fillText('L'+r, 1, py);
+  }
+
+  // Coordonnées pixel des colonnes char en haut
+  if (ZOOM >= 5) {
+    ctx.fillStyle = '#444';
+    ctx.font = `${Math.max(5, ZOOM-3)}px monospace`;
+    ctx.textAlign = 'center';
+    for (let c = 0; c < N_CHAR_COLS; c++) {
+      const px = c * CHAR_W * ZOOM + (CHAR_W*ZOOM/2);
+      if (c % 2 === 0 || ZOOM >= 7)
+        ctx.fillText(c*CHAR_W, px, ZOOM*CHAR_H - ZOOM + 2);
+    }
+  }
+}
+
+// ---- Info ----
+function updateInfo() {
+  const px = selCol * CHAR_W + COL_OFFSET;
+  const py = selRow * CHAR_H;
+  document.getElementById('oCol').textContent = selCol;
+  document.getElementById('oRow').textContent = selRow;
+  document.getElementById('oPx').textContent  = px;
+  document.getElementById('oPy').textContent  = py;
+}
+
+// ---- Code ----
+function updateCode() {
+  const px   = selCol * CHAR_W + COL_OFFSET;
+  const py   = selRow * CHAR_H;
+  const wPx  = selNcar * CHAR_W;
+  const hPx  = selNrow * CHAR_H;
+
+  const html = `
+<span class="cmt">// Col ${selCol}, Ligne ${selRow}  →  pixel (${px}, ${py})   zone: ${wPx}×${hPx} px</span>
+<span class="cmt">// ─────────────────────────────────────────────────────────</span>
+<span class="cmt">// Positionner le curseur :</span>
+<span class="fn">setCursorAdjusted</span>(<span class="num">${selCol*CHAR_W}</span>, <span class="num">${py}</span>);           <span class="cmt">// col=${selCol}, lig=${selRow}</span>
+<span class="cmt">// ou avec les constantes :</span>
+<span class="fn">setCursorAdjusted</span>(<span class="num">${selCol}</span> * <span class="str">OLED_Col</span>, <span class="num">${selRow}</span> * <span class="str">OLED_L1</span>);
+
+<span class="cmt">// Effacer une zone (fillRect) :</span>
+display.<span class="fn">fillRect</span>(<span class="num">${px}</span>, <span class="num">${py}</span>, <span class="num">${wPx}</span>, <span class="num">${hPx}</span>, <span class="num">0</span>);
+<span class="cmt">// ou avec les constantes :</span>
+display.<span class="fn">fillRect</span>(<span class="str">OLED_Col_Offset</span> + <span class="num">${selCol}</span>*<span class="str">OLED_Col</span>, <span class="num">${selRow}</span>*<span class="str">OLED_L1</span>,
+           <span class="num">${selNcar}</span>*<span class="str">OLED_Col</span>, <span class="num">${selNrow}</span>*<span class="str">OLED_L1</span>, <span class="num">0</span>);
+
+<span class="cmt">// Écrire du texte :</span>
+display.<span class="fn">setCursor</span>(<span class="num">${px}</span>, <span class="num">${py}</span>);
+display.<span class="fn">print</span>(<span class="str">"votre texte"</span>);   <span class="cmt">// max ${N_CHAR_COLS - selCol} car. depuis col ${selCol}</span>`;
+
+  document.getElementById('codeBox').innerHTML = html;
+}
+
+// ---- Mouse ----
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  const mx = Math.floor((e.clientX - r.left) / ZOOM);
+  const my = Math.floor((e.clientY - r.top)  / ZOOM);
+  hoverCol = Math.floor(mx / CHAR_W);
+  hoverRow = Math.floor(my / CHAR_H);
+  document.getElementById('oMx').textContent = mx;
+  document.getElementById('oMy').textContent = my;
+  draw();
+});
+
+canvas.addEventListener('mouseleave', () => {
+  hoverCol = -1; hoverRow = -1;
+  document.getElementById('oMx').textContent = '-';
+  document.getElementById('oMy').textContent = '-';
+  draw();
+});
+
+canvas.addEventListener('click', e => {
+  const r = canvas.getBoundingClientRect();
+  const mx = Math.floor((e.clientX - r.left) / ZOOM);
+  const my = Math.floor((e.clientY - r.top)  / ZOOM);
+  selCol = Math.floor(mx / CHAR_W);
+  selRow = Math.floor(my / CHAR_H);
+  inCol.value = selCol;
+  inRow.value = selRow;
+  updateFromInputs();
+});
+
+// Init
+draw();
+updateInfo();
+updateCode();
+</script>
+</body>
+</html>

@@ -156,14 +156,8 @@ unsigned long lastBlink = 0;
 bool blinkState = true;
 
 // Variables config
-bool setupDone = false;
 ConfigGenerale_t config;
-//config.materiel_t config.materiel;
-//config.applicatif_t config.applicatif;
 HiveSensor_Data_t HiveSensor_Data;  // nommer en payload !!!! existe: uint8_t payload[PAYLOADSIZE];
-
-
-
 
 // Variables debug
 bool COM_DebugSerial = true;
@@ -233,17 +227,17 @@ uint8_t testPayload[7] =
 
 // jauges de contrainte de J01 à J15
 int bal = 0;      // indiquer le contenu, Num de proto identifié par init lora & HWEUI_List ???????????????????????
-float Jauge[22][4] = {                // Tare , Echelle , TareTemp , CompTemp
+float Jauge[22][4] = {                // Tare , Echelle (positif) , TareTemp , CompTemp
       {0,0,0,0},     // J00 => pas de peson connecté
       {178666,108.5,20,0},    // J01 20kg
       {30250,21.2,20,0},      // J02
-      {21000,22000,20,0},     // J03 évolution valeurs en négatif. tester sur bornier
+{-21000,-23208.92,20,0},     // J03 évolution valeurs en négatif. tester sur bornier
       {31000,32000,20,0},     // J04
       {41000,42000,20,0},     // J05
       {8000,0.19,19.7,0},     // J06  BAL_A  200kg  le 19/03/2021                     // new
       {61000,62000,20,0},     // J07MS 200kg
-      {64003,21.19,20,0},     // J08SL proto1 SLB 200kg (OK à 5 et 50kg)
-      {140680,19.39,20,0},    // J09MS proto1 SL 200kg (OK à 5 et 50kg)
+ {-35751,-22785.07079,20,0},     // J08SL proto1 SLB 200kg (OK à 5 et 50kg)
+ {-28026,-22990.56199,20,0},    // J09MS proto1 SL 200kg (OK à 5 et 50kg)
       {374942,1145.58,20,0},  // J10 2kg
       {4798647,1053.71,20,0}, // J11 2kg
       {179568,1056.40,20,0},  // J12 2kg
@@ -264,10 +258,10 @@ float Jauge[22][4] = {                // Tare , Echelle , TareTemp , CompTemp
 int Peson [10][4] = {
       {0,0,0,0},    // Module LoRa pas Lu; pas de Peson
       {0,0,0,17},    // 0004A30B0020300A carte 1 HS; sur Carte PROTO2 en service le 05/03/2021
-      {13,8,9,0}, //15},    // 0004A30B0024BF45 carte 2; en service le 10/05/2020
-      {6,16,0,0},    // 0004A30B00EEEE01 Carte PROTO1 mis en service Loess le 08/03/2021
+      {13,8,9,0},    // 0004A30B0024BF45 carte 2; en service le 10/05/2020
+      {6,3,8,9},   // 0004A30B00EEEE01 Carte PROTO1 mis en service Loess le 08/03/2021 et 02/2026
       {0,18,0,0},    // 0004A30B00EEA5D5
-      {19,21,14,17},  // 0004A30B00F547C
+      {19,21,14,8}, //17},  // 0004A30B00F547C //
       {6,0,0,0},
       {7,0,0,0},
       {8,0,0,0},
@@ -334,7 +328,7 @@ typedef struct
 
 // n'est ce pas en doublon avec Data_LoRa.HX711Weight[num]
 // non car Data_LoRa.HX711Weight = poids en g
-// et Contrainte_List [4] = valeur jauge
+// et Contrainte_List[4] = valeur jauge
 float Contrainte_List[4] = {
          -999,  // pas de balance, Affiche "N/A"
          -999,  // pas de balance, Affiche "N/A"
@@ -377,7 +371,14 @@ float VLumScale_List [10] = {
 String readingT;
 
 // pesée HX711
+// 100 ms par lecture
+// setup 400 ms
 HX711 scale;    // parameter "gain" is ommited; the default value 128 is used 
+HX711 scaleA;    // parameter "gain" is ommited; the default value 128 is used 
+HX711 scaleB;    // parameter "gain" is ommited; the default value 128 is used 
+HX711 scaleC;    // parameter "gain" is ommited; the default value 128 is used 
+HX711 scaleD;    // parameter "gain" is ommited; the default value 128 is used 
+
 int HX711_NbLect = 10;//float calibration_factor = 7050; //-7050 worked for my 440lb max scale setup
 
 /* 
@@ -521,11 +522,8 @@ extern uint8_t AppKey_List [][17];
 
 
 // Variables config
-extern bool setupDone;
 // Structures de données des configurations
 extern ConfigGenerale_t config;
-//extern config.materiel_t config.materiel;
-//extern config.applicatif_t config.applicatif;
 extern HiveSensor_Data_t HiveSensor_Data;
 
 

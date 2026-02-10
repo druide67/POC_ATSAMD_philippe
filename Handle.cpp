@@ -81,12 +81,12 @@ debugSerial.println(serialbuf);       // I2£n I2£n I2£n I2£n I2£n I2£n I2�
     turnOnRedLED();     // PCB donne GREEN?
 
 // preferer takeAllMeasure()
-  for ( int z=0;z<4;z++)                                 // Z  .. 3
+  for ( int z=0;z<4;z++)                                 // Z  0 .. 3
   {     
     if (Peson[config.materiel.Num_Carte][z])
     { 
-      GetPoids(z+1,10);  // renvoi la moyenne des &à dernières mesures 
-      HiveSensor_Data.HX711Weight[z] =  (GetPoids(z+1,10) - pesonTare(z))/pesonScale(z);   // GrammesPesée
+      Contrainte_List[z]=GetStrainGaugeAverage(z,10);  // renvoi la moyenne des &à dernières mesures 
+      HiveSensor_Data.HX711Weight[z] =  calculePoids(z); // kg
     }
 /*    else 
     {
@@ -106,7 +106,7 @@ debugSerial.println("__SendLoRaInOperationMode DEFINED => sendLoRaPayload()");
 debugSerial.println("Fin Payload, Reactive IRQ1");    
     alarm1_enabled = true;   // Réactiver alarme 1 
 #ifdef __SerialDebugPoc  
-debugSerial.print("7");   // 777777777777777777777777777777777777
+//debugSerial.print("7");   // 777777777777777777777777777777777777
 #endif
 // GestionEnCours("ISR2b");  // Surveillance pour Debug
   }
@@ -317,13 +317,12 @@ debugSerial.println("handleProgrammingMode1/wakeupPayload set to false");
   if (wakeupPayload)                          // Envoi LoRa, LED Activité LoRa
   { static int counterPayload=0;   
     wakeupPayload = false;
-debugSerial.println("handleProgrammingMode2/wakeupPayload set to false");
-
-debugSerial.println("GestionEnCours(\"ISR2a\")");   //                                            recherche KKKKK
+//debugSerial.println("handleProgrammingMode2/wakeupPayload set to false");
+//debugSerial.println("GestionEnCours(\"ISR2a\")");   //                                            recherche KKKKK
     counterPayload++;  // compte le nombre d'envois Payload
 //#ifdef __SerialDebugPoc    
-sprintf(serialbuf, "I2£%d ", counterPayload);   
-debugSerial.println(serialbuf);       // I2£n I2£n I2£n I2£n I2£n I2£n I2£n
+//sprintf(serialbuf, "I2£%d ", counterPayload);   
+//debugSerial.println(serialbuf);       // I2£n I2£n I2£n I2£n I2£n I2£n I2£n
 //#endif
     turnOnRedLED();     // PCB donne GREEN?
     buildLoraPayload();                                          // pas la cause du KKKKKKKKKKKKKKKKKKKKK
@@ -332,7 +331,7 @@ debugSerial.println(serialbuf);       // I2£n I2£n I2£n I2£n I2£n I2£n I2�
     alarm1_enabled = true;   // Réactiver alarme 1 
 #ifdef __SerialDebugPoc  
 
-debugSerial.print("7");   // 777777777777777777777777777777777777
+//debugSerial.print("7");   // 777777777777777777777777777777777777
 
 //Apparition de KKKKK
 
@@ -773,7 +772,13 @@ GestionEnCours("handleProgrammingModek");     // affiche le type de traitement e
 debugSerial.print("K");   // KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
 #endif   
 
+
+LOG_ERROR("Perte de la Gestion courante");
+
+startupListActivated = false;
 restartGestionSaisieOLED();    // solution de sortie d'urgence à valider
+GestionEnCours("handleProgrammingModea");
+
 
     if (touche != KEY_NONE)
     {
@@ -885,7 +890,7 @@ bool isInfoScreenActive(void)
 void restartGestionSaisieOLED(void)
 {
 // préciser le statut des menus, retour au PRINCIPAL
-  switchToOperationMode = true;
+  switchToOperationMode = true;   // 
   switchToProgrammingMode = false;
   OLEDClear();
 // Réinit structure à Default

@@ -371,7 +371,7 @@ typedef struct
 
 // ===== STRUCTURES DE CONFIGURATION =====
 // Définition structure: config.materiel_t
-typedef struct 
+typedef struct __attribute__((packed))
 {
   uint16_t version;       // version matérielle : 3 = PCB2
   uint8_t adresseRTC;     // DS3231_ADDRESS 0x68
@@ -428,7 +428,7 @@ typedef struct
 
 
 // Définition structure: config.applicatif_t;
-typedef struct 
+typedef struct __attribute__((packed))
 {
     uint16_t version;  // version logicielle
 // paramètres cosmétiques    
@@ -449,7 +449,7 @@ typedef struct
 } ConfigApplicatif_t;
 
 // Config Générale
-typedef struct 
+typedef struct __attribute__((packed))
 {
   uint16_t magicNumber;         // Nombre magique pour validation
   ConfigApplicatif_t applicatif;

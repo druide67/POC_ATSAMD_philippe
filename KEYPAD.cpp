@@ -91,9 +91,10 @@ key_code_t readKeyOnce(void)
       return keycodes[i];                                 // renvoie KEY_n identifiée
   }
 
-// supprimer 3 lignes si pa revu.
-char localserialbuf[81];
 // 14:14:37.305 -> KEY-INVALID: 661/755
+// supprimer 3 lignes si pas revu.
+char localserialbuf[81];
+
 sprintf(localserialbuf, "KEY-INVALID: %d/%d",val, levels[4] + TOL); 
 debugSerial.println(localserialbuf);
 

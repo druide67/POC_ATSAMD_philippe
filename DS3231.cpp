@@ -12,6 +12,8 @@
 //                                            | |   | |   
 //                                            |_|   |_|   
 // ---------------------------------------------------------------------------*
+// RTClib Documentation : https://adafruit.github.io/RTClib/html/index.html
+// ---------------------------------------------------------------------------*
 #define __INIT_DONE
 #include "define.h"
 
@@ -71,7 +73,6 @@ char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursd
 
      //rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0)); 
       rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));  
-
       
     }
 #ifdef debugSerialinitRTC
@@ -89,9 +90,6 @@ char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursd
 // ---------------------------------------------------------------------------*
 void DS3231setRTCAlarm1(void) 
 {
-//  return; 
-
-  
 // Configuration DS3231 AVANT interruption
 //  rtc.writeSqwPinMode(DS3231_OFF);
   rtc.clearAlarm(1);
@@ -131,8 +129,7 @@ void DS3231setRTCAlarm2(void)
 // déjà fait dans fonction appelante:      rtc.clearAlarm(2);
 
    // AJOUTEZ ceci pour être sûr :
-  //  rtc.alarmFired(1);  // Lit et efface le flag alarme 1
- //  rtc.alarmFired(2);  // Lit et efface le flag alarme 2
+   // DS3231clearRTCAlarms();       // Efface les 2 alarmes du RTC
    
     // Reprogrammer A2
 //debugSerial.println("=== CONFIGURATION ALARMES RTC + INTERRUPTIONS ===");
@@ -159,11 +156,11 @@ void DS3231setRTCAlarm2(void)
 }
 
 // ---------------------------------------------------------------------------*
-// @brief Efface les alarmes du RTC
+// @brief Efface les 2 alarmes du RTC
 // @param Aucun
 // @return void
 // ---------------------------------------------------------------------------*
-void DS3231clearRTCAlarms(void) 
+void DS3231clearRTCAlarms(void)       // Efface les 2 alarmes du RTC
 {
   rtc.clearAlarm(1);
   rtc.clearAlarm(2);

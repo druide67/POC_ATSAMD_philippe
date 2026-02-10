@@ -22,7 +22,7 @@
 // ---------------------------------------------------------------------------*
 void onRTCAlarm(void) // $ ou £
 {
-debugSerial.println("\n€ISR€");  // €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
+debugSerial.print("\n€ISR€ ");  // €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 
 
 // ISR1 doit être activé, sinon vu toutes les n minutes de ISR2
@@ -55,8 +55,7 @@ debugSerial.print("\n$1$\n");   // $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
   if (rtc.alarmFired(2)) 
   {
     alarm1_enabled = false;  // Bloquer alarme 1
-    rtc.clearAlarm(1);       
-    rtc.clearAlarm(2); 
+    DS3231clearRTCAlarms();       // Efface les 2 alarmes du RTC
 
     if (!alarm2_enabled) 
     {
@@ -66,13 +65,13 @@ debugSerial.print("\n$1$\n");   // $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     wakeup1Sec = false;    // annule si activée
 displayNextPayload = false; //true;
     wakeupPayload = true;
-debugSerial.println("OnRTCAlarm/wakeupPayload set to true");
+//debugSerial.println("OnRTCAlarm/wakeupPayload set to true");
     
 
     if (config.applicatif.SendingPeriod)     // si 0 pas d'envois par IT
     {
       DS3231setRTCAlarm2(); // Reprogrammer prochaine alarme
     }
-debugSerial.println("\n£2£\n");  // £££££££££££££££££££££££££££££££££££££££££££££££££££££££££
+//debugSerial.println("\n£2£\n");  // £££££££££££££££££££££££££££££££££££££££££££££££££££££££££
   }
 }

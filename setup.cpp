@@ -157,34 +157,12 @@ debugSerial.println("init2483A() => fin Fonction");
 
 // ---------------------------------------------------------------------------*
 // ---------------------------------------------------------------------------*
-void initLoRa(void)
+bool initLoRa(void)
 {
-// INIT LoRa ---- INIT LoRa ---- INIT LoRa ---- INIT LoRa ---- INIT LoRa 
-debugSerial.println("--------------------------------- SETUP - INIT LoRa ---------------------------------");
 //  Reset_LoRa();  // initialise pas sur reset chaud.
 
-  if (setupLoRa())
-  {
-debugSerial.println("Init LoRa done.");
-debugSerial.println("Test sending LoRa testPayload (7) (Restart)..."); 
-    sendLoRaPayload((uint8_t*)testPayload,7);
-    OLEDDebugDisplay("LoRa    Initialized");
-  }
-  else
-  {
-    OLEDDebugDisplay("LoRa Failed");  
-  }
+  return(setupLoRa());
 
-/*
-  blink(LED_BUILTIN,200);
-// Flash ---- Flash ---- Flash ---- Flash ---- Flash ---- Flash ---- Flash 
-// set FLASH to deep sleep & reset SPI pins for min. energy consumption
-  DFlashUltraDeepSleep(); 
-*/
-//  OLEDDebugDisplay("---- SETUP DONE ----");
-//delay(1000);
-//  display.clearDisplay();
-//  display.display();
 }
 
 // INIT DHT22 ---- INIT DHT22 ---- INIT DHT22 ---- INIT DHT22 ---- 
@@ -197,6 +175,23 @@ debugSerial.println("--------------------------------- SETUP - INIT DHT22 ------
   debugSerial.println("done.");
 OLEDDebugDisplay("DHT22   Initialized");
 }
+
+//==============================================================================
+// SOLUTION 2 : Utiliser un Watchdog Timer (plus radical)
+//==============================================================================
+
+// Sur ATSAMD21, on peut utiliser le WDT pour forcer un reset si blocage
+
+
+void SETUPinitHX711WithWatchdog(int num)
+{
+// voir porposition Claude : SOLUTION_COMPLETE_HX711_BLOCAGE SODAQ.txt
+}
+
+// ATTENTION : Si scale.begin() bloque, le µC va reset après 4 secondes !
+// Pas idéal, mais au moins le programme ne reste pas bloqué indéfiniment
+
+
 
 
 // ---------------------------------------------------------------------------
@@ -215,10 +210,10 @@ void SETUPSetStructDefaultValues()
   config.applicatif.version = CONFIG_VERSION; 
   
 // Paramètres LED
-  config.applicatif.redLedDuration = RED_LED_DURATION;;
-  config.applicatif.greenLedDuration = GREEN_LED_DURATION;;
-  config.applicatif.blueLedDuration = BLUE_LED_DURATION;;
-  config.applicatif.builtinLedDuration = BUILTIN_LED_DURATION;;
+  config.applicatif.redLedDuration = RED_LED_DURATION;
+  config.applicatif.greenLedDuration = GREEN_LED_DURATION;
+  config.applicatif.blueLedDuration = BLUE_LED_DURATION;
+  config.applicatif.builtinLedDuration = BUILTIN_LED_DURATION;
   
 // Paramètres Rucher
   config.applicatif.RucherID = 0; 
@@ -269,12 +264,9 @@ void SETUPSetStructDefaultValues()
   config.materiel.HX711Dta_0 = HX711_ASENSOR_DOUT;
 // les données sont extraites de la base de données des pesons
   config.materiel.HX711NoloadValue_0 = Jauge[config.materiel.Peson_0][0];
-  config.materiel.HX711Tare_Temp_0 = Jauge[config.materiel.Peson_0][2];
   config.materiel.HX711Scaling_0 = Jauge[config.materiel.Peson_0][1];
+  config.materiel.HX711Tare_Temp_0 = Jauge[config.materiel.Peson_0][2];
   config.materiel.HX711Cor_Temp_0 = Jauge[config.materiel.Peson_0][3];
-
-//    Jauge[19] =>   {7929.70,97.49,20,0},    // J19 proto1  20kg (OK à 1 et 5kg) + DHT22
-
   
 // Initialisation HX711#1
   config.materiel.Peson_1 = Peson[config.materiel.Num_Carte][1];
@@ -282,8 +274,8 @@ void SETUPSetStructDefaultValues()
   config.materiel.HX711Dta_1 = HX711_BSENSOR_DOUT;
 // les données sont extraites de la base de données des pesons
   config.materiel.HX711NoloadValue_1 = Jauge[config.materiel.Peson_1][0];
-  config.materiel.HX711Tare_Temp_1 = Jauge[config.materiel.Peson_1][2];
   config.materiel.HX711Scaling_1 = Jauge[config.materiel.Peson_1][1];
+  config.materiel.HX711Tare_Temp_1 = Jauge[config.materiel.Peson_1][2];
   config.materiel.HX711Cor_Temp_1 = Jauge[config.materiel.Peson_1][3];
   
 // Initialisation HX711#2
@@ -292,8 +284,8 @@ void SETUPSetStructDefaultValues()
   config.materiel.HX711Dta_2 = HX711_CSENSOR_DOUT;
 // les données sont extraites de la base de données des pesons
   config.materiel.HX711NoloadValue_2 = Jauge[config.materiel.Peson_2][0];
-  config.materiel.HX711Tare_Temp_2 = Jauge[config.materiel.Peson_2][2];
   config.materiel.HX711Scaling_2 = Jauge[config.materiel.Peson_2][1];
+  config.materiel.HX711Tare_Temp_2 = Jauge[config.materiel.Peson_2][2];
   config.materiel.HX711Cor_Temp_2 = Jauge[config.materiel.Peson_2][3];
   
 // Initialisation HX711#3
@@ -302,8 +294,8 @@ void SETUPSetStructDefaultValues()
   config.materiel.HX711Dta_3 = HX711_DSENSOR_DOUT;
 // les données sont extraites de la base de données des pesons
   config.materiel.HX711NoloadValue_3 = Jauge[config.materiel.Peson_3][0];
-  config.materiel.HX711Tare_Temp_3 = Jauge[config.materiel.Peson_3][2];
   config.materiel.HX711Scaling_3 = Jauge[config.materiel.Peson_3][1];
+  config.materiel.HX711Tare_Temp_3 = Jauge[config.materiel.Peson_3][2];
   config.materiel.HX711Cor_Temp_3 = Jauge[config.materiel.Peson_3][3];
 
 // ---------------------------------------------------------------------------
@@ -313,9 +305,9 @@ void SETUPSetStructDefaultValues()
   config.magicNumber = CONFIG_MAGIC_NUMBER;  
 // Calcul et stockage du checksum
   config.checksum = EPR_24C32calcChecksum(&config);
-
+// 58 elements dans struct
 debugSerial.println(F("Config par defaut initialisee"));
 // EPR_24C32DumpConfigToJSON();
-debugSerial.println("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ SETUPSetStructDefaultValues() \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");  
-debugSerial.print("config.materiel.Num_Carte <= "); debugSerial.println(config.materiel.Num_Carte);  // OK
+//debugSerial.println("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ SETUPSetStructDefaultValues() \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\");  
+//debugSerial.print("config.materiel.Num_Carte <= "); debugSerial.println(config.materiel.Num_Carte);  // OK
 }

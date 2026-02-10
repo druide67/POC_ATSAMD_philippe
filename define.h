@@ -25,6 +25,13 @@
 #define PROJECT_NAME "POC IRQ_Payload IRQ_1s LOW_POWER OLED RN2483 DHT22 KEY5"  // len = 55
 #define VERSION "1.1.1-PL"
 
+
+#define LOG_ERROR(msg)   debugSerial.print("[ERROR] "); debugSerial.println(msg)
+#define LOG_WARNING(msg) debugSerial.print("[WARN]  "); debugSerial.println(msg)
+#define LOG_INFO(msg)    debugSerial.print("[INFO]  "); debugSerial.println(msg)
+
+
+
 #define NB_RUCHES 4 // 3 Protos Atsamd, Fixe à 4 pesées
 
 // ===== TIMING CONSTANTS =====
@@ -32,7 +39,7 @@
 #define GREEN_LED_DURATION      100   // Durée d'allumage LED verte 300 ms
 #define BLUE_LED_DURATION       100   // Durée d'allumage LED bleue 300 ms
 #define BUILTIN_LED_DURATION    100   // Durée d'allumage LED builtin 100 ms
-#define WAKEUP_INTERVAL_PAYLOAD 2     // Intervalle de réveil en minutes 
+#define WAKEUP_INTERVAL_PAYLOAD 5     // Intervalle de réveil en minutes 
 #define INTERVAL_1SEC           1000  // Intervalle 1 seconde en ms
 #define DEFAULT_SF              12    // Spread Factor par defaut
 #define TIMEOUT_SAISIE          20000    // Timeout saisies écrans (ms)
@@ -62,19 +69,19 @@
 #define CONFIG_VERSION 111   // Version 1.1.1
 // ===== ADRESSE EEPROM CONFIGURATION =====
 #define CONFIG_EEPROM_START 0x0000  // Adresse de début en EEPROM
-#define CONFIG_MAGIC_NUMBER 0xFF00  // Nombre magique pour valider config
+#define CONFIG_MAGIC_NUMBER 0xFF03  // Nombre magique pour valider config
 
 // defines pour raccourcir et clarifier les instructions
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // noms courts et explicites, parametrer (num: 0..3) par Macro
 #define poidsBal_g(num)   HiveSensor_Data.HX711Weight[num]         // g 
-#define poidsBal_kg(num)  (Contrainte_List[num]-pesonTare(num))/pesonScale(num)/1000 // kg
+#define poidsBal_kg(num)  abs((Contrainte_List[num]-pesonTare(num))/pesonScale(num)) // kg
 
 #define pesonTare(num)    Jauge[Peson[config.materiel.Num_Carte][num]][0]
 #define pesonScale(num)   Jauge[Peson[config.materiel.Num_Carte][num]][1]
 #define TareTemp(num)     Jauge[Peson[config.materiel.Num_Carte][num]][2]  
 #define CompTemp(num)     Jauge[Peson[config.materiel.Num_Carte][num]][3]
-
+#define pesonNum(num)     Peson[config.materiel.Num_Carte][num]
 
 #define EXPLORER
 
@@ -179,7 +186,7 @@
 #else
   #define OLEDTEXTSIZE  1
   #define OLED_Col      6
-  #define OLED_Col_Offset  2     // pour 2.42 pouces
+  #define OLED_Col_Offset  0 // 2     // pour 2.42 pouces
   #define OLED_Max_Col  20
   #define OLED_L1       8
   #define WHITE         SH110X_WHITE
@@ -210,6 +217,7 @@
 
 // ---------------------------------------------------------------------------*
 // HX711 Weight sensors - weastone bridge
+// HX711 Calibration Guide : https://github.com/bogde/HX711
 // ---------------------------------------------------------------------------*
 #include "HX711.h"              // inclusion de la librairie HX711
 #define HX711_SENSOR_SCK    3
@@ -217,7 +225,7 @@
 #define HX711_BSENSOR_DOUT  6
 #define HX711_CSENSOR_DOUT  8
 #define HX711_DSENSOR_DOUT  10
-#define debugSerialGetPoids  // decommenter pour les messages debugSerial
+#define debugSerialGetStrainGaugeAverage  // decommenter pour les messages debugSerial
 #define TARE  1071         //  56200 // Bloc de 56.2 kg
 
 // ---------------------------------------------------------------------------*
@@ -228,6 +236,7 @@
 #define DHT_SENSOR    5       // Temp/Hum
 #define DHT_T_ERR     99      // Mesures en erreur
 #define DHT_H_ERR     99      // Mesures en erreur
+
 
 #include ".\Struct.h"
 #include ".\Var.h"

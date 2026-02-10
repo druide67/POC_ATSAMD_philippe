@@ -493,16 +493,24 @@ void m02_4F_GetPayloadDelayDone()                          // appel de Handle.cp
 void m02_5F_Join() // Connexion LoRa
 {
   debugSerial.println("Appel m02_5F_Join - a tester");
-
   GestionEnCours("m02_5Fa");
 
-  
   init2483A(config.materiel.DevEUI);  // Réinitialise DevEUI, AppEUI et AppKey
-
   
   debugSerial.println("Fin init2483A");
   GestionEnCours("m02_5Fb");
-  initLoRa();   // Reconnecte et envoie Payload + affiche résultat
+  if (initLoRa())   // Reconnecte et envoie Payload + affiche résultat
+  {
+debugSerial.println("Init LoRa done.");
+debugSerial.println("Test sending LoRa testPayload (7) (Restart)..."); 
+    sendLoRaPayload((uint8_t*)testPayload,7);
+    OLEDDebugDisplay("LoRa    Initialized");
+  }
+  else
+  {
+    OLEDDebugDisplay("LoRa Failed");  
+  }
+  
   GestionEnCours("m02_5Fc");
   debugSerial.println("Appel m02_5F_Join - FIN");
 

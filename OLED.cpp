@@ -121,15 +121,32 @@ void OLEDClear(void)
 // @param col Colonne de départ
 // @param lig Ligne de départ
 // @param Ncar Nombre de caractères à effacer
+// Avec col = 6; ligne = 4 ;  nbcar = 14
+// display.fillRect( x, y, w, h, color );
+// x      int16_t   Colonne de départ (pixel gauche)    32
+// y      int16_t   Ligne de départ (pixel haut)        24
+// w      int16_t   Largeur en pixels                   84  
+// h      int16_t   Hauteur en pixels                    8
+// color  uint16_t  Couleur : 0 = noir, 1 = blanc
+//
 // @return void
 // ---------------------------------------------------------------------------*
 void OLEDEraseText(int16_t colonne, int16_t lig, int16_t Ncar)
 {
   char TL_ColPixel = (OLED_Col_Offset + colonne*OLED_Col);
   char TL_LigPixel = lig * OLED_L1;
+
     
+  if (debugOLEDDrawText)
+  {
+    debugSerial.print(" efface zone display.fillRect (pixels) TL_ColPixel : "); debugSerial.print(TL_ColPixel,DEC);
+    debugSerial.print(" TL_LigPixel: "); debugSerial.print(TL_LigPixel,DEC);
+    debugSerial.print(" OLED_Col * Ncar: "); debugSerial.print(OLED_Col * Ncar);
+    debugSerial.print("  OLED_L1: "); debugSerial.println( OLED_L1);
+  }
+
   display.fillRect( TL_ColPixel, TL_LigPixel, OLED_Col * Ncar, OLED_L1, 0);
-  display.display(); // Ajoutez ceci pour forcer l'affichage
+  display.display();                    // Ajoutez ceci pour forcer l'affichage     
 }
 
 // ---------------------------------------------------------------------------*
@@ -194,20 +211,6 @@ void OLEDDrawScreenRefreshTime(uint8_t ligne, uint8_t colonne)
   { val = systemTime.second();
     OLEDPrintVar(ligne, 6, &val, 'i');
   }       
-/*               
-               if (oldSystemTime.day() != systemTime.day())
-               { val = systemTime.day();
-   //              OLEDPrintVar(ligne, 11, &val, 'i');
-               }
-               if (oldSystemTime.month() != systemTime.month())
-               { val = systemTime.month();
-        //         OLEDPrintVar(ligne, 14, &val, 'i');
-               }              
-               if (oldSystemTime.year() != systemTime.year())
-               { val = systemTime.year();
-     //            OLEDPrintVar(ligne, 17, &val, 'i');
-               }               
-*/
 // ---------------------------------------------------------------------------*              
   if (systemTime != oldSystemTime)
     oldSystemTime = systemTime;
@@ -281,8 +284,6 @@ OLEDClear();
 void non_OLEDClearLine(uint8_t ligne) 
 {
     OLEDDrawText(1,ligne, 0, "                    "); // 20 espaces
-delay(1000);
-////    
 }
 
 // ---------------------------------------------------------------------------*
@@ -454,40 +455,33 @@ void OLEDDrawText(int8_t Txt_Size, uint8_t ligne, uint8_t colonne, const char *t
 {
   if (strlen(text) > 20-colonne )   // controler la longueur du texte à afficher  
   {
-    debugSerial.println("OLEDDrawText: Txt dépasse colonne 20");
-// erreur, texte dépasse colonne 20
+    LOG_ERROR("OLEDDrawText: Txt dépasse colonne 20");
   }
   
   display.setTextSize(Txt_Size);
   display.setTextColor(WHITE); 
 
-  
-  OLEDEraseText(colonne, ligne, strlen(text));
-//debugOLEDDrawText = true;     
+//debugOLEDDrawText = true;    
+// Efface zone à réecrire
+//10:24:43.663 ->  efface zone display.fillRect (pixels) TL_ColPixel :  TL_LigPixel:  OLED_Col * Ncar: 84  OLED_L1: 8
+
+    OLEDEraseText(colonne, ligne, strlen(text));  
+
+//10:24:43.709 -> txt: <z:     0.01 ko> NB Car: 14 Ligne: 3 Colonne: 5/30
   if (debugOLEDDrawText)
   {
     debugSerial.print("txt: <"); debugSerial.print(text);debugSerial.print(">");
     debugSerial.print(" NB Car: "); debugSerial.print(strlen(text));
     debugSerial.print(" Ligne: "); debugSerial.print(ligne); 
     debugSerial.print(" Colonne: "); debugSerial.print(colonne); 
-    debugSerial.print("/"); debugSerial.println((colonne*OLED_Col)); 
-  }
-//debugOLEDDrawText = false; 
+    debugSerial.print("/"); debugSerial.println((colonne*OLED_Col)); // OLED_Col vaut nb pix 1 col (6)
+    }
 
-/* rappel
-//    #define OLED_Col      6
-  #define OLED_Max_Col  20
-  #define OLED_L1       8
-*/
-// coordonnées en PIXELS
-
-//colonne++;  // 242
-
-
-
-
+ // positionne le curseur 
+//10:24:43.709 ->  positionne curseur (pixels) x :32 y: 24 
   setCursorAdjusted((colonne*OLED_Col), (ligne*OLED_L1)); // OLED_ColOffset
-        
+debugOLEDDrawText = false; 
+
   for (uint8_t i = 0; i < strlen(text); i++)
   {
     display.write(text[i]);
@@ -559,27 +553,7 @@ void OLEDDisplayTime(char *h, uint8_t pos)
 // 07 :  Température µC
 // @param Aucun
 // @return void
-/* 
- typedef struct   
-{
-  uint8_t rucher_ID;  // 0:non affecté, 1: Fleurs, 2: Acacia, 3: Tilleul, 4: Chataignier
-                      // 5: Sapin 6: Jachère 7: Forêt  8: Phacélie 9: Pommes 
-  float   DHT_Temp;         // Temp DHT en °C    xx,x  Float
-  float   DHT_Hum;          // Hum DHT en %      xx,x  Float
-  float   Brightness;       // %Lum en LUX      xxxxx  uint16_t
-  float   Bat_Voltage;      // Tension BAT en V     xx,xx  Float (uint16_t)
-  float   Solar_Voltage;    // Tension BAT en V     xx,xx  Float (uint16_t)
-  float   HX711Weight[4];    // masse Ruche 1 en kg xxx,xx (précision affich. 10g)
-  float   VSol[11];
-  float   VBat[11];   
-//  float   _noLux;              // VLux, ne sera pas conservé 
-  float   ProcessorTemp;    // temp µC, conservé en backup DHT22 
-} LoRa_Var;
-*/
 // ---------------------------------------------------------------------------*
-
-// Modifier pour avoir données dynamiques ++++ tout +++++++++++++++++++++++++++
-
 void OLEDDisplayHivesDatas(void)
 { char localOLEDbuf[21] = "12345678901234567890";
 
@@ -602,11 +576,9 @@ void OLEDDisplayHivesDatas(void)
 ////    sprintf(OLEDbuf, "Ba1: %4.1f - Ba2: %4.1f", poidsBal_g(0), poidsBal_g(1));
 
 
- float poids = (float)poidsBal_g(0);
-       poids = poids/1000;
-//HiveSensor_Data.HX711Weight[0]=123456;
+// WTF poids
        
-  snprintf(localOLEDbuf, 21,"Ba1: %4.1f - Ba2: %4.1f", HiveSensor_Data.HX711Weight[0]/1000, 15.22); //poidsBal_g(1));
+  snprintf(localOLEDbuf, 21,"Ba1: %4.1f - Ba2: %4.1f", HiveSensor_Data.HX711Weight[0]/1000, 15.22);
   OLEDDrawText(1,5, 0, localOLEDbuf);
 
   snprintf(localOLEDbuf, 21, "Ba3: %4.1f - Ba4: %4.1f", poidsBal_g(2), poidsBal_g(3));
@@ -641,9 +613,6 @@ void OLEDDisplayHivesDatas(void)
 // @param void
 // @return void
 // ---------------------------------------------------------------------------*
-
-// Modifier pour avoir données dynamiques ++++ DHT ou TµC +++++++++++++++++++++
-
 void OLEDdisplayInfoScreenSyst(void)
 { char localOLEDbuf[21] = "12345678901234567890";
   infoScreenState = INFO_SCREEN_ACTIVE;   // pour eviter KKKKKKKK
@@ -687,22 +656,6 @@ void OLEDdisplayInfoScreenSyst(void)
 // @param void
 // @return void
 // ---------------------------------------------------------------------------*
-/*
-
-// Config LoRa
-typedef struct  
-{
-  uint8_t HWEUI [20];       // ID RN2483: "0004A30B00EEEE01"
-  uint8_t AppEUI [10];      // AppEUI: {0x41, 0x42, 0x45, 0x49, 0x4C, 0x4C, 0x45, 0x31, 0x00}
-  uint8_t AppKey [18];      // AppKEY: // 5048494C495050454C4F564542454553 - PHILIPPELOVEBEES
-// {0x50, 0x48, 0x49, 0x4C, 0x49, 0x50, 0x50, 0x45, 0x4C, 0x4F, 0x56, 0x45, 0x42, 0x45, 0x45, 0x53, 0x00} 
-  uint8_t SpreadingFactor;  // 7, 9 et 12 echec freudeneck
-  uint8_t SendingPeriod;    // 15 minutes = 500 sans IT
-} LoRa_configuration;  // LoRa_Config.  
- 
-*/
-
-// AppKey = (uint8_t *)AppKey_List[Ruche.Num_Carte];
 void OLEDdisplayInfoScreenLoRa(void)
 { char localOLEDbuf[21] = "12345678901234567890";
   infoScreenState = INFO_SCREEN_ACTIVE;   // pour eviter KKKKKKKK
@@ -745,9 +698,6 @@ debugSerial.println("Ecran infos affiche");
 // @param void
 // @return void
 // ---------------------------------------------------------------------------*
-
-// Modifier pour avoir données dynamiques ++++ 4 x Poids, date time
-
 void OLEDdisplayInfoBal(void)
 { char localOLEDbuf[21] = "12345678901234567890";
 //  int num = 1;
@@ -764,34 +714,27 @@ snprintf(localOLEDbuf, 21,"== INFOS BALANCES ==");
 
 // faire Fonction()
   if (Peson[config.materiel.Num_Carte][0])
-    snprintf(localOLEDbuf, 21,"Bal. A: %-10.0f P", poidsBal_kg(0) );
+    snprintf(localOLEDbuf, 21,"Bal. A: %8.2f kg", calculePoids(0) );
   else
-    snprintf(localOLEDbuf, 21,"Bal. A: N/A         ", poidsBal_kg(0) );
-  OLEDDrawText(1, 3, 8, localOLEDbuf);
+    snprintf(localOLEDbuf, 21,"Bal. A: N/A         ");
+  OLEDDrawText(1, 3, 0, localOLEDbuf);
   if (Peson[config.materiel.Num_Carte][1])
-    snprintf(localOLEDbuf, 21,"Bal. B: %10.0f g", poidsBal_kg(1) );
+    snprintf(localOLEDbuf, 21,"Bal. B: %8.2f kg", calculePoids(1) );
   else
-    snprintf(localOLEDbuf, 21,"Bal. B: N/A         ", poidsBal_kg(1) );
+    snprintf(localOLEDbuf, 21,"Bal. B: N/A         ");
   OLEDDrawText(1, 4, 0, localOLEDbuf);
 
   if (Peson[config.materiel.Num_Carte][2])
-    snprintf(localOLEDbuf, 21,"Bal. C: %10.0f g", poidsBal_kg(2) );
+    snprintf(localOLEDbuf, 21,"Bal. C: %8.2f kg", calculePoids(2) );
   else
-    snprintf(localOLEDbuf, 21,"Bal. C: N/A         ", poidsBal_kg(2) );
+    snprintf(localOLEDbuf, 21,"Bal. C: N/A         ");
   OLEDDrawText(1, 5, 0, localOLEDbuf);
   
    if (Peson[config.materiel.Num_Carte][3])
-    snprintf(localOLEDbuf, 21,"Bal. D: %10.0f g", poidsBal_kg(3) );
+    snprintf(localOLEDbuf, 21,"Bal. D: %8.2f kg", calculePoids(3) );
   else
-    snprintf(localOLEDbuf, 21,"Bal. D: N/A         ", poidsBal_kg(3) );
+    snprintf(localOLEDbuf, 21,"Bal. D: N/A         ");
   OLEDDrawText(1, 6, 0, localOLEDbuf);
-
-//  snprintf(localOLEDbuf, 21, "#%1d - Num Pes:%2d", config.materiel.Num_Carte,Peson[config.materiel.Num_Carte][bal-1]);
-//  OLEDDrawText(1, 6, 0, localOLEDbuf);
-// fin Fonction()
-
-
-
   OLEDDrawText(1, 7, 0, "VALIDE pour retour");
 }
 
@@ -811,13 +754,13 @@ snprintf(localOLEDbuf, 21,"=== CALIB. BAL:%d ===", bal);
   OLEDDrawText(1, 0, 0, localOLEDbuf);
 
 // faire Fonction()
-  snprintf(localOLEDbuf, 21,"Bal%d : %4.2d kg ", bal, Peson[config.materiel.Num_Carte][bal] );
+  snprintf(localOLEDbuf, 21,"Bal%d : %4.2d kg ", bal, pesonNum(bal));
   OLEDDrawText(1, 2, 0, localOLEDbuf);
-  snprintf(localOLEDbuf, 21,"Scale%d : %4.2d kg ", bal, Jauge[Peson[config.materiel.Num_Carte][bal]][1] );
+  snprintf(localOLEDbuf, 21,"Scale%d : %4.2d kg ", bal, pesonScale(bal));
   OLEDDrawText(1, 3, 0, localOLEDbuf);
-  snprintf(localOLEDbuf, 21,"Temp%d : %4.2d kg ", bal, poidsBal_kg(2) );
+  snprintf(localOLEDbuf, 21,"Temp%d : %4.2d kg ", bal, TareTemp(bal)); 
   OLEDDrawText(1, 4, 0, localOLEDbuf);
-  snprintf(localOLEDbuf, 21,"Tare%D : %4.2d kg ", bal, Jauge[Peson[config.materiel.Num_Carte][bal]][0] );
+  snprintf(localOLEDbuf, 21,"Tare%D : %4.2d kg ", bal, pesonTare(bal));
   OLEDDrawText(1, 5, 0, localOLEDbuf);
 // fin Fonction()
   OLEDDrawText(1, 7, 0, "VALIDE pour retour");
@@ -851,24 +794,27 @@ debugSerial.println("InfoVSolScreenRefreshTime()");
 char localOLEDbuf[21] = "";
   if (InfoBalScreenRefreshBal_1)   // rafraichir les poids
   { 
-     snprintf(localOLEDbuf, 20,"Bal. A: %10.2f j",poidsBal_kg(0));
-     OLEDDrawText(1, 3, 0, localOLEDbuf);
+ 
+// debugOLEDDrawText = true;     
+     
+     snprintf(localOLEDbuf,15 ," %8.2f",calculePoids(0));
+     OLEDDrawText(1, 3, 7, localOLEDbuf);
   } 
 
   if (InfoBalScreenRefreshBal_2)   // rafraichir les poids
   { 
-     snprintf(localOLEDbuf, 21,"Bal. B: %10.0f g",poidsBal_kg(1));
-     OLEDDrawText(1, 4, 0, localOLEDbuf);
+     snprintf(localOLEDbuf, 21," %8.2f",calculePoids(1));
+     OLEDDrawText(1, 4, 7, localOLEDbuf);
   } 
   if (InfoBalScreenRefreshBal_3)   // rafraichir les poids
   {
-     snprintf(localOLEDbuf, 21,"Bal. C: %10.0f g",poidsBal_kg(2));
-     OLEDDrawText(1, 5, 0, localOLEDbuf);
+     snprintf(localOLEDbuf, 21," %8.2f",calculePoids(2));
+     OLEDDrawText(1, 5, 7, localOLEDbuf);
   } 
   if (InfoBalScreenRefreshBal_4)   // rafraichir les poids
   {
-     snprintf(localOLEDbuf, 21,"Bal. D: %10.0f g",poidsBal_kg(3));
-     OLEDDrawText(1, 6, 0, localOLEDbuf);
+     snprintf(localOLEDbuf, 21," %8.2f",calculePoids(3));
+     OLEDDrawText(1, 6, 7, localOLEDbuf);
   } 
 // FIN Weight INFOS
 //  
@@ -958,6 +904,12 @@ void OLEDRefreshVlum(uint8_t ligne, uint8_t colonne)
 // Fonction wrapper pour setCursor
 void setCursorAdjusted(int16_t x, int16_t y) 
 {
+
+  if (debugOLEDDrawText)
+  {
+    debugSerial.print(" positionne curseur (pixels) x :"); debugSerial.print(x + OLED_Col_Offset);
+    debugSerial.print(" y: "); debugSerial.println(y);
+  }
   display.setCursor(x + OLED_Col_Offset, y);
 }
 
