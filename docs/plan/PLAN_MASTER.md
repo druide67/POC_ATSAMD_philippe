@@ -30,6 +30,9 @@ DIMANCHE: Phase 0 + début Phase 1 (objectif réaliste pour une journée)
 |`docs/plan/PHASE_2_FEDERATION_LORA.md`      |Plan détaillé + 17 questions            |
 |`docs/plan/PHASE_3_ROBUSTESSE_PRODUCTION.md`|Plan détaillé + 12 questions            |
 |`docs/plan/PLAN_MASTER.md`                  |Ce fichier (vue d'ensemble)             |
+|`docs/plan/ANALYSE_REPO.md`                 |Audit complet du code source            |
+|`docs/REFERENCES_PROJETS.md`                |Projets open-source de référence        |
+|`docs/ANALYSE_BEEP.md`                      |Étude plateforme BEEP comme backend     |
 
 -----
 

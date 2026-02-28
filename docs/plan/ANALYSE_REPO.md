@@ -15,7 +15,7 @@ Le projet est un firmware Arduino (.ino) pour carte **SODAQ Explorer** (ATSAMD21
 |Lignes de code (C++/H)        |~16 200            |
 |Fichiers source (.cpp)        |19                 |
 |Headers (.h)                  |7                  |
-|Commits                       |29                 |
+|Commits                       |29 (au 26/02/2026) |
 |Branches                      |1 (main uniquement)|
 |Fichiers binaires dans le repo|2 (.bin)           |
 
@@ -39,8 +39,8 @@ Le projet est un firmware Arduino (.ino) pour carte **SODAQ Explorer** (ATSAMD21
 |`LED_NB.cpp`     |309   |Gestion LEDs non-bloquante                                             |
 |`KEYPAD.cpp`     |158   |Clavier analogique 5 touches                                           |
 |`Power.cpp`      |110   |Gestion veille / réveil                                                |
-|`ISR.cpp`        |69    |Handlers d'interruption RTC                                            |
-|`DHT22.cpp`      |~80   |Lecture capteur DHT22                                                  |
+|`ISR.cpp`        |68    |Handlers d'interruption RTC                                            |
+|`DHT22.cpp`      |53    |Lecture capteur DHT22                                                  |
 |`Claude.cpp`     |136   |Notes / spécifications (pas de code actif)                             |
 
 -----
@@ -108,7 +108,7 @@ La topologie actuelle est simple : **chaque nœud envoie individuellement** vers
 
 ### 4.2 Architecture logicielle
 
-**Couplage fort via variables globales.** Le fichier `var.h` déclare ~194 variables globales, incluant tous les contextes de saisie, flags d'interruption, états d'écran, objets hardware (rtc, scales, display). Toute modification a des effets de bord imprévisibles.
+**Couplage fort via variables globales.** Le fichier `var.h` déclare **~97 variables globales uniques** (dans le bloc `#ifdef __MAIN__`), incluant tous les contextes de saisie, flags d'interruption, états d'écran, objets hardware (rtc, scales, display). Toute modification a des effets de bord imprévisibles. Note : 3 variables sont déclarées `extern` sans définition correspondante (`OLED`, `PvageInfosLoRaRefresh`, `PvageInfosSystRefresh`).
 
 **Pas d'abstraction entre couches.** Le code LoRa (`RN2483A.cpp`) accède directement aux variables globales `HiveSensor_Data`, `config`, `payload`. Le code de mesures accède aux objets hardware globaux (`scaleA`, `scaleB`…). Il n'y a pas d'interface entre "acquisition", "traitement" et "communication".
 
@@ -125,6 +125,14 @@ La topologie actuelle est simple : **chaque nœud envoie individuellement** vers
 **Pas de gestion d'erreurs structurée.** Les lectures capteurs ne gèrent pas les timeouts de façon uniforme. Le DHT est noté "bloquant en erreur". Les envois LoRa retournent un code d'erreur qui est affiché mais pas traité (pas de retry automatique, pas de log local).
 
 **Incohérence d'indexation.** Un commentaire dans Mesures.cpp le dit explicitement : "indices des macros de 0 à 3 ou de 1 à 4 ????? manque de cohérence !". Cela se confirme dans `Build_Lora_String` où `poidsBal_g(4)` est appelé (index hors bornes pour un tableau de 4).
+
+**Utilisation de `String` Arduino dans var.h.** Les variables `readingL` et `readingT` (var.h) sont déclarées comme `String` Arduino — en violation directe de la contrainte mémoire (fragmentation heap sur 32 Ko de RAM).
+
+**Bug potentiel memcpy dans buildLoraPayload().** Dans RN2483A.cpp, `memcpy(&payload[indice], &Masse, sizeof(Masse))` copie `sizeof(int)` = 4 octets sur ARM 32 bits, mais le code n'incrémente l'indice que de 2 — risque d'écrasement des octets adjacents dans le payload.
+
+**delay(10000-20000) dans RN2483AsendLoRaPayload().** En cas d'erreur LoRa, le code bloque pendant 10 à 20 secondes avec des `delay()` — bloquant en mode exploitation et incompatible avec un watchdog de 8 secondes.
+
+**`__INIT_DONE` défini partout, utilisé nulle part.** Chaque fichier .cpp définit `#define __INIT_DONE` avant l'include de `define.h`, mais ce symbole n'est jamais testé dans aucun header. Code résiduel mort.
 
 ### 4.4 Communication LoRa
 

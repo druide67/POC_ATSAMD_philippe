@@ -4,6 +4,12 @@
 
 Firmware embarqué C++ (Arduino) pour carte **SODAQ Explorer** (ATSAMD21J18A, Cortex-M0+) destiné à la surveillance de ruches apicoles. Collecte poids (HX711 ×4), température/humidité (DHT22), luminosité (LDR), tensions batterie LiFePO4 et panneau solaire, puis transmet les données via **LoRaWAN** (module Microchip RN2483A) vers une passerelle Orange Live Objects.
 
+## Infrastructure backend (existante)
+
+Les données LoRaWAN sont collectées par Orange Live Objects, puis consolidées dans un **Prometheus** hébergé chez un prestataire, avec visualisation **Grafana**. Cette infrastructure est opérationnelle et ne fait pas partie du périmètre firmware.
+
+Une intégration complémentaire avec la plateforme apicole **BEEP** (beep.nl) est à l'étude — voir `docs/ANALYSE_BEEP.md`.
+
 ## Contraintes fondamentales
 
 **Ce firmware tourne sur un microcontrôleur à ressources limitées.** Chaque décision de code doit être évaluée à travers ces contraintes :
@@ -118,6 +124,17 @@ volatile bool modeExploitation;  // État du pin physique mode
 - **Pas de `Serial.print` dans les ISR** — les macros LOG_* actuelles dans ISR.cpp sont un bug connu à corriger
 - **Ne pas modifier `ConfigGenerale_t` sans incrémenter `CONFIG_VERSION`** et gérer la migration EEPROM
 - **Ne pas toucher aux clés LoRa (AppKey, AppEUI)** — ce sont des secrets même si en clair dans le code
+
+### Bugs connus à corriger (identifiés par audit)
+
+- **`String` Arduino dans var.h** : `readingL` et `readingT` sont des `String` — à convertir en `char[]`
+- **LOG_DEBUG dans ISR** : 5 appels `LOG_DEBUG()` dans `ISRonRTCAlarm()` (ISR.cpp) → Serial dans ISR
+- **delay(5000) dans Power.cpp** : gaspille 5s à ~10 mA avant chaque mise en veille
+- **delay(10000-20000) dans RN2483A.cpp** : bloque 10-20s en cas d'erreur LoRa
+- **Bug memcpy dans buildLoraPayload()** : `memcpy` copie 4 octets (sizeof int 32 bits) mais indice incrémenté de 2 seulement
+- **3 extern orphelins dans var.h** : `OLED`, `PvageInfosLoRaRefresh`, `PvageInfosSystRefresh` déclarés extern sans définition
+- **`__INIT_DONE`** : défini dans chaque .cpp, jamais testé — code mort
+- **`config.h` et `state.h`** : ne sont inclus par aucun fichier
 
 ### Workflow de modification
 
