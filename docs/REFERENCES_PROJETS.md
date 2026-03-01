@@ -2,22 +2,24 @@
 
 Ce document recense les projets open-source matures dont l'architecture, le code ou les choix techniques sont directement exploitables pour l'évolution du POC_ATSAMD.
 
------
+---
 
 ## Hiveeyes — Le plus pertinent
 
-|                |                                                  |
-|----------------|--------------------------------------------------|
-|**Site**        |https://hiveeyes.org                              |
-|**Firmware**    |https://github.com/hiveeyes/arduino               |
-|**Doc firmware**|https://hiveeyes.org/docs/arduino/                |
-|**Communauté**  |https://community.hiveeyes.org                    |
-|**Licence**     |AGPL-3.0                                          |
-|**Actif depuis**|2011                                              |
-|**MCU**         |ATmega328P, ESP8266, ESP32, Heltec CubeCell       |
-|**Radio**       |RFM69, RFM95 (LoRa), LoRaWAN, GSM, WiFi           |
-|**Capteurs**    |HX711, DS18B20, DHT22, BME280 — les mêmes que nous|
-|**Backend**     |Kotori (MQTT) → InfluxDB → Grafana                |
+
+|                  |                                                                            |
+| ---------------- | -------------------------------------------------------------------------- |
+| **Site**         | [https://hiveeyes.org](https://hiveeyes.org)                               |
+| **Firmware**     | [https://github.com/hiveeyes/arduino](https://github.com/hiveeyes/arduino) |
+| **Doc firmware** | [https://hiveeyes.org/docs/arduino/](https://hiveeyes.org/docs/arduino/)   |
+| **Communauté**   | [https://community.hiveeyes.org](https://community.hiveeyes.org)           |
+| **Licence**      | AGPL-3.0                                                                   |
+| **Actif depuis** | 2011                                                                       |
+| **MCU**          | ATmega328P, ESP8266, ESP32, Heltec CubeCell                                |
+| **Radio**        | RFM69, RFM95 (LoRa), LoRaWAN, GSM, WiFi                                    |
+| **Capteurs**     | HX711, DS18B20, DHT22, BME280 — les mêmes que nous                         |
+| **Backend**      | Kotori (MQTT) → InfluxDB → Grafana                                         |
+
 
 ### Pourquoi c'est la référence n°1
 
@@ -36,21 +38,23 @@ Le firmware "generic" de Hiveeyes implémente exactement l'architecture cible de
 - Pas de mode LoRaWAN natif dans leur firmware generic (ils passent par un gateway qui fait le pont).
 - Pas d'interface utilisateur embarquée (pas d'OLED, pas de clavier) — notre système de menus et saisies est unique.
 
------
+---
 
 ## BEEP — Le plus industrialisé
 
-|            |                                                         |
-|------------|---------------------------------------------------------|
-|**Site**    |https://beep.nl                                          |
-|**App/API** |https://github.com/beepnl/BEEP                           |
-|**Firmware**|https://github.com/beepnl/beep-base-firmware             |
-|**Hardware**|https://github.com/beepnl/measurement-system-v3          |
-|**Licence** |AGPL-3.0 (API/app), hardware open                        |
-|**MCU**     |Nordic NRF52832 (Cortex-M4F)                             |
-|**Radio**   |LoRaWAN (RN2903/RN2483) + BLE                            |
-|**Capteurs**|HX711 (poids), DS18B20 ×N (température), microphone (son)|
-|**Backend** |Laravel PHP API + InfluxDB + VUE.js app                  |
+
+|              |                                                                                                    |
+| ------------ | -------------------------------------------------------------------------------------------------- |
+| **Site**     | [https://beep.nl](https://beep.nl)                                                                 |
+| **App/API**  | [https://github.com/beepnl/BEEP](https://github.com/beepnl/BEEP)                                   |
+| **Firmware** | [https://github.com/beepnl/beep-base-firmware](https://github.com/beepnl/beep-base-firmware)       |
+| **Hardware** | [https://github.com/beepnl/measurement-system-v3](https://github.com/beepnl/measurement-system-v3) |
+| **Licence**  | AGPL-3.0 (API/app), hardware open                                                                  |
+| **MCU**      | Nordic NRF52832 (Cortex-M4F)                                                                       |
+| **Radio**    | LoRaWAN (RN2903/RN2483) + BLE                                                                      |
+| **Capteurs** | HX711 (poids), DS18B20 ×N (température), microphone (son)                                          |
+| **Backend**  | Laravel PHP API + InfluxDB + VUE.js app                                                            |
+
 
 ### Pourquoi c'est intéressant
 
@@ -58,7 +62,7 @@ BEEP est le projet le plus abouti en termes de **produit fini** : ils produisent
 
 ### Ce qu'on peut en tirer
 
-- **Plateforme gratuite** : la plateforme https://app.beep.nl est ouverte et gratuite. Notre cousin pourrait y envoyer ses données au lieu de développer un backend custom. L'API accepte les données via HTTP POST ou via TTN webhook.
+- **Plateforme gratuite** : la plateforme [https://app.beep.nl](https://app.beep.nl) est ouverte et gratuite. Notre cousin pourrait y envoyer ses données au lieu de développer un backend custom. L'API accepte les données via HTTP POST ou via TTN webhook.
 - **Décodeur LoRaWAN** : leur payload formatter pour TTN/Chirpstack est open-source et bien documenté, utile comme référence pour notre encodage Phase 1.
 - **Configuration par BLE** : leur app mobile configure le firmware par Bluetooth. Pas prioritaire pour nous, mais intéressant si on veut éviter le clavier/OLED pour la configuration terrain.
 - **Ultra low power** : leur design est optimisé pour la consommation, bon benchmark pour notre Phase 3.
@@ -73,17 +77,19 @@ BEEP est le projet le plus abouti en termes de **produit fini** : ils produisent
 
 Ils utilisent aussi le **RN2483** pour le LoRa, comme nous. Leur code d'initialisation et de gestion du module peut être une bonne référence.
 
------
+---
 
 ## WaggleNet — La recherche la plus récente
 
-|            |                                 |
-|------------|---------------------------------|
-|**Paper**   |https://arxiv.org/pdf/2512.07408 |
-|**Licence** |Académique                       |
-|**MCU**     |Heltec WiFi LoRa 32 V3 (ESP32-S3)|
-|**Radio**   |LoRa P2P + WiFi/MQTT             |
-|**Capteurs**|DHT22, LDR, GPS                  |
+
+|              |                                                                      |
+| ------------ | -------------------------------------------------------------------- |
+| **Paper**    | [https://arxiv.org/pdf/2512.07408](https://arxiv.org/pdf/2512.07408) |
+| **Licence**  | Académique                                                           |
+| **MCU**      | Heltec WiFi LoRa 32 V3 (ESP32-S3)                                    |
+| **Radio**    | LoRa P2P + WiFi/MQTT                                                 |
+| **Capteurs** | DHT22, LDR, GPS                                                      |
+
 
 ### Pourquoi c'est intéressant
 
@@ -102,44 +108,53 @@ WaggleNet implémente exactement la topologie **master/worker** qu'on vise pour 
 - Le master se connecte en WiFi au cloud (MQTT), pas en LoRaWAN. Pas de contrainte de duty cycle LoRa pour le master.
 - Pas de pesée (HX711) dans leur implémentation actuelle.
 
------
+---
 
 ## Autres projets utiles
 
 ### joergkeller/beehive-sensor
 
-|           |                                                                                                                             |
-|-----------|-----------------------------------------------------------------------------------------------------------------------------|
-|**Repo**   |https://github.com/joergkeller/beehive-sensor                                                                                |
-|**MCU**    |Heltec CubeCell (ASR6502)                                                                                                    |
-|**Intérêt**|Benchmark autonomie : 1W solaire + 230 mAh LiPo = 2 semaines sans soleil. Encodage payload en int16 (×100) pour la compacité.|
+
+|             |                                                                                                                               |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **Repo**    | [https://github.com/joergkeller/beehive-sensor](https://github.com/joergkeller/beehive-sensor)                                |
+| **MCU**     | Heltec CubeCell (ASR6502)                                                                                                     |
+| **Intérêt** | Benchmark autonomie : 1W solaire + 230 mAh LiPo = 2 semaines sans soleil. Encodage payload en int16 (×100) pour la compacité. |
+
 
 ### DanNduati/IoT-beehive-monitoring-system
 
-|           |                                                                                                                                              |
-|-----------|----------------------------------------------------------------------------------------------------------------------------------------------|
-|**Repo**   |https://github.com/DanNduati/IoT-beehive-monitoring-system                                                                                    |
-|**Intérêt**|Architecture double carte (main board + aux board LoRa) avec audio FFT. Firmware en C Arduino et MicroPython, bon pour comparer les approches.|
+
+|             |                                                                                                                                                |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Repo**    | [https://github.com/DanNduati/IoT-beehive-monitoring-system](https://github.com/DanNduati/IoT-beehive-monitoring-system)                       |
+| **Intérêt** | Architecture double carte (main board + aux board LoRa) avec audio FFT. Firmware en C Arduino et MicroPython, bon pour comparer les approches. |
+
 
 ### Projet OpenRuche (français)
 
-|           |                                                                                                                          |
-|-----------|--------------------------------------------------------------------------------------------------------------------------|
-|**Repo**   |https://github.com/InGELLIS/Projet_OpenRuche                                                                              |
-|**Intérêt**|Projet français similaire utilisant Arduino + LoRaWAN + BEEP. Intégration webhook TTN → BEEP documentée. Code en français.|
 
------
+|             |                                                                                                                            |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **Repo**    | [https://github.com/InGELLIS/Projet_OpenRuche](https://github.com/InGELLIS/Projet_OpenRuche)                               |
+| **Intérêt** | Projet français similaire utilisant Arduino + LoRaWAN + BEEP. Intégration webhook TTN → BEEP documentée. Code en français. |
+
+
+---
 
 ## Synthèse : quoi prendre où
 
-|Besoin                                   |Meilleure source                      |
-|-----------------------------------------|--------------------------------------|
-|Structure PlatformIO multi-environnements|Hiveeyes/arduino                      |
-|Architecture nœud/relais/gateway         |Hiveeyes generic firmware             |
-|Encodage payload LoRaWAN compact         |joergkeller (int16 ×100) + BEEP       |
-|Calibration HX711                        |Hiveeyes (sketches dédiés)            |
-|Plateforme de visualisation gratuite     |BEEP (app.beep.nl)                    |
-|Validation portée P2P entre ruches       |WaggleNet (110m, 100% delivery)       |
-|Budget énergie solaire/batterie          |joergkeller (1W + 230mAh = 2 semaines)|
-|Gestion RN2483 (commandes AT)            |BEEP base firmware                    |
-|Intégration TTN → dashboard              |OpenRuche                             |
+
+| Besoin                                    | Meilleure source                       |
+| ----------------------------------------- | -------------------------------------- |
+| Structure PlatformIO multi-environnements | Hiveeyes/arduino                       |
+| Architecture nœud/relais/gateway          | Hiveeyes generic firmware              |
+| Encodage payload LoRaWAN compact          | joergkeller (int16 ×100) + BEEP        |
+| Calibration HX711                         | Hiveeyes (sketches dédiés)             |
+| Plateforme de visualisation gratuite      | BEEP (app.beep.nl)                     |
+| Validation portée P2P entre ruches        | WaggleNet (110m, 100% delivery)        |
+| Budget énergie solaire/batterie           | joergkeller (1W + 230mAh = 2 semaines) |
+| Gestion RN2483 (commandes AT)             | BEEP base firmware                     |
+| Intégration TTN → dashboard               | OpenRuche                              |
+
+

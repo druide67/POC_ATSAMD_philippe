@@ -1,179 +1,286 @@
-# CLAUDE.md — POC_ATSAMD : Surveillance de Ruches
+# CLAUDE.md — Ruches Connectees ESP32-S3
 
-## Identité du projet
+## Identite du projet
 
-Firmware embarqué C++ (Arduino) pour carte **SODAQ Explorer** (ATSAMD21J18A, Cortex-M0+) destiné à la surveillance de ruches apicoles. Collecte poids (HX711 ×4), température/humidité (DHT22), luminosité (LDR), tensions batterie LiFePO4 et panneau solaire, puis transmet les données via **LoRaWAN** (module Microchip RN2483A) vers une passerelle Orange Live Objects.
+Firmware embarque C++ (Arduino/PlatformIO) pour **ESP32-S3-DevKitC-1** destine a la surveillance de ruches apicoles. Architecture **Master/Slaves** avec communication BLE entre noeuds :
+
+- **1 Master** : collecte poids (HX711), meteo (BME280), luminosite (BH1750), energie (INA219, ADC), agrege les donnees des slaves via BLE, transmet via **LoRaWAN** (SX1262 + RadioLib) vers **Orange Live Objects**, et expose un serveur web local (ESPAsyncWebServer).
+- **3 Slaves** : chacun mesure le poids (HX711), la tension batterie (ADC), l'horodatage (DS3231), puis transmet au master via BLE avant de passer en deep sleep.
+
+**Migration depuis** : SODAQ Explorer (ATSAMD21) — le code metier portable (~40%) est porte depuis le repo `pleuh67/POC_ATSAMD`.
 
 ## Infrastructure backend (existante)
 
-Les données LoRaWAN sont collectées par Orange Live Objects, puis consolidées dans un **Prometheus** hébergé chez un prestataire, avec visualisation **Grafana**. Cette infrastructure est opérationnelle et ne fait pas partie du périmètre firmware.
-
-Une intégration complémentaire avec la plateforme apicole **BEEP** (beep.nl) est à l'étude — voir `docs/ANALYSE_BEEP.md`.
+- **Orange Live Objects** : reception des trames LoRaWAN (OTAA)
+- **Decodeur Go** : sur Scalingo, decode le payload V2 (24 octets) — maintenu par Philippe et son pote
+- **Prometheus + Grafana** : visualisation — operationnel, hors perimetre firmware
+- **BEEP** (beep.nl) : integration a evaluer plus tard — voir `docs/ANALYSE_BEEP.md`
 
 ## Contraintes fondamentales
 
-**Ce firmware tourne sur un microcontrôleur à ressources limitées.** Chaque décision de code doit être évaluée à travers ces contraintes :
+- **RAM** : 512 Ko SRAM + 8 Mo PSRAM (master N16R8) — plus large que ATSAMD mais toujours pas de fragmentation heap
+- **Flash** : 16 Mo (master), 4 Mo (slave)
+- **Consommation** : objectif < 20 uA en deep sleep, budget 1x Li-Ion 18650 + solaire 6V + CN3791 MPPT
+- **Fiabilite** : exterieur sans supervision pendant des semaines
+- **Temps reel** : loop() ne doit jamais bloquer (pas de `delay()` en production)
+- **LoRaWAN** : payload 24 octets max, duty cycle 1%, EU868
+- **BLE** : NimBLE avec pairing passkey statique, portee ~15 m entre ruches
+- **Pas de `String` Arduino** — utiliser `char[]` + `snprintf`
+- **Pas d'allocation dynamique** (`new`, `malloc`) — memoire statique uniquement
 
-- **RAM** : 32 Ko SRAM — pas d'allocation dynamique en production, pas de `String`, pas de `new`/`malloc`
-- **Flash** : 256 Ko — surveiller la taille du binaire après chaque modification
-- **Consommation** : objectif < 50 µA en deep sleep, budget énergie batterie+solaire
-- **Fiabilité** : fonctionne en extérieur sans supervision humaine pendant des semaines
-- **Temps réel** : la loop() ne doit jamais bloquer (pas de `delay()` en production)
-- **LoRaWAN** : payload limité à ~51 octets en SF12, duty cycle réglementaire 1%
+## Architecture materielle
 
-## Architecture matérielle
+### Master (ESP32-S3-DevKitC-1 N16R8)
 
 ```
-SODAQ Explorer (ATSAMD21J18A)
-├── I²C bus
-│   ├── DS3231 RTC + EEPROM 24C32 (0x68 / 0x57)
-│   └── OLED SH1106 128×64 (0x3C)
-├── Serial2 → RN2483A (LoRa module)
-├── GPIO
-│   ├── HX711 ×4 (SCK partagé pin 3, DOUT pins 4/6/8/10)
-│   ├── DHT22 (pin 5)
-│   ├── Pin mode exploitation/programmation (BUTTON)
-│   └── Alarme RTC (pin 2, interrupt FALLING)
-├── ADC
-│   ├── A0 : LDR (luminosité)
-│   ├── A1 : VBat (pont diviseur)
-│   ├── A2 : VSol (pont diviseur)
-│   └── A3 : Clavier analogique 5 touches
-└── Alimentation : LiFePO4 + panneau solaire + régulateur
+ESP32-S3 Master
++-- I2C bus
+|   +-- DS3231 RTC + EEPROM AT24C32 (0x68 / 0x57)
+|   +-- OLED SSD1309 2,42" (0x3C) — U8g2
+|   +-- BME280 (0x76) — temperature, humidite, pression
+|   +-- BH1750 (0x23) — luminosite en lux
+|   +-- INA219 (0x40) — courant/tension solaire
++-- SPI bus
+|   +-- SX1262 E22-868M22S (LoRaWAN) — RadioLib
++-- GPIO
+|   +-- HX711 x1 (cellule 200 kg)
+|   +-- Alarme RTC (interrupt FALLING)
++-- ADC
+|   +-- VBat (pont diviseur)
+|   +-- VSol (pont diviseur)
+|   +-- Clavier analogique 5 touches
++-- BLE : GATT client (scan + lecture 3 slaves)
++-- WiFi STA : serveur web (ESPAsyncWebServer)
++-- Alimentation : Li-Ion 18650 + solaire 6V + CN3791 MPPT
+```
+
+### Slave (ESP32-S3)
+
+```
+ESP32-S3 Slave
++-- I2C bus
+|   +-- DS3231 RTC + EEPROM AT24C32
+|   +-- OLED SSD1309 2,42" (debug/maintenance, debranchable)
++-- GPIO
+|   +-- HX711 x1 (cellule 200 kg)
+|   +-- Clavier analogique 5 touches (debug/maintenance)
++-- ADC
+|   +-- VBat (pont diviseur)
++-- BLE : GATT server (advertising + envoi donnees au master)
++-- Alimentation : Li-Ion 18650 + solaire 6V + CN3791 MPPT
 ```
 
 ## Toolchain
 
-- **IDE** : VS Code + PlatformIO
-- **Build** : `pio run -e sodaq_explorer`
-- **Upload** : `pio run -e sodaq_explorer -t upload`
-- **Monitor série** : `pio device monitor -b 57600`
-- **Projets de référence** : voir `docs/REFERENCES_PROJETS.md`
+- **IDE** : VS Code + PlatformIO (ou Cursor + PlatformIO CLI)
+- **Build master** : `pio run -e master`
+- **Build slave** : `pio run -e slave`
+- **Upload master** : `pio run -e master -t upload`
+- **Upload slave** : `pio run -e slave -t upload`
+- **Monitor serie** : `pio device monitor -b 115200`
+- **Upload fichiers web** : `pio run -e master -t uploadfs`
 
-## Organisation du code (état actuel)
+## Organisation du code
 
-Tous les fichiers sont à la racine. Un fichier `define.h` chaîne tous les includes.
-Le pattern `#ifdef __MAIN__` / `#else extern` dans `var.h` gère les déclarations/extern.
+```
+src/
++-- common/                    <- code partage master ET slave
+|   +-- hx711_manager.cpp/h    <- pesee HX711
+|   +-- rtc_manager.cpp/h      <- DS3231 + alarmes + ISR
+|   +-- eeprom_manager.cpp/h   <- AT24C32 config persistante
+|   +-- display_manager.cpp/h  <- U8g2 + SSD1309
+|   +-- keypad.cpp/h           <- clavier analogique 5 touches
+|   +-- power_manager.cpp/h    <- deep sleep ESP32
+|   +-- convert.cpp/h          <- conversions hex/byte
+|   +-- saisies_nb.cpp/h       <- saisies non-bloquantes
+|   +-- menus_common.cpp/h     <- calibration, affichage simple
++-- master/
+|   +-- main.cpp               <- setup() + loop() master
+|   +-- ble_master.cpp/h       <- scan, connect, read slaves
+|   +-- lora_manager.cpp/h     <- RadioLib + SX1262
+|   +-- sensor_manager.cpp/h   <- BME280, BH1750, INA219
+|   +-- web_server.cpp/h       <- ESPAsyncWebServer + API REST
+|   +-- menus_master.cpp/h     <- menus specifiques master
++-- slave/
+    +-- main.cpp               <- setup() + deep sleep cycle
+    +-- ble_slave.cpp/h        <- GATT server, advertising
+    +-- menus_slave.cpp/h      <- menus calibration slave
 
-|Fichier                      |Rôle                                           |Dépendances clés                 |
-|-----------------------------|-----------------------------------------------|---------------------------------|
-|`POC_ATSAMD.ino`             |setup() + loop()                               |Tout                             |
-|`Handle.cpp`                 |Machine à états exploitation/programmation     |ISR flags, Mesures, RN2483A, OLED|
-|`RN2483A.cpp`                |Communication LoRaWAN (OTAA, payload, send)    |Sodaq_RN2483, config             |
-|`Mesures.cpp`                |Acquisition capteurs (HX711, DHT, ADC)         |HX711, DHT, config               |
-|`Power.cpp`                  |Deep sleep / réveil                            |LowPower, LoRaBee, display       |
-|`ISR.cpp`                    |Handlers interruption RTC alarmes 1 et 2       |rtc, flags volatile              |
-|`DS3231.cpp`                 |Pilote RTC (alarmes, synchro)                  |RTClib                           |
-|`24C32.cpp`                  |Config persistante EEPROM                      |Wire, ConfigGenerale_t           |
-|`OLED.cpp`                   |Affichage écran                                |Adafruit_SH110X                  |
-|`Saisies_NB.cpp`             |Saisies non-bloquantes (num, alpha, hex, date…)|OLED, clavier                    |
-|`Menus.cpp` / `MenusFonc.cpp`|Navigation menus + actions associées           |Saisies, OLED, config            |
-|`setup.cpp`                  |Initialisations matérielles                    |Tous les drivers                 |
+include/
++-- config.h                   <- constantes, pins, macros
++-- types.h                    <- structures de donnees
++-- credentials.h              <- AppKey, WiFi, BLE passkey — .gitignore !
++-- credentials_example.h      <- template sans secrets
 
-## Conventions de code existantes
+data-master/                   <- fichiers web (HTML/CSS/JS) pour LittleFS
+docs/                          <- documentation
+```
+
+**Selection des fichiers par environnement :**
+- `[env:master]` : `build_src_filter = -<*> +<common/**/*> +<master/**/*>`
+- `[env:slave]` : `build_src_filter = -<*> +<common/**/*> +<slave/**/*>`
+- Flags : `-DIS_MASTER=1` ou `-DIS_SLAVE=1`
+
+## Conventions de code
 
 - **Style d'accolades** : alignement vertical (Allman)
 - **Indentation** : 2 espaces
 - **Noms** : fonctions et variables en camelCase, `#define` en MAJUSCULES
-- **Préfixes fichier** : chaque fonction est préfixée du nom de son module (ex: `RN2483AsendLoRaPayload`, `E24C32loadConfig`, `DS3231setRTCAlarm1`)
-- **Commentaires** : en français avec accents
-- **Textes affichés (OLED/série)** : français SANS accents
-- **Debug** : `#define debugSerial SerialUSB`, macros `LOG_INFO()`, `LOG_DEBUG()`, etc.
-- **Prototypes** : centralisés dans `prototypes.h`
+- **Commentaires** : en francais avec accents
+- **Textes affiches (OLED/serie)** : francais SANS accents
+- **Debug** : `Serial.printf()` (plus de `debugSerial`/`SerialUSB`)
+- **Types** : toujours `uint8_t`, `int16_t`, `float` — jamais `int` seul
+- **ISR** : `IRAM_ATTR`, flag only (pas de Serial ni I2C dans les ISR)
+- **Deep sleep** : sauvegarder l'etat en RTC RAM (`RTC_DATA_ATTR`)
 
-## Structures de données critiques
+## Structures de donnees critiques
 
 ```cpp
 // Mesures capteurs — rempli par acquisition, lu par build payload
 HiveSensor_Data_t HiveSensor_Data;
 
-// Configuration persistante (EEPROM) — NE JAMAIS modifier la struct sans incrémenter CONFIG_VERSION
-ConfigGenerale_t config; // contient .magicNumber, .applicatif, .materiel, .checksum
+// Configuration persistante (EEPROM AT24C32)
+// NE JAMAIS modifier ConfigGenerale_t sans incrementer CONFIG_VERSION
+ConfigGenerale_t config; // .magicNumber, .applicatif, .materiel, .checksum
 
-// Identifiants des cartes physiques — tables de lookup par Num_Carte
-HWEUI_List[], SN2483_List[], AppKey_List[], Peson[][], Jauge[][]
+// Donnees des slaves recues via BLE
+SlaveReading_t slaveReadings[3]; // address, weight, vbat, timestamp, valid
+
+// Coefficients d'etalonnage des pesons physiques
+Jauge[22][4]; // tare, echelle, tempTare, compTemp
+Peson[10][4]; // matrice carte -> pesons connectes
 ```
 
-## Flags d'interruption (ISR ↔ loop)
-
-```cpp
-volatile bool wakeup1Sec;        // Alarme 1 : tick 1s (mode programmation)
-volatile bool wakeupPayload;     // Alarme 2 : cycle mesure+envoi
-volatile bool alarm1_enabled;    // Verrou : désactivé pendant traitement payload
-volatile bool alarm2_enabled;    // Verrou alarme 2
-volatile bool modeExploitation;  // État du pin physique mode
-```
-
-## Règles pour Claude Code
+## Regles pour Claude Code
 
 ### Ce qu'il FAUT faire
 
-- Toujours vérifier la taille du binaire après modification (`pio run` → section .text + .data)
-- Tester la compilation avant de committer (`pio run -e sodaq_explorer`)
-- Documenter chaque fonction : description, paramètres, retour (en français)
-- Utiliser des types à taille fixe (`uint8_t`, `int16_t`, `float`) — jamais `int` seul
-- Préférer `snprintf` à `sprintf` (buffer overflow protection)
-- Marquer `volatile` toute variable partagée ISR ↔ loop
-- Mettre les constantes en `PROGMEM` / `const` quand possible
+- Tester la compilation des DEUX environnements : `pio run -e master && pio run -e slave`
+- Utiliser `snprintf` (jamais `sprintf`)
+- Marquer `volatile` toute variable partagee ISR <-> loop
+- Marquer `IRAM_ATTR` toutes les fonctions d'interruption
+- Mettre les secrets dans `credentials.h` (gitignore)
+- Documenter les fonctions en francais
 
 ### Ce qu'il NE FAUT PAS faire
 
-- **Pas de `String` Arduino** (fragmentation heap) — utiliser `char[]` + `snprintf`
-- **Pas de `delay()` dans loop()** — tout doit être non-bloquant
-- **Pas d'allocation dynamique** (`new`, `malloc`, `std::vector`) — mémoire statique uniquement
-- **Pas de `Serial.print` dans les ISR** — les macros LOG_* actuelles dans ISR.cpp sont un bug connu à corriger
-- **Ne pas modifier `ConfigGenerale_t` sans incrémenter `CONFIG_VERSION`** et gérer la migration EEPROM
-- **Ne pas toucher aux clés LoRa (AppKey, AppEUI)** — ce sont des secrets même si en clair dans le code
-
-### Bugs connus à corriger (identifiés par audit)
-
-- **`String` Arduino dans var.h** : `readingL` et `readingT` sont des `String` — à convertir en `char[]`
-- **LOG_DEBUG dans ISR** : 5 appels `LOG_DEBUG()` dans `ISRonRTCAlarm()` (ISR.cpp) → Serial dans ISR
-- **delay(5000) dans Power.cpp** : gaspille 5s à ~10 mA avant chaque mise en veille
-- **delay(10000-20000) dans RN2483A.cpp** : bloque 10-20s en cas d'erreur LoRa
-- **Bug memcpy dans buildLoraPayload()** : `memcpy` copie 4 octets (sizeof int 32 bits) mais indice incrémenté de 2 seulement
-- **3 extern orphelins dans var.h** : `OLED`, `PvageInfosLoRaRefresh`, `PvageInfosSystRefresh` déclarés extern sans définition
-- **`__INIT_DONE`** : défini dans chaque .cpp, jamais testé — code mort
-- **`config.h` et `state.h`** : ne sont inclus par aucun fichier
+- **Pas de `String` Arduino** — `char[]` + `snprintf`
+- **Pas de `delay()` dans loop()** — non-bloquant uniquement
+- **Pas d'allocation dynamique** (`new`, `malloc`, `std::vector`)
+- **Pas de Serial dans les ISR** — flag only
+- **Ne pas modifier `ConfigGenerale_t`** sans incrementer `CONFIG_VERSION`
+- **Ne pas committer `credentials.h`** — secrets LoRa, WiFi, BLE
 
 ### Workflow de modification
 
-1. Créer une branche depuis `main`
 1. Modifier le code
-1. Compiler : `pio run -e sodaq_explorer`
-1. Vérifier taille : la flash ne doit pas dépasser 240 Ko (marge bootloader)
-1. Si possible, tester sur carte physique
-1. Commit avec message descriptif en français
-1. PR vers main
+2. Compiler les deux envs : `pio run -e master && pio run -e slave`
+3. Tester sur carte physique si possible
+4. Commit avec message descriptif en francais
 
-## Objectifs d'évolution (par priorité)
+## Bibliotheques cibles
 
-1. **Phase 0** — Assainissement : structuration repo, suppression code mort, réduction globales
-1. **Phase 1** — Abstraction radio : couche comms, payload extensible, file d'attente
-1. **Phase 2** — Fédération LoRa : mode P2P inter-nœuds, agrégation, scheduling
-1. **Phase 3** — Robustesse production : CI/CD, watchdog, OTA, logs locaux
+### Partagees (master + slave)
 
-## Bibliothèques utilisées (versions figées)
+| Lib | Version | Usage |
+|-----|---------|-------|
+| NimBLE-Arduino | ^2.1.0 (h2zero) | BLE GATT client/server |
+| HX711 | ^0.7.5 (bogde) | Cellules de charge |
+| RTClib | ^2.1.4 (Adafruit) | DS3231 RTC |
+| U8g2 | ^2.35.19 (olikraus) | OLED SSD1309 2,42" |
 
-|Lib               |Version              |Usage                       |
-|------------------|---------------------|----------------------------|
-|RTClib            |2.1.4 (Adafruit)     |DS3231 RTC                  |
-|ArduinoLowPower   |1.2.1                |Deep sleep SAMD             |
-|Adafruit_SH110X   |2.1.13               |OLED 1.3"                   |
-|Adafruit_SSD1306  |2.5.15               |OLED 0.96" (alternatif)     |
-|Sodaq_RN2483      |1.1.0                |Module LoRa RN2483A         |
-|Sodaq_wdt         |1.0.2                |Watchdog timer              |
-|CayenneLPP        |1.4.0                |Encodage LoRa (peu utilisé) |
-|DHT sensor library|1.3.7 (Adafruit)     |DHT22                       |
-|OneWire           |2.3.5                |DS18B20 (prévu, pas utilisé)|
-|HX711             |0.7.2 (Bogdan Necula)|Cellules de charge          |
+### Master uniquement
 
-## Carte des prototypes physiques
+| Lib | Version | Usage |
+|-----|---------|-------|
+| RadioLib | ^7.4.0 (jgromes) | LoRaWAN SX1262 |
+| ESPAsyncWebServer | ^3.10.0 (esp32async) | Serveur web |
+| AsyncTCP | ^3.4.10 (esp32async) | TCP async pour web |
+| Adafruit BME280 | ^2.2.4 | Temperature/humidite/pression |
+| BH1750 | ^1.3.0 (claws) | Luminosite lux |
+| Adafruit INA219 | ^1.2.1 | Courant/tension solaire |
 
-|Num_Carte|DevEUI          |Localisation       |Pesons (A,B,C,D)|
-|---------|----------------|-------------------|----------------|
-|1        |0004A30B0020300A|HS / récupéré      |0,0,0,J17       |
-|2        |0004A30B0024BF45|Non connecté Orange|J13,J08,J09,0   |
-|3        |0004A30B00EEEE01|Ruches Loess       |J06,J09,J03,J08 |
-|4        |0004A30B00EEA5D5|Ruches Verger      |0,J18,0,0       |
-|5        |0004A30B00F547CF|Cave               |J19,J21,J14,J17 |
+## Payload LoRaWAN V2 (24 octets)
+
+```
+[0]    Version (0x02)          [1]    NodeCount
+[2]    Flags                   [3-4]  Poids master (x0.01 kg)
+[5-6]  Temperature (x0.1 C)   [7]    Humidite (x0.5 %)
+[8-9]  Pression (x0.1 hPa)    [10-11] Luminosite (lux)
+[12]   VBat master (x0.1V)    [13]   VSol (x0.1V)
+[14]   ISol (x10 mA)          [15-16] Poids slave 1
+[17]   VBat slave 1            [18-19] Poids slave 2
+[20]   VBat slave 2            [21-22] Poids slave 3
+[23]   VBat slave 3
+```
+
+Slave absent : poids = 0x7FFF, VBat = 0xFF
+
+## Decisions architecturales (01/03/2026)
+
+| Decision | Choix |
+|----------|-------|
+| Nombre de slaves | 3 |
+| Backend LoRaWAN | Orange Live Objects (pas TTN) |
+| Module LoRa | E22-868M22S (SPI) — le E22-900T30D (UART) est incompatible |
+| BLE | NimBLE avec pairing passkey statique |
+| ADR LoRaWAN | Active, option forcer SF via menu |
+| Cellules de charge | 200 kg partout |
+| Capteurs slaves | Poids + VBat + timestamp uniquement |
+| BME280 | Remplace DHT22 sur master |
+| OLED + clavier slaves | Oui (debug/maintenance, debranchable) |
+| Alimentation | 1x Li-Ion 18650 + solaire 6V + CN3791 |
+| Credentials | credentials.h gitignore |
+| Organisation repo | Un seul repo, deux env PlatformIO |
+| Cartes SODAQ | Retirees |
+| Integration BEEP | A evaluer plus tard |
+
+## Etat d'avancement
+
+### Phase 0 — Migration de base (EN COURS)
+
+- [x] Structure repo PlatformIO (src/common, src/master, src/slave)
+- [x] platformio.ini multi-environnement (master + slave compilent)
+- [x] credentials.h + credentials_example.h
+- [x] types.h (porte depuis struct.h + nouvelles structures ESP32)
+- [ ] config.h (constantes, pins — en cours)
+- [ ] Porter code portable (Convert.cpp, Saisies_NB.cpp, 24C32.cpp, DS3231.cpp)
+- [ ] Adapter OLED (Adafruit -> U8g2)
+- [ ] Adapter clavier (ADC 12 bits)
+- [ ] Reecrire power management (esp_sleep)
+
+### Phases suivantes
+
+- Phase 1 : Capteurs + OLED + menus (quand Phase 0 terminee)
+- Phase 2 : BLE Master/Slaves (quand Phase 1 terminee)
+- Phase 3 : LoRaWAN (quand module E22-868M22S recu)
+- Phase 4 : Serveur web + robustesse
+
+## Documentation
+
+| Fichier | Description |
+|---------|-------------|
+| `docs/plan/PLAN_MASTER.md` | Vue d'ensemble des phases |
+| `docs/plan/IMPACT_MIGRATION_ESP32.md` | Analyse d'impact migration |
+| `docs/20260220_memo_ruches_connectees_ESP.md` | Memo technique ESP32 (Philippe) |
+| `docs/ANALYSE_BEEP.md` | Etude plateforme BEEP |
+| `docs/plan/ANALYSE_REPO.md` | Audit du code source ATSAMD |
+
+## Code ATSAMD de reference (portage)
+
+Le code source ATSAMD est dans le meme repo (fichiers a la racine) :
+
+| Fichier ATSAMD | Destination ESP32 | Portabilite |
+|----------------|-------------------|-------------|
+| struct.h | include/types.h | 100% — FAIT |
+| Convert.cpp | src/common/convert.cpp | 100% |
+| Saisies_NB.cpp | src/common/saisies_nb.cpp | 100% |
+| 24C32.cpp | src/common/eeprom_manager.cpp | 95% |
+| DS3231.cpp | src/common/rtc_manager.cpp | 90% |
+| OLED.cpp | src/common/display_manager.cpp | Reecriture API |
+| KEYPAD.cpp | src/common/keypad.cpp | Recalibrer ADC |
+| Mesures.cpp | src/common/hx711_manager.cpp | Factoriser |
+| Menus.cpp | src/common/menus_common.cpp | 95% |
+| RN2483A.cpp | src/master/lora_manager.cpp | Reecriture complete |
+| Power.cpp | src/common/power_manager.cpp | Reecriture complete |
+| ISR.cpp | integre dans rtc_manager | Simplifier |
